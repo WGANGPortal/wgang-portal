@@ -1,4 +1,4 @@
-# Project Rooster v0.4.0 Foundation
+# WGANG v0.4.1 Foundation
 
 WGANG Portal er et uavhengig fellesskaps- og planleggingsverktøy for WGANG.
 
@@ -11,7 +11,7 @@ WGANG Portal er et uavhengig fellesskaps- og planleggingsverktøy for WGANG.
 ## Innhold
 
 - Offentlig landing page
-- Ny WGANG Project Rooster-logo
+- Ny WGANG WGANG-logo
 - Rosa WGANG-identitet
 - Nøytral demobruker: «Nabo»
 - Dashboard

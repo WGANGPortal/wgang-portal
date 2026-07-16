@@ -1,4 +1,4 @@
-# Design Manual – Project Rooster
+# Design Manual – WGANG
 
 ## Visuell retning
 

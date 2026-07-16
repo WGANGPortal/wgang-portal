@@ -1,10 +1,10 @@
 # Changelog
 
-## v0.4.0 Foundation – Build 001
+## v0.4.1 Foundation – WGANG Identity
 
 ### Nytt
 - Offentlig forside med WGANG-presentasjon
-- Ny Project Rooster-logo integrert
+- Ny WGANG-logo integrert
 - Rosa designsystem gjennom hele portalen
 - Nøytral bruker «Nabo»
 - Nøytrale demo-medlemmer
