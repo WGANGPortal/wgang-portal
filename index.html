@@ -1,16 +1,82 @@
-<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WGANG Portal</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"></head><body>
-<header><a class="brand" href="#"><svg viewBox="0 0 64 64"><path d="M14 9h36l7 13-5 31-20 7-20-7-5-31z" fill="#e36b96"/><path d="M19 14h26l6 10-4 24-15 6-15-6-4-24z" fill="#f59bbb"/><path d="M32 17c-4 4-7 8-8 13 3-1 6-1 8 1-5 2-8 6-9 11 4-2 8-2 11 0 2-6 5-10 9-13-4-1-7-1-10 0 2-4 2-8-1-12z" fill="#9d2f58"/></svg><span><b>WGANG</b><small>PORTAL</small></span></a><button id="theme">◐</button><div class="user"><i>S</i><span><b>SANDER</b><small>Medlem</small></span></div></header>
-<aside><nav><a class="active">⌂ Dashboard</a><a>🏆 Derby</a><a>✓ Oppgaver</a><a>✉ Diskusjoner <em>3</em></a><a>👥 Medlemmer</a><a>▤ WGANG Wiki</a></nav><footer>Project Rooster<small>Prototype v0.2</small></footer></aside>
-<main><section class="intro"><div><p class="kicker">Mandag 16. juli</p><h1>God kveld, SANDER</h1><p>Her er det viktigste du trenger å vite akkurat nå.</p></div></section>
-<section class="alert"><strong>!</strong><div><p class="kicker">Handling nødvendig</p><h2>Bekreft neste derby</h2><p>Fristen går ut mandag kl. 20.00. Manglende svar betyr at admin melder deg av derbyet.</p></div><button id="openConfirm">Svar nå</button></section>
-<section class="grid">
-<article class="card wide"><div class="head"><div><p class="kicker">Neste derby</p><h2>Derbytype ikke valgt</h2></div><span class="chip amber">Avventer admin</span></div><div class="countdown"><div><b>01</b><small>dager</small></div><div><b>14</b><small>timer</small></div><div><b>32</b><small>min</small></div></div><div class="rules"><div><small>Minimum</small><b>90 % av oppgavene</b></div><div><small>Poengkrav</small><b>Maks poeng for derbytypen</b></div></div><p class="state" id="state">● Du har ikke svart ennå</p></article>
-<article class="card"><div class="head"><div><p class="kicker">Oppslagstavle</p><h2>Viktig fra lederne</h2></div><span class="chip pink">Ny</span></div><h3>Alle er velkomne – derby er frivillig</h3><p>Du trenger ikke delta hver uke. Det viktige er at du tar pause før start dersom du ikke kan fullføre minst 90 % med maks poeng.</p><a>Les hele kunngjøringen →</a></article>
-<article class="card"><div class="head"><div><p class="kicker">Mitt aktive derby</p><h2>Fremdrift</h2></div><span class="chip">Ikke startet</span></div><div class="progressnum"><b id="count">0</b><span>/ 9 oppgaver</span></div><div class="bar"><i id="fill"></i></div><input id="range" type="range" min="0" max="9" value="0"><button class="secondary" id="finish">Marker derby som ferdig</button><p id="finishStatus"></p></article>
-<article class="card"><div class="head"><div><p class="kicker">Mine preferanser</p><h2>Derbyoppgaver</h2></div><a>Rediger</a></div><div class="tags"><span>Melk</span><span>Bacon</span><span>Hjelp</span><span class="no">Båt</span><span class="no">Fisk</span></div><p class="muted">Admin kan se hvilke spillere som liker og ikke liker hver oppgavetype.</p></article>
-<article class="card wide"><div class="head"><div><p class="kicker">Diskusjoner</p><h2>Siste aktivitet</h2></div><span class="chip pink">3 nye</span></div><ul><li><i>D</i><div><b>Ukens derbystrategi</b><small>Derby · 12 svar</small></div><time>18:42</time></li><li><i>H</i><div><b>Trenger hjelp med båt</b><small>Hjelp og bytte · 4 svar</small></div><time>17:10</time></li><li><i>T</i><div><b>Tips til produksjonsoppgaver</b><small>Tips · 8 svar</small></div><time>I går</time></li></ul></article>
-<article class="card"><p class="kicker">WGANG akkurat nå</p><div class="stats"><div><b>24</b><small>medlemmer</small></div><div><b>18</b><small>bekreftet derby</small></div><div><b>4</b><small>tar pause</small></div><div><b>2</b><small>mangler svar</small></div></div></article>
-</section></main>
-<nav class="mobile"><a>⌂<small>Hjem</small></a><a>🏆<small>Derby</small></a><a>✉<small>Diskusjoner</small></a><a>👥<small>Medlemmer</small></a></nav>
-<dialog id="confirm"><button class="x" id="close">×</button><p class="kicker">Neste derby</p><h2>Bekreft deltakelse</h2><p>Derby er frivillig. Hvis du deltar, forventes det at du gjør ditt beste for å fullføre minst 90 % av oppgavene med maks poeng for aktuell derbytype.</p><label><input id="agree" type="checkbox"> Jeg har forstått at manglende svar innen fristen betyr at admin melder meg av.</label><div class="actions"><button id="join">Jeg deltar</button><button class="secondary" id="pause">Jeg tar pause denne uken</button></div><p id="dialogStatus"></p></dialog>
-<script src="script.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WGANG Portal – Project Rooster medlemsoversikt.">
+  <title>WGANG Portal | Medlemmer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top">
+      <span class="logo">W</span>
+      <span><strong>WGANG</strong><small>PROJECT ROOSTER</small></span>
+    </a>
+    <button class="mode-button" id="modeButton">Vis som admin</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Modul 2 · prototype</p>
+      <h1>Medlemsoversikt</h1>
+      <p>Alle svar og statuser vises med det godkjente spillnavnet i Hay Day.</p>
+    </section>
+
+    <section class="summary-grid">
+      <article><strong>8</strong><span>medlemmer i demo</span></article>
+      <article><strong>5</strong><span>bekreftet derby</span></article>
+      <article><strong>2</strong><span>tar pause</span></article>
+      <article><strong>1</strong><span>mangler svar</span></article>
+    </section>
+
+    <section class="controls">
+      <label>
+        <span>Søk etter spillnavn</span>
+        <input id="searchInput" type="search" placeholder="For eksempel SANDER">
+      </label>
+      <label>
+        <span>Derbystatus</span>
+        <select id="statusFilter">
+          <option value="all">Alle</option>
+          <option value="joined">Deltar</option>
+          <option value="pause">Tar pause</option>
+          <option value="waiting">Mangler svar</option>
+          <option value="finished">Ferdig</option>
+        </select>
+      </label>
+      <label>
+        <span>Rolle</span>
+        <select id="roleFilter">
+          <option value="all">Alle roller</option>
+          <option value="leader">Leder</option>
+          <option value="coleader">Ass. leder</option>
+          <option value="member">Medlem</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="member-grid" id="memberGrid"></section>
+
+    <section class="empty-state" id="emptyState" hidden>
+      Ingen medlemmer samsvarer med filtrene.
+    </section>
+  </main>
+
+  <dialog id="memberDialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">Medlemsprofil</p>
+        <h2 id="dialogName"></h2>
+      </div>
+      <button id="closeDialog" aria-label="Lukk">×</button>
+    </div>
+    <div id="dialogContent"></div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

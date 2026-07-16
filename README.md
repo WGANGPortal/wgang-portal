@@ -1,7 +1,15 @@
-# Project Rooster – WGANG Portal v0.2
+# Project Rooster – WGANG Portal v0.3
 
-Modul 1: medlemsdashboard.
+## Modul 2: Medlemsoversikt
 
-Inneholder derbybekreftelse/pause, fremdrift, oppgavepreferanser, kunngjøringer, diskusjoner og medlemsoversikt. Dette er en frontend-prototype uten ekte innlogging eller database.
+Prototypen viser hvordan medlemmer kan identifiseres med godkjent spillnavn og hvordan admin kan få oversikt over:
 
-All grafikk er egenutviklet. Portalen er uavhengig og ikke tilknyttet, godkjent eller sponset av Supercell.
+- rolle og gårdsnivå
+- deltar, tar pause eller mangler svar
+- derbyfremdrift
+- om minimumskravet er nådd
+- oppgaver medlemmet foretrekker eller helst unngår
+- filtrering etter spillnavn, rolle og status
+- egen adminvisning
+
+Dette er fortsatt en frontend-prototype. Data lagres ikke permanent.
