@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WGANG Portal – et norsk Hay Day-nabolag med fokus på samarbeid, derby og et hyggelig fellesskap.">
+  <title>WGANG Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="WGANG Portal">
+      <span class="brand-mark">W</span>
+      <span>
+        <strong>WGANG</strong>
+        <small>PORTAL</small>
+      </span>
+    </a>
+
+    <button class="menu-button" id="menuButton" aria-expanded="false" aria-controls="mainNav">
+      Meny
+    </button>
+
+    <nav id="mainNav" class="main-nav">
+      <a href="#about">Om oss</a>
+      <a href="#rules">Regler</a>
+      <a href="#join">Bli medlem</a>
+      <button class="login-button" id="openPortal">Medlemsportal</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <p class="eyebrow">Norsk Hay Day-nabolag</p>
+        <h1>Spill sammen.<br>Voks sammen.</h1>
+        <p class="hero-text">
+          WGANG er et aktivt og voksende nabolag med fokus på samarbeid,
+          derby og et hyggelig miljø.
+        </p>
+        <div class="hero-actions">
+          <button class="primary-button" id="openPortalHero">Åpne medlemsportalen</button>
+          <a class="secondary-button" href="#join">Les om medlemskap</a>
+        </div>
+      </div>
+
+      <div class="hero-card" aria-label="Informasjon om WGANG">
+        <div class="hero-card-top">
+          <span class="status-dot"></span>
+          Aktivt nabolag
+        </div>
+        <div class="stat-grid">
+          <div>
+            <span>Språk</span>
+            <strong>Norsk</strong>
+          </div>
+          <div>
+            <span>Minimumsnivå</span>
+            <strong>15</strong>
+          </div>
+          <div>
+            <span>Derby</span>
+            <strong>300+ poeng</strong>
+          </div>
+          <div>
+            <span>Krav</span>
+            <strong>Minst 90 %</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about">
+      <div class="section-heading">
+        <p class="eyebrow">Om WGANG</p>
+        <h2>Et nabolag bygget på samarbeid</h2>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <span class="feature-icon">🤝</span>
+          <h3>Vi hjelper hverandre</h3>
+          <p>Vi samarbeider i derby, byen og ellers i spillet.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon">🏆</span>
+          <h3>Fokus på derby</h3>
+          <p>Vi ønsker aktive deltakere som gjør sitt beste for laget.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon">🌱</span>
+          <h3>Nytt og voksende</h3>
+          <p>WGANG er i utvikling og ønsker hyggelige, stabile spillere.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="rules">
+      <div class="section-heading">
+        <p class="eyebrow">Våre regler</p>
+        <h2>Enkelt, tydelig og rettferdig</h2>
+      </div>
+      <div class="rules-list">
+        <div class="rule">
+          <span>01</span>
+          <div>
+            <h3>Bekreft neste derby</h3>
+            <p>Manglende bekreftelse innen fristen betyr avmelding av admin.</p>
+          </div>
+        </div>
+        <div class="rule">
+          <span>02</span>
+          <div>
+            <h3>Fullfør minst 90 %</h3>
+            <p>Alle som deltar skal gjøre sitt beste for å fullføre minst 90 % av oppgavene.</p>
+          </div>
+        </div>
+        <div class="rule">
+          <span>03</span>
+          <div>
+            <h3>Velg oppgaver over 300 poeng</h3>
+            <p>Vi prioriterer oppgaver som gir laget best mulig resultat.</p>
+          </div>
+        </div>
+        <div class="rule">
+          <span>04</span>
+          <div>
+            <h3>Gi beskjed ved fravær</h3>
+            <p>Meld fra tidlig dersom du ikke kan delta eller fullføre som planlagt.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="join">
+      <div class="join-card">
+        <div>
+          <p class="eyebrow">Bli medlem</p>
+          <h2>Passer WGANG for deg?</h2>
+          <p>
+            Vi ser etter hyggelige og aktive spillere som ønsker å bidra til et godt
+            fellesskap og et sterkt derbylag.
+          </p>
+        </div>
+        <button class="primary-button" id="joinButton">Medlemssøknad kommer snart</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>WGANG Portal</strong>
+    <p>En uoffisiell fellesskapsportal for WGANG. Ikke tilknyttet Supercell.</p>
+  </footer>
+
+  <dialog id="portalDialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">Demovisning</p>
+        <h2>Medlemsportal</h2>
+      </div>
+      <button class="close-button" id="closePortal" aria-label="Lukk">×</button>
+    </div>
+
+    <div class="portal-user">
+      <div class="avatar">S</div>
+      <div>
+        <span>Innlogget som</span>
+        <strong>SANDER</strong>
+      </div>
+    </div>
+
+    <div class="portal-grid">
+      <section class="portal-card important">
+        <p class="card-label">Neste derby</p>
+        <h3>Bekreft deltakelse</h3>
+        <p>
+          Ved å bekrefte lover du å gjøre ditt beste for å fullføre minst 90 %
+          av oppgavene og velge oppgaver over 300 poeng.
+        </p>
+        <label class="checkbox-row">
+          <input type="checkbox" id="confirmRules">
+          <span>Jeg har forstått at manglende svar betyr avmelding.</span>
+        </label>
+        <div class="portal-actions">
+          <button class="primary-button small" id="confirmDerby">Jeg deltar</button>
+          <button class="secondary-button small" id="declineDerby">Jeg deltar ikke</button>
+        </div>
+        <p class="status-message" id="derbyStatus"></p>
+      </section>
+
+      <section class="portal-card">
+        <p class="card-label">Mine oppgavepreferanser</p>
+        <h3>Hva liker du å ta?</h3>
+        <div class="preference-list">
+          <button data-state="neutral">🥛 Melk <span>Velg</span></button>
+          <button data-state="neutral">🥓 Bacon <span>Velg</span></button>
+          <button data-state="neutral">🚢 Båt <span>Velg</span></button>
+          <button data-state="neutral">🎣 Fisk <span>Velg</span></button>
+        </div>
+        <p class="helper-text">I ferdig versjon lagres dette på spillnavnet ditt.</p>
+      </section>
+
+      <section class="portal-card">
+        <p class="card-label">Derbystatus</p>
+        <h3>Hvor langt har du kommet?</h3>
+        <div class="progress-wrap">
+          <div class="progress-bar"><span id="progressFill"></span></div>
+          <strong id="progressText">0 av 9 oppgaver</strong>
+        </div>
+        <input id="taskProgress" type="range" min="0" max="9" value="0">
+        <button class="primary-button small full" id="finishDerby">Jeg er ferdig</button>
+        <p class="status-message" id="finishStatus"></p>
+      </section>
+
+      <section class="portal-card">
+        <p class="card-label">Diskusjoner</p>
+        <h3>Siste temaer</h3>
+        <ul class="topic-list">
+          <li><strong>Derby:</strong> Hvilke oppgaver ønsker vi på tavlen?</li>
+          <li><strong>Hjelp og bytte:</strong> Trenger varer til båt.</li>
+          <li><strong>Tips:</strong> Beste strategi for produksjonsoppgaver.</li>
+        </ul>
+      </section>
+    </div>
+
+    <p class="demo-note">
+      Dette er foreløpig en visuell demo. Innlogging, database og adminoversikt kobles til senere.
+    </p>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>
