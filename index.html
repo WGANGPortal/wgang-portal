@@ -15,41 +15,53 @@
   <section class="landing" id="landing">
     <header class="landing-header">
       <a class="landing-brand" href="#landing">
-        <img src="wgang-icon.webp" alt="WGANG-logo">
-        <span><strong>WGANG</strong><small>Sammen står vi sterkere</small></span>
+        <img src="wgang-icon-cream.webp" alt="WGANG-logo">
       </a>
-      <nav class="landing-nav">
+      <nav class="landing-nav" aria-label="Hovedmeny">
+        <a class="active" href="#landing">Hjem</a>
         <a href="#about">Om WGANG</a>
-        <a href="#rules">Derby</a>
         <a href="#join">Bli medlem</a>
+        <a href="#contact">Kontakt</a>
         <button class="button button-secondary" id="openPortalTop">Logg inn</button>
+        <a class="button button-primary" href="#join">Bli medlem</a>
       </nav>
     </header>
 
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">VELKOMMEN TIL WGANG</p>
           <h1>WGANG</h1>
-          <p class="script-tagline">Sammen står vi sterkere</p>
+          <p class="tagline">Sammen står vi sterkere</p>
+          <div class="tagline-rule"><span></span><b>♥</b><span></span></div>
           <p class="hero-lead">
             Et aktivt nabolag med fokus på samarbeid, lagånd og gode resultater.
-            Vi hjelper hverandre, lærer sammen og bygger et fellesskap vi er stolte av.
+          </p>
+          <p class="hero-lead">
+            Vi hjelper hverandre, lærer sammen og bygger et fellesskap vi er stolte av!
           </p>
           <div class="hero-actions">
             <a class="button button-primary button-large" href="#join">Bli medlem</a>
             <button class="button button-secondary button-large" id="openPortalHero">Logg inn</button>
           </div>
-          <div class="feature-strip">
-            <div><span class="feature-icon">●</span><strong>Samarbeid</strong><small>Vi spiller sammen og hjelper hverandre.</small></div>
-            <div><span class="feature-icon">◇</span><strong>Aktivitet</strong><small>Derby, oppgaver og fellesskap.</small></div>
-            <div><span class="feature-icon">♥</span><strong>Fellesskap</strong><small>Et inkluderende miljø der alle bidrar.</small></div>
-          </div>
         </div>
 
-        <div class="hero-art">
-          <img class="hero-logo" src="wgang-logo.webp" alt="WGANG">
-          <img class="farm-art" src="wgang-farm.webp" alt="">
+        <div class="hero-art" aria-hidden="true">
+          <img src="wgang-farm.webp" alt="">
+        </div>
+
+        <div class="feature-strip">
+          <article>
+            <span class="feature-symbol">●</span>
+            <div><strong>Samarbeid</strong><p>Vi spiller sammen og hjelper hverandre.</p></div>
+          </article>
+          <article>
+            <span class="feature-symbol">◇</span>
+            <div><strong>Aktivitet</strong><p>Derby, oppgaver og events holder oss i gang.</p></div>
+          </article>
+          <article>
+            <span class="feature-symbol">♥</span>
+            <div><strong>Fellesskap</strong><p>Et inkluderende miljø der alle bidrar.</p></div>
+          </article>
         </div>
       </section>
 
@@ -66,39 +78,33 @@
         </div>
       </section>
 
-      <section class="public-section public-section-tint" id="rules">
+      <section class="public-section public-section-tint">
         <div class="section-heading">
           <p class="eyebrow">DERBY</p>
           <h2>En enkel regel som er rettferdig for alle</h2>
         </div>
         <div class="rules-panel">
           <div class="rule-number">90%</div>
-          <div>
-            <h3>Når du velger å delta</h3>
-            <p>gjør du ditt beste for å fullføre minst 90 % av oppgavene med høyeste mulige poengsum for den aktuelle derbytypen.</p>
-          </div>
+          <div><h3>Når du velger å delta</h3><p>gjør du ditt beste for å fullføre minst 90 % av oppgavene med høyeste mulige poengsum for den aktuelle derbytypen.</p></div>
           <div class="rule-note"><strong>Trenger du pause?</strong><span>Velg «Jeg tar pause» før svarfristen.</span></div>
         </div>
       </section>
 
       <section class="public-section" id="join">
         <div class="join-panel">
-          <div>
-            <p class="eyebrow">BLI MED</p>
-            <h2>Passer WGANG for deg?</h2>
-            <p>Vi ønsker hyggelige naboer som bidrar til et godt miljø. Nivå er mindre viktig enn samarbeid og tydelig kommunikasjon.</p>
-          </div>
+          <div><p class="eyebrow">BLI MED</p><h2>Passer WGANG for deg?</h2><p>Vi ønsker hyggelige naboer som bidrar til et godt miljø. Nivå er mindre viktig enn samarbeid og tydelig kommunikasjon.</p></div>
           <button class="button button-primary button-large" id="joinDemoButton">Medlemssøknad kommer snart</button>
         </div>
       </section>
     </main>
 
-    <footer class="public-footer">
+    <footer class="public-footer" id="contact">
       <div class="footer-brand">
-        <img src="wgang-icon.webp" alt="">
-        <div><strong>WGANG</strong><span>Sammen står vi sterkere · v0.4.1</span></div>
+        <img src="wgang-icon-pink.webp" alt="">
+        <div><strong>WGANG</strong><span>Sammen står vi sterkere</span></div>
       </div>
-      <p>Dette er en uavhengig fellesskapsportal. Hay Day og Supercell er varemerker som tilhører sine respektive eiere. Portalen er ikke tilknyttet eller godkjent av Supercell.</p>
+      <div class="footer-links"><a href="#about">Om oss</a><a href="#join">Regler</a><a href="#contact">Kontakt</a></div>
+      <p>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</p>
     </footer>
   </section>
 
@@ -106,13 +112,12 @@
     <header class="portal-topbar">
       <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny"><span></span><span></span><span></span></button>
       <a class="portal-brand" href="#dashboard" data-route="dashboard">
-        <img src="wgang-icon.webp" alt="WGANG">
+        <img src="wgang-icon-pink.webp" alt="WGANG">
         <strong>WGANG</strong>
       </a>
       <div class="portal-actions">
         <button class="role-switch" id="roleSwitch">Vis som admin</button>
         <button class="top-icon" aria-label="Varsler">○</button>
-        <button class="top-icon" aria-label="Meldinger">□</button>
         <button class="profile-chip"><span class="avatar">N</span><span class="profile-copy"><strong>Nabo</strong><small>Demobruker</small></span></button>
         <button class="icon-button close-portal" id="closePortal" aria-label="Tilbake">×</button>
       </div>
@@ -129,13 +134,13 @@
           <a href="#wiki" data-route="wiki"><span>▤</span>WGANG Wiki</a>
           <a href="#admin" class="admin-link admin-only" data-route="admin"><span>⚙</span>Admin</a>
         </nav>
-        <div class="sidebar-footer"><strong>WGANG</strong><span>Sammen står vi sterkere</span><small>v0.4.1</small></div>
+        <div class="sidebar-footer"><strong>WGANG</strong><span>Sammen står vi sterkere</span><small>v0.4.2</small></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
         <section class="page active" data-page="dashboard">
           <div class="page-heading">
-            <div><p class="eyebrow">DASHBOARD</p><h1>Hei, Nabo!</h1><p>Velkommen tilbake til WGANG-portalen.</p></div>
+            <div><p class="eyebrow">DASHBOARD</p><h1>Hei, Nabo! <span class="wave">👋</span></h1><p>Velkommen tilbake til WGANG-portalen.</p></div>
             <span class="demo-label">DEMOVISNING</span>
           </div>
 
@@ -147,7 +152,7 @@
           </div>
 
           <div class="dashboard-grid">
-            <article class="portal-card">
+            <article class="portal-card derby-card">
               <div class="card-header"><div><p class="card-kicker">DERBY-STATUS</p><h2 id="dashboardDerbyType">Standard Derby</h2></div><span class="badge badge-gold">Pågår</span></div>
               <div class="large-number"><strong id="dashboardTasksDone">0</strong><span>av <b id="dashboardTasksTotal">9</b> oppgaver</span></div>
               <div class="progress-track"><span id="dashboardProgress"></span></div>
@@ -166,12 +171,7 @@
 
             <article class="portal-card">
               <p class="card-kicker">HURTIGLENKER</p>
-              <div class="quick-grid">
-                <button data-route="preferences">Oppgavepreferanser</button>
-                <button data-route="discussions">Diskusjoner</button>
-                <button data-route="wiki">WGANG Wiki</button>
-                <button data-route="members">Medlemmer</button>
-              </div>
+              <div class="quick-grid"><button data-route="preferences">Oppgavepreferanser</button><button data-route="discussions">Diskusjoner</button><button data-route="wiki">WGANG Wiki</button><button data-route="members">Medlemmer</button></div>
             </article>
           </div>
         </section>
@@ -179,36 +179,19 @@
         <section class="page" data-page="derby">
           <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegging, status og fremdrift.</p></div><button class="button button-primary admin-only" id="openDerbyEditor">Rediger denne uken</button></div>
           <div class="split-layout">
-            <article class="portal-card">
-              <div class="card-header"><div><p class="card-kicker">DENNE UKEN</p><h2 id="derbyType">Standard Derby</h2></div><span class="badge badge-pink">Planlegging</span></div>
-              <div class="derby-facts"><div><span>Start</span><strong>Tirsdag 09.00</strong></div><div><span>Svarfrist</span><strong>Mandag 20.00</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div></div>
-              <div class="strategy-panel"><p class="card-kicker">WGANG-STRATEGI</p><ul id="derbyStrategy"><li>Fullfør minst 90 % av oppgavene.</li><li>Velg oppgaver med maks poeng for derbytypen.</li><li>Gi beskjed tidlig dersom noe endrer seg.</li></ul></div>
-              <div class="participation-panel"><h3>Hva ønsker du denne uken?</h3><div class="choice-row"><button class="choice-button" data-choice="joined">Jeg deltar</button><button class="choice-button" data-choice="pause">Jeg tar pause</button><button class="choice-button" data-choice="unsure">Usikker ennå</button></div><p class="inline-status" id="participationStatus">Du har ikke svart ennå.</p></div>
-            </article>
-            <article class="portal-card">
-              <p class="card-kicker">MIN DERBYFREMGANG</p><div class="large-number"><strong id="tasksDone">0</strong><span>av <b id="tasksTotal">9</b> oppgaver</span></div><div class="progress-track progress-large"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0">
-              <label class="field"><span>Status</span><select id="derbyStatus"><option>Ikke startet</option><option>I gang</option><option>Trenger hjelp</option><option>Nesten ferdig</option><option>Ferdig</option></select></label>
-              <button class="button button-primary button-full" id="finishDerby">Marker som ferdig</button><p class="inline-status" id="finishStatus"></p>
-            </article>
+            <article class="portal-card"><div class="card-header"><div><p class="card-kicker">DENNE UKEN</p><h2 id="derbyType">Standard Derby</h2></div><span class="badge badge-pink">Planlegging</span></div><div class="derby-facts"><div><span>Start</span><strong>Tirsdag 09.00</strong></div><div><span>Svarfrist</span><strong>Mandag 20.00</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div></div><div class="strategy-panel"><p class="card-kicker">WGANG-STRATEGI</p><ul id="derbyStrategy"><li>Fullfør minst 90 % av oppgavene.</li><li>Velg oppgaver med maks poeng for derbytypen.</li><li>Gi beskjed tidlig dersom noe endrer seg.</li></ul></div><div class="participation-panel"><h3>Hva ønsker du denne uken?</h3><div class="choice-row"><button class="choice-button" data-choice="joined">Jeg deltar</button><button class="choice-button" data-choice="pause">Jeg tar pause</button><button class="choice-button" data-choice="unsure">Usikker ennå</button></div><p class="inline-status" id="participationStatus">Du har ikke svart ennå.</p></div></article>
+            <article class="portal-card"><p class="card-kicker">MIN DERBYFREMGANG</p><div class="large-number"><strong id="tasksDone">0</strong><span>av <b id="tasksTotal">9</b> oppgaver</span></div><div class="progress-track progress-large"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0"><label class="field"><span>Status</span><select id="derbyStatus"><option>Ikke startet</option><option>I gang</option><option>Trenger hjelp</option><option>Nesten ferdig</option><option>Ferdig</option></select></label><button class="button button-primary button-full" id="finishDerby">Marker som ferdig</button><p class="inline-status" id="finishStatus"></p></article>
           </div>
           <section class="admin-section admin-only"><div class="admin-stats"><article><strong>5</strong><span>bekreftet</span></article><article><strong>2</strong><span>tar pause</span></article><article><strong>1</strong><span>mangler svar</span></article><article><strong>2</strong><span>ferdige</span></article></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>Valg</th><th>Fremdrift</th><th>Status</th><th>Tiltak</th></tr></thead><tbody id="derbyAdminTable"></tbody></table></div></section>
         </section>
 
-        <section class="page" data-page="members">
-          <div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Alle statuser er knyttet til godkjente spillnavn.</p></div></div>
-          <div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="finished">Ferdig</option></select></div>
-          <div class="member-grid" id="memberGrid"></div>
-        </section>
-
+        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Alle statuser er knyttet til godkjente spillnavn.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="finished">Ferdig</option></select></div><div class="member-grid" id="memberGrid"></div></section>
         <section class="page" data-page="preferences"><div class="page-heading"><div><p class="eyebrow">OPPGAVER</p><h1>Oppgavepreferanser</h1><p>Velg hva du liker, kan ta eller helst unngår.</p></div></div><article class="portal-card"><div class="preference-list" id="preferenceList"></div><p class="helper-text">Admin kan se spillnavnene bak registrerte preferanser.</p></article></section>
-
         <section class="page" data-page="discussions"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Diskusjoner</h1><p>Viktige samtaler skal ikke forsvinne i spillchatten.</p></div></div><div class="discussion-grid"><article class="discussion-card"><span>K</span><div><p class="card-kicker">KUNNGJØRINGER</p><h2>Fra lederne</h2><p>Beskjeder alle må få med seg.</p></div></article><article class="discussion-card"><span>D</span><div><p class="card-kicker">DERBY</p><h2>Strategi og oppgaver</h2><p>Diskuter ukens derby.</p></div></article><article class="discussion-card"><span>H</span><div><p class="card-kicker">HJELP OG BYTTE</p><h2>Varer og assistanse</h2><p>Be om hjelp uten at meldingen forsvinner.</p></div></article><article class="discussion-card"><span>S</span><div><p class="card-kicker">SOSIALT</p><h2>Generell prat</h2><p>Uformelle samtaler.</p></div></article></div></section>
-
         <section class="page" data-page="wiki"><div class="page-heading"><div><p class="eyebrow">KUNNSKAP</p><h1>WGANG Wiki</h1><p>Tips og erfaringer på ett sted.</p></div></div><div class="wiki-grid"><article class="wiki-card"><span>01</span><h2>Derbytyper</h2><p>Regler og strategier.</p></article><article class="wiki-card"><span>02</span><h2>Oppgaver</h2><p>Tips til ulike oppgavetyper.</p></article><article class="wiki-card"><span>03</span><h2>Nye naboer</h2><p>Det viktigste du bør vite.</p></article><article class="wiki-card"><span>04</span><h2>FAQ</h2><p>Vanlige spørsmål og svar.</p></article></div></section>
-
         <section class="page admin-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Administrasjon</h1><p>Kontrollsenter for medlemmer og derby.</p></div></div><div class="admin-module-grid"><article class="portal-card"><p class="card-kicker">MEDLEMMER</p><h2>Godkjenning og roller</h2></article><article class="portal-card"><p class="card-kicker">DERBY</p><h2>Maler og ukesoppsett</h2></article><article class="portal-card"><p class="card-kicker">KOMMUNIKASJON</p><h2>Kunngjøringer</h2></article><article class="portal-card"><p class="card-kicker">STATISTIKK</p><h2>Oversikt og historikk</h2></article></div></section>
 
-        <footer class="portal-footer"><strong>WGANG</strong><span>Sammen står vi sterkere · v0.4.1</span><p>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</p></footer>
+        <footer class="portal-footer"><strong>WGANG</strong><span>Sammen står vi sterkere · v0.4.2</span><p>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</p></footer>
       </main>
     </div>
 

@@ -1,4 +1,4 @@
-# WGANG v0.4.1 Foundation
+# WGANG v0.4.2 Foundation
 
 WGANG Portal er et uavhengig fellesskaps- og planleggingsverktøy for WGANG.
 

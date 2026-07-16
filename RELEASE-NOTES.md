@@ -1,10 +1,8 @@
-# WGANG v0.4.1 – WGANG Identity
+# WGANG v0.4.2
 
-## Endringer
-- Ny rosa/kremfarget WGANG-logo
-- «Project Rooster» fjernet fra synlig nettside
-- Norsk slagord: «Sammen står vi sterkere»
-- Ny lys portal med rosa toppfelt
-- Ny offentlig forside inspirert av godkjent design
-- Dashboard med statistikkort, oppgaver, kunngjøringer og hurtiglenker
-- Alle tidligere moduler og funksjoner videreført
+- Logo and icon assets separated into clean cream and pink variants.
+- All headings and slogan rendered as HTML text.
+- Norwegian slogan: Sammen står vi sterkere.
+- Desktop landing page redesigned.
+- Mobile portal redesigned with 2-column metrics and full-width content cards.
+- Icon background matches the relevant cream or pink section.

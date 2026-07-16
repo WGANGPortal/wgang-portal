@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.1 Foundation – WGANG Identity
+## v0.4.2 Foundation – WGANG Identity
 
 ### Nytt
 - Offentlig forside med WGANG-presentasjon
