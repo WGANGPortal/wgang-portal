@@ -9,13 +9,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=Parisienne&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/app-icons/favicon-64.png">
+  <link rel="apple-touch-icon" href="assets/app-icons/apple-touch-icon.png">
   <link rel="stylesheet" href="main.css">
 </head>
 <body>
   <section class="landing" id="landing">
     <header class="landing-header">
       <a class="landing-brand" href="#landing">
-        <img src="wgang-icon-cream.webp" alt="WGANG-logo">
+        <img src="assets/logos/wgang-icon-cream.webp" alt="WGANG-logo">
       </a>
       <nav class="landing-nav" aria-label="Hovedmeny">
         <a class="active" href="#landing">Hjem</a>
@@ -46,7 +49,10 @@
         </div>
 
         <div class="hero-art" aria-hidden="true">
-          <img src="wgang-farm.webp" alt="">
+          <picture>
+          <source media="(max-width: 620px)" srcset="assets/backgrounds/hero-farm-mobile.webp">
+          <img src="assets/backgrounds/hero-farm-desktop.webp" alt="">
+        </picture>
         </div>
 
         <div class="feature-strip">
@@ -100,7 +106,7 @@
 
     <footer class="public-footer" id="contact">
       <div class="footer-brand">
-        <img src="wgang-icon-pink.webp" alt="">
+        <img src="assets/logos/wgang-icon-pink.webp" alt="">
         <div><strong>WGANG</strong><span>Sammen står vi sterkere</span></div>
       </div>
       <div class="footer-links"><a href="#about">Om oss</a><a href="#join">Regler</a><a href="#contact">Kontakt</a></div>
@@ -112,7 +118,7 @@
     <header class="portal-topbar">
       <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny"><span></span><span></span><span></span></button>
       <a class="portal-brand" href="#dashboard" data-route="dashboard">
-        <img src="wgang-icon-pink.webp" alt="WGANG">
+        <img src="assets/logos/wgang-icon-pink.webp" alt="WGANG">
         <strong>WGANG</strong>
       </a>
       <div class="portal-actions">
@@ -134,7 +140,7 @@
           <a href="#wiki" data-route="wiki"><span>▤</span>WGANG Wiki</a>
           <a href="#admin" class="admin-link admin-only" data-route="admin"><span>⚙</span>Admin</a>
         </nav>
-        <div class="sidebar-footer"><strong>WGANG</strong><span>Sammen står vi sterkere</span><small>v0.4.2</small></div>
+        <div class="sidebar-footer"><strong>WGANG</strong><span>Sammen står vi sterkere</span><small>v0.5.0</small></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -191,7 +197,7 @@
         <section class="page" data-page="wiki"><div class="page-heading"><div><p class="eyebrow">KUNNSKAP</p><h1>WGANG Wiki</h1><p>Tips og erfaringer på ett sted.</p></div></div><div class="wiki-grid"><article class="wiki-card"><span>01</span><h2>Derbytyper</h2><p>Regler og strategier.</p></article><article class="wiki-card"><span>02</span><h2>Oppgaver</h2><p>Tips til ulike oppgavetyper.</p></article><article class="wiki-card"><span>03</span><h2>Nye naboer</h2><p>Det viktigste du bør vite.</p></article><article class="wiki-card"><span>04</span><h2>FAQ</h2><p>Vanlige spørsmål og svar.</p></article></div></section>
         <section class="page admin-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Administrasjon</h1><p>Kontrollsenter for medlemmer og derby.</p></div></div><div class="admin-module-grid"><article class="portal-card"><p class="card-kicker">MEDLEMMER</p><h2>Godkjenning og roller</h2></article><article class="portal-card"><p class="card-kicker">DERBY</p><h2>Maler og ukesoppsett</h2></article><article class="portal-card"><p class="card-kicker">KOMMUNIKASJON</p><h2>Kunngjøringer</h2></article><article class="portal-card"><p class="card-kicker">STATISTIKK</p><h2>Oversikt og historikk</h2></article></div></section>
 
-        <footer class="portal-footer"><strong>WGANG</strong><span>Sammen står vi sterkere · v0.4.2</span><p>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</p></footer>
+        <footer class="portal-footer"><strong>WGANG</strong><span>Sammen står vi sterkere · v0.5.0</span><p>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</p></footer>
       </main>
     </div>
 

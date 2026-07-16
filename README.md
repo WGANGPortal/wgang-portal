@@ -1,54 +1,54 @@
-# WGANG v0.4.2 Foundation
+# WGANG Portal v0.5.0
 
-WGANG Portal er et uavhengig fellesskaps- og planleggingsverktøy for WGANG.
-
-## Build
-
-- Version: 0.4.0 Foundation
-- Build: 001
-- Status: Frontend-prototype / release candidate
+Komplett frontendpakke for WGANG-portalen.
 
 ## Innhold
 
-- Offentlig landing page
-- Ny WGANG WGANG-logo
-- Rosa WGANG-identitet
-- Nøytral demobruker: «Nabo»
+- Offentlig forside
+- Desktop- og mobiltilpasset hero-bakgrunn
+- Kremfarget og rosa logoikon
 - Dashboard
 - Derby-senter
-- Adminmodus og Derby Control Center
 - Medlemsoversikt
 - Oppgavepreferanser
-- Diskusjonskategorier
+- Diskusjoner
 - WGANG Wiki
-- Juridisk footer
-- Mobiltilpasset navigasjon
+- Adminvisning
+- Appikoner og favicon
+- Dokumentasjon og testliste
 
 ## Filstruktur
 
-Alle filer ligger i rotmappen for enkel opplasting fra mobil:
+```text
+WGANG-Portal-v0.5/
+├── index.html
+├── main.css
+├── app.js
+├── demo-data.js
+├── assets/
+│   ├── logos/
+│   ├── backgrounds/
+│   └── app-icons/
+└── docs/
+```
 
-- index.html
-- main.css
-- app.js
-- demo-data.js
-- wgang-logo.webp
-- README.md
-- CHANGELOG.md
-- DESIGN.md
-- PRODUCT.md
-- ROADMAP.md
-- TEST-CHECKLIST.md
+## GitHub og Cloudflare Pages
 
-## Publisering
-
-Last opp alle filene til rotmappen i GitHub og erstatt eksisterende filer med samme navn.
+Last opp innholdet i denne mappen til rotmappen i ønsket GitHub-gren.
 
 Cloudflare Pages:
 - Framework preset: None
 - Build command: tomt
 - Build output directory: /
 
-## Viktig
+## Anbefalt testgren
 
-Dette er en prototype. Valg og endringer lagres ikke permanent før database og innlogging er koblet til.
+Opprett en gren, for eksempel:
+
+`preview-v0.5`
+
+Last opp hele pakken i denne grenen og test den før den flettes inn i `main`.
+
+## Begrensning
+
+Dette er fortsatt en frontend-prototype. Endringer lagres ikke permanent før database og innlogging kobles til.

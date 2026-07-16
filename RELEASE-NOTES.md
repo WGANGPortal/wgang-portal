@@ -1,8 +1,6 @@
-# WGANG v0.4.2
+# Release Notes – WGANG Portal v0.5.0
 
-- Logo and icon assets separated into clean cream and pink variants.
-- All headings and slogan rendered as HTML text.
-- Norwegian slogan: Sammen står vi sterkere.
-- Desktop landing page redesigned.
-- Mobile portal redesigned with 2-column metrics and full-width content cards.
-- Icon background matches the relevant cream or pink section.
+Denne versjonen samler kode, grafikk og dokumentasjon i én komplett prosjektpakke.
+
+Hovedendringen er en ryddig `assets`-struktur og ekte WebP-filer med riktige navn.
+Pakken kan brukes i en egen GitHub-testgren før publisering til `main`.

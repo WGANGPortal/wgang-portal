@@ -1,0 +1,24 @@
+WGANG Portal v0.5.0 – File Manifest
+
+README.md
+app.js
+assets/app-icons/apple-touch-icon.png
+assets/app-icons/favicon-32.png
+assets/app-icons/favicon-64.png
+assets/app-icons/icon-192.png
+assets/app-icons/icon-512.png
+assets/backgrounds/hero-farm-desktop.webp
+assets/backgrounds/hero-farm-mobile.webp
+assets/logos/wgang-icon-cream.webp
+assets/logos/wgang-icon-pink.webp
+demo-data.js
+docs/BRAND-GUIDE.md
+docs/CHANGELOG.md
+docs/DESIGN-HISTORY.md
+docs/LICENSE.md
+docs/PRODUCT.md
+docs/RELEASE-NOTES.md
+docs/ROADMAP.md
+docs/TEST-CHECKLIST.md
+index.html
+main.css
