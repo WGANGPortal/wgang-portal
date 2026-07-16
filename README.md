@@ -1,15 +1,51 @@
-# Project Rooster – WGANG Portal v0.3
+# Project Rooster Foundation
 
-## Modul 2: Medlemsoversikt
+Project Rooster er kodebasen bak WGANG Portal.
 
-Prototypen viser hvordan medlemmer kan identifiseres med godkjent spillnavn og hvordan admin kan få oversikt over:
+## Hensikt
 
-- rolle og gårdsnivå
-- deltar, tar pause eller mangler svar
-- derbyfremdrift
-- om minimumskravet er nådd
-- oppgaver medlemmet foretrekker eller helst unngår
-- filtrering etter spillnavn, rolle og status
-- egen adminvisning
+WGANG Portal skal være et uavhengig organiserings- og fellesskapsverktøy for WGANG. Portalen skal ikke kopiere Hay Day eller hente data fra Supercells systemer.
 
-Dette er fortsatt en frontend-prototype. Data lagres ikke permanent.
+## Foundation v0.1 inneholder
+
+- samlet navigasjon og layout
+- medlemsdashboard
+- derby-senter
+- medlemsoversikt
+- oppgavepreferanser
+- diskusjonskategorier
+- WGANG Wiki
+- adminområde
+- demo-data i egen fil
+- dokumentasjon og prosjektstruktur
+
+## Mappestruktur
+
+```text
+project-rooster-foundation/
+├── index.html
+├── css/
+│   └── main.css
+├── js/
+│   └── app.js
+├── data/
+│   └── demo-data.js
+├── assets/
+│   ├── icons/
+│   └── images/
+├── docs/
+│   ├── PRODUCT.md
+│   ├── DESIGN.md
+│   └── ROADMAP.md
+└── README.md
+```
+
+## Publisering på Cloudflare Pages
+
+- Framework preset: None
+- Build command: tomt
+- Build output directory: `/`
+
+## Viktig arbeidsregel
+
+Alle nye versjoner skal være komplette prosjektversjoner som bygger videre på denne kodebasen. Ingen senere modul skal erstatte eller fjerne tidligere moduler uten at det er en uttrykkelig beslutning.
