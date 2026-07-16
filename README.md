@@ -1,51 +1,39 @@
-# Project Rooster Foundation
+# Project Rooster – Complete Foundation v0.3
 
-Project Rooster er kodebasen bak WGANG Portal.
+Dette er en komplett prosjektpakke for WGANG Portal.
 
-## Hensikt
+## Viktig filstruktur
 
-WGANG Portal skal være et uavhengig organiserings- og fellesskapsverktøy for WGANG. Portalen skal ikke kopiere Hay Day eller hente data fra Supercells systemer.
+Alle filer ligger i rotmappen for å gjøre opplasting fra mobil trygg og enkel:
 
-## Foundation v0.1 inneholder
+- index.html
+- main.css
+- demo-data.js
+- app.js
+- README.md
+- PRODUCT.md
+- DESIGN.md
+- ROADMAP.md
 
-- samlet navigasjon og layout
-- medlemsdashboard
-- derby-senter
-- medlemsoversikt
-- oppgavepreferanser
-- diskusjonskategorier
+Ikke legg filene i undermapper.
+
+## Inkluderte moduler
+
+- Dashboard
+- Derby-senter
+- Medlemsoversikt
+- Oppgavepreferanser
+- Diskusjonskategorier
 - WGANG Wiki
-- adminområde
-- demo-data i egen fil
-- dokumentasjon og prosjektstruktur
+- Adminområde
+- Demo-data
 
-## Mappestruktur
+## Publisering
 
-```text
-project-rooster-foundation/
-├── index.html
-├── css/
-│   └── main.css
-├── js/
-│   └── app.js
-├── data/
-│   └── demo-data.js
-├── assets/
-│   ├── icons/
-│   └── images/
-├── docs/
-│   ├── PRODUCT.md
-│   ├── DESIGN.md
-│   └── ROADMAP.md
-└── README.md
-```
+Last opp alle filene til rotmappen i GitHub og erstatt filer med samme navn.
+Cloudflare Pages publiserer automatisk.
 
-## Publisering på Cloudflare Pages
+## Teknisk status
 
-- Framework preset: None
-- Build command: tomt
-- Build output directory: `/`
-
-## Viktig arbeidsregel
-
-Alle nye versjoner skal være komplette prosjektversjoner som bygger videre på denne kodebasen. Ingen senere modul skal erstatte eller fjerne tidligere moduler uten at det er en uttrykkelig beslutning.
+Dette er fortsatt en frontend-prototype. Data lagres ikke permanent.
+Neste hovedsteg er innlogging og database.

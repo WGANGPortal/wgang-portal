@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
   <header class="topbar">
@@ -49,7 +49,7 @@
 
       <div class="sidebar-footer">
         <strong>Project Rooster</strong>
-        <span>Foundation v0.1</span>
+        <span>Complete Foundation v0.3</span>
       </div>
     </aside>
 
@@ -98,9 +98,7 @@
           <article class="card">
             <p class="card-kicker">Oppslagstavle</p>
             <h2>Alle er velkomne</h2>
-            <p class="muted">
-              Derby er frivillig. Når du deltar, forventes det at du gjør ditt beste for laget.
-            </p>
+            <p class="muted">Derby er frivillig. Når du deltar, forventes det at du gjør ditt beste for laget.</p>
           </article>
 
           <article class="card">
@@ -327,21 +325,9 @@
       <button id="closeDerbyEditor" aria-label="Lukk">×</button>
     </div>
 
-    <label class="field">
-      <span>Derbytype</span>
-      <input id="editDerbyType" value="Standard Derby">
-    </label>
-
-    <label class="field">
-      <span>Antall oppgaver</span>
-      <input id="editTaskTotal" type="number" min="1" value="9">
-    </label>
-
-    <label class="field">
-      <span>Maks poeng</span>
-      <input id="editMaxPoints" type="number" min="1" value="320">
-    </label>
-
+    <label class="field"><span>Derbytype</span><input id="editDerbyType" value="Standard Derby"></label>
+    <label class="field"><span>Antall oppgaver</span><input id="editTaskTotal" type="number" min="1" value="9"></label>
+    <label class="field"><span>Maks poeng</span><input id="editMaxPoints" type="number" min="1" value="320"></label>
     <label class="field">
       <span>WGANG-strategi</span>
       <textarea id="editStrategy" rows="6">Fullfør minst 90 % av oppgavene.
@@ -352,6 +338,7 @@ Gi beskjed tidlig dersom noe endrer seg.</textarea>
     <button class="primary-button full" id="saveDerby">Lagre endringer</button>
   </dialog>
 
-  <script type="module" src="js/app.js"></script>
+  <script src="demo-data.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

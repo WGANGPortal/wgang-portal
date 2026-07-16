@@ -1,27 +1,13 @@
-# Design System – Project Rooster
+# Design – Project Rooster
 
-## Retning
+Designet skal være varmt, landlig og lekent uten å kopiere Hay Day.
 
-WGANG Portal skal gi en varm, landlig og leken følelse uten å kopiere Hay Days grafikk eller brukergrensesnitt.
+Farger:
+- WGANG Pink #d85f8b
+- Dark Pink #9d2f58
+- Farm Green #456b55
+- Dark Green #2f4f3d
+- Cream #f5efe3
+- Gold #d8a33b
 
-## Kjennetegn
-
-- rosa skjold som gjenkjennelig WGANG-element
-- grønt som hovedfarge for navigasjon og status
-- kremfarget bakgrunn
-- avrundede kort
-- tydelig mobilnavigasjon
-- egne grafiske elementer og ikoner
-
-## Juridisk prinsipp
-
-Ingen originale Hay Day-ikoner, logoer, fonter eller UI-elementer skal kopieres direkte.
-
-## Farger
-
-- WGANG Pink: #d85f8b
-- WGANG Dark Pink: #9d2f58
-- WGANG Green: #456b55
-- WGANG Dark Green: #2f4f3d
-- WGANG Cream: #f5efe3
-- WGANG Gold: #d8a33b
+Ingen originale Hay Day-ikoner, fonter, logoer eller UI-elementer skal kopieres.
