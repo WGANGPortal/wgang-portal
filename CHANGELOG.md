@@ -1,25 +1,10 @@
 # Changelog
 
-## v0.4.2 Foundation – WGANG Identity
-
-### Nytt
-- Offentlig forside med WGANG-presentasjon
-- Ny WGANG-logo integrert
-- Rosa designsystem gjennom hele portalen
-- Nøytral bruker «Nabo»
-- Nøytrale demo-medlemmer
-- WGANG Health-panel
-- Forbedret Derby-senter
-- Adminmodus
-- Medlemsoversikt
-- Oppgavepreferanser
-- Diskusjonskategorier
-- Wiki-forside
-- Juridisk ansvarsfraskrivelse
-- Versjonsinformasjon i portal og footer
-
-### Teknisk
-- Komplett flat prosjektpakke for trygg mobilopplasting
-- Ingen avhengighet av undermapper
-- Responsiv mobilvisning
-- Frontend-only; ingen permanent lagring
+## v0.5.0
+- Ny komplett prosjektstruktur med `assets/`
+- Ekte WebP-filer
+- Separate logoer for kremfarget og rosa bakgrunn
+- Desktop- og mobilversjon av hero-bakgrunnen
+- Favicon og appikoner
+- Oppdaterte filreferanser i HTML
+- Alle funksjoner fra v0.4.2 videreført

@@ -1,23 +1,22 @@
-# Test Checklist – v0.4.0 Foundation Build 001
+# Test Checklist v0.5
 
-## Offentlig side
-- [ ] Logo vises
-- [ ] Knappen «Gå til medlemsportalen» åpner portalen
-- [ ] Lenker til Om WGANG, Derby og Bli medlem fungerer
-- [ ] Juridisk tekst vises nederst
+## Forside
+- [ ] Kremfarget logo vises riktig
+- [ ] Desktop-bakgrunn vises riktig
+- [ ] Mobilbakgrunn vises riktig
+- [ ] Tekst ligger over den åpne flaten til venstre
+- [ ] Knapper fungerer
 
 ## Portal
+- [ ] Rosa logo vises i toppfelt
 - [ ] Dashboard åpnes
-- [ ] Meny og mobilmeny fungerer
-- [ ] Derby-senter åpnes
-- [ ] Deltar/pause/usikker kan velges
-- [ ] Fremdriftslinjen oppdateres
+- [ ] Derby fungerer
 - [ ] Medlemsfilter fungerer
 - [ ] Oppgavepreferanser kan velges
-- [ ] Adminmodus viser admininnhold
-- [ ] «Rediger denne uken» oppdaterer derbyinformasjon
+- [ ] Adminmodus fungerer
+- [ ] Bunnmeny fungerer på mobil
 
-## Mobil
-- [ ] Ingen innhold går utenfor skjermen
-- [ ] Bunnmenyen fungerer
-- [ ] Logo og knapper er lesbare
+## Teknisk
+- [ ] Ingen manglende filer
+- [ ] Ingen 404-feil på bilder
+- [ ] Cloudflare-build er godkjent
