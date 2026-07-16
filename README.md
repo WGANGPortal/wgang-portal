@@ -1,30 +1,7 @@
-# WGANG Portal
+# Project Rooster – WGANG Portal v0.2
 
-WGANG Portal er en uoffisiell fellesskapsportal for Hay Day-nabolaget WGANG.
+Modul 1: medlemsdashboard.
 
-## Versjon 0.1
+Inneholder derbybekreftelse/pause, fremdrift, oppgavepreferanser, kunngjøringer, diskusjoner og medlemsoversikt. Dette er en frontend-prototype uten ekte innlogging eller database.
 
-Denne første versjonen inneholder:
-
-- offentlig forside
-- informasjon om WGANG
-- grunnregler
-- demovisning av medlemsportalen
-- derbybekreftelse
-- oppgavepreferanser
-- derbystatus
-- kategoriserte diskusjoner
-
-Funksjonene i medlemsportalen er foreløpig en visuell demo. Innlogging, database,
-adminoversikt og varig lagring kobles til i senere versjoner.
-
-## Publisering
-
-Prosjektet kan publiseres direkte med Cloudflare Pages.
-
-Build command: ingen  
-Build output directory: `/`
-
-## Viktig
-
-Ikke legg passord, API-nøkler eller andre hemmelige opplysninger i GitHub-repositoriet.
+All grafikk er egenutviklet. Portalen er uavhengig og ikke tilknyttet, godkjent eller sponset av Supercell.
