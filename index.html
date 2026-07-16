@@ -3,323 +3,563 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="WGANG Portal – Project Rooster">
-  <meta name="theme-color" content="#9d2f58">
-  <title>WGANG Portal</title>
+  <meta name="description" content="WGANG Portal – et uavhengig fellesskaps- og planleggingsverktøy for WGANG.">
+  <meta name="theme-color" content="#b83f73">
+  <title>WGANG Portal | Project Rooster</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="main.css">
 </head>
 <body>
-  <header class="topbar">
-    <button class="menu-toggle" id="menuToggle" aria-label="Åpne meny">☰</button>
-
-    <a class="brand" href="#dashboard" data-route="dashboard">
-      <span class="brand-shield">W</span>
-      <span>
-        <strong>WGANG</strong>
-        <small>PROJECT ROOSTER</small>
-      </span>
-    </a>
-
-    <div class="topbar-actions">
-      <button class="role-switch" id="roleSwitch">Vis som admin</button>
-      <button class="profile-chip">
-        <span class="avatar">S</span>
-        <span class="profile-copy">
-          <strong>SANDER</strong>
-          <small>Medlem</small>
+  <!-- OFFENTLIG FORSIDE -->
+  <section class="landing" id="landing">
+    <header class="landing-header">
+      <a class="landing-brand" href="#landing" aria-label="WGANG Project Rooster">
+        <img src="wgang-logo.webp" alt="WGANG Project Rooster-logo">
+        <span>
+          <strong>WGANG</strong>
+          <small>PROJECT ROOSTER</small>
         </span>
-      </button>
-    </div>
-  </header>
+      </a>
 
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <nav class="main-nav" aria-label="Hovedmeny">
-        <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span>Dashboard</a>
-        <a href="#derby" data-route="derby"><span>🏆</span>Derby</a>
-        <a href="#members" data-route="members"><span>👥</span>Medlemmer</a>
-        <a href="#preferences" data-route="preferences"><span>✓</span>Oppgaver</a>
-        <a href="#discussions" data-route="discussions"><span>✉</span>Diskusjoner <em>3</em></a>
-        <a href="#wiki" data-route="wiki"><span>▤</span>WGANG Wiki</a>
-        <a href="#admin" class="admin-nav admin-only" data-route="admin"><span>⚙</span>Admin</a>
+      <nav class="landing-nav" aria-label="Offentlig meny">
+        <a href="#about">Om WGANG</a>
+        <a href="#rules">Derby</a>
+        <a href="#join">Bli medlem</a>
+        <button class="button button-primary" id="openPortalTop">Medlemsportal</button>
       </nav>
+    </header>
 
-      <div class="sidebar-footer">
-        <strong>Project Rooster</strong>
-        <span>Complete Foundation v0.3</span>
-      </div>
-    </aside>
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">WGANG EDITION</p>
+          <h1>Grow together.<br>Win together.</h1>
+          <p class="hero-lead">
+            Et varmt og inkluderende fellesskap for naboer som vil hjelpe hverandre,
+            dele kunnskap og organisere derby på en enkel måte.
+          </p>
 
-    <main id="app" tabindex="-1">
-      <section class="page active" id="page-dashboard" data-page="dashboard">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Dashboard</p>
-            <h1>God kveld, SANDER</h1>
-            <p>Her er det viktigste du trenger å vite akkurat nå.</p>
+          <div class="hero-actions">
+            <button class="button button-primary button-large" id="openPortalHero">
+              Gå til medlemsportalen
+            </button>
+            <a class="button button-secondary button-large" href="#join">Les om medlemskap</a>
+          </div>
+
+          <div class="hero-notes">
+            <span>Alle er velkomne</span>
+            <span>Derby er frivillig</span>
+            <span>Samarbeid først</span>
           </div>
         </div>
 
-        <article class="priority-banner">
-          <div class="priority-icon">!</div>
-          <div>
-            <p class="card-kicker">Handling nødvendig</p>
-            <h2>Bekreft neste derby</h2>
-            <p>Manglende svar innen fristen betyr at admin melder deg av derbyet.</p>
+        <div class="hero-visual">
+          <div class="logo-stage">
+            <div class="logo-glow"></div>
+            <img src="wgang-logo.webp" alt="Project Rooster-logo">
           </div>
-          <button class="primary-button" data-route="derby">Svar nå</button>
-        </article>
+          <div class="floating-card floating-card-one">
+            <strong>90 %</strong>
+            <span>minimum når du deltar</span>
+          </div>
+          <div class="floating-card floating-card-two">
+            <strong>Maks poeng</strong>
+            <span>for aktuell derbytype</span>
+          </div>
+        </div>
+      </section>
 
-        <div class="dashboard-grid">
-          <article class="card card-wide">
-            <div class="card-header">
-              <div>
-                <p class="card-kicker">Neste derby</p>
-                <h2 id="dashboardDerbyType">Standard Derby</h2>
-              </div>
-              <span class="status-chip waiting">Planlegging</span>
-            </div>
+      <section class="public-section" id="about">
+        <div class="section-heading">
+          <p class="eyebrow">OM WGANG</p>
+          <h2>Et nabolag med plass til ulike spillestiler</h2>
+          <p>
+            Du trenger ikke delta i hvert derby for å være en god nabo. Det viktigste er å
+            melde pause før start dersom du ikke kan gi minimumsinnsatsen den aktuelle uken.
+          </p>
+        </div>
 
-            <div class="countdown-grid">
-              <div><strong>01</strong><span>dager</span></div>
-              <div><strong>14</strong><span>timer</span></div>
-              <div><strong>32</strong><span>min</span></div>
-            </div>
-
-            <div class="rule-grid">
-              <div><span>Minimum</span><strong>90 % av oppgavene</strong></div>
-              <div><span>Poengkrav</span><strong>Maks poeng for derbytypen</strong></div>
-            </div>
+        <div class="public-card-grid">
+          <article class="public-card">
+            <span class="public-icon">01</span>
+            <h3>Fellesskap</h3>
+            <p>Vi hjelper hverandre i derby, byen og ellers i spillet.</p>
           </article>
 
-          <article class="card">
-            <p class="card-kicker">Oppslagstavle</p>
-            <h2>Alle er velkomne</h2>
-            <p class="muted">Derby er frivillig. Når du deltar, forventes det at du gjør ditt beste for laget.</p>
+          <article class="public-card">
+            <span class="public-icon">02</span>
+            <h3>Frivillig derby</h3>
+            <p>Ta pause når du trenger det. Bare sørg for å svare innen fristen.</p>
           </article>
 
-          <article class="card">
-            <p class="card-kicker">Min fremdrift</p>
-            <h2><span id="dashboardTasksDone">0</span> av <span id="dashboardTasksTotal">9</span></h2>
-            <div class="progress-track"><span id="dashboardProgress"></span></div>
-            <button class="secondary-button full" data-route="derby">Åpne Derby-senter</button>
-          </article>
-
-          <article class="card">
-            <p class="card-kicker">WGANG akkurat nå</p>
-            <div class="stat-grid">
-              <div><strong>5</strong><span>deltar</span></div>
-              <div><strong>2</strong><span>tar pause</span></div>
-              <div><strong>1</strong><span>mangler svar</span></div>
-              <div><strong>2</strong><span>ferdige</span></div>
-            </div>
+          <article class="public-card">
+            <span class="public-icon">03</span>
+            <h3>Tydelige forventninger</h3>
+            <p>Når du deltar, gjør du ditt beste for minst 90 % med maks poeng.</p>
           </article>
         </div>
       </section>
 
-      <section class="page" id="page-derby" data-page="derby">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Derby</p>
-            <h1>Derby-senter</h1>
-            <p>Planlegging før derby, fremdrift underveis og historikk etterpå.</p>
-          </div>
-          <button class="primary-button admin-only" id="openDerbyEditor">Rediger denne uken</button>
+      <section class="public-section public-section-tint" id="rules">
+        <div class="section-heading">
+          <p class="eyebrow">DERBY</p>
+          <h2>En enkel regel som er rettferdig for alle</h2>
         </div>
 
-        <div class="split-layout">
-          <article class="card">
-            <div class="card-header">
-              <div>
-                <p class="card-kicker">Denne uken</p>
-                <h2 id="derbyType">Standard Derby</h2>
-              </div>
-              <span class="status-chip active-chip">Planlegging</span>
-            </div>
-
-            <div class="derby-facts">
-              <div><span>Start</span><strong>Tirsdag 09.00</strong></div>
-              <div><span>Svarfrist</span><strong>Mandag 20.00</strong></div>
-              <div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div>
-              <div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div>
-            </div>
-
-            <div class="strategy-panel">
-              <p class="card-kicker">WGANG-strategi</p>
-              <ul id="derbyStrategy">
-                <li>Fullfør minst 90 % av oppgavene.</li>
-                <li>Velg oppgaver med maks poeng for derbytypen.</li>
-                <li>Gi beskjed tidlig dersom noe endrer seg.</li>
-              </ul>
-            </div>
-
-            <div class="participation-panel">
-              <h3>Hva ønsker du denne uken?</h3>
-              <div class="choice-row">
-                <button class="choice-button" data-choice="joined">Jeg deltar</button>
-                <button class="choice-button" data-choice="pause">Jeg tar pause</button>
-                <button class="choice-button" data-choice="unsure">Usikker ennå</button>
-              </div>
-              <p class="inline-status" id="participationStatus">Du har ikke svart ennå.</p>
-            </div>
-          </article>
-
-          <article class="card">
-            <p class="card-kicker">Min derbyfremdrift</p>
-            <h2><span id="tasksDone">0</span> av <span id="tasksTotal">9</span> oppgaver</h2>
-            <div class="progress-track large"><span id="derbyProgress"></span></div>
-            <input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Antall fullførte oppgaver">
-
-            <label class="field">
-              <span>Status</span>
-              <select id="derbyStatus">
-                <option>Ikke startet</option>
-                <option>I gang</option>
-                <option>Trenger hjelp</option>
-                <option>Nesten ferdig</option>
-                <option>Ferdig</option>
-              </select>
-            </label>
-
-            <button class="primary-button full" id="finishDerby">Marker som ferdig</button>
-            <p class="inline-status" id="finishStatus"></p>
-          </article>
-        </div>
-
-        <section class="admin-section admin-only">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Admin</p>
-              <h2>Derby Control Center</h2>
-            </div>
+        <div class="rules-panel">
+          <div class="rule-number">90%</div>
+          <div class="rule-copy">
+            <h3>Når du velger å delta</h3>
+            <p>
+              forventes det at du gjør ditt beste for å fullføre minst 90 % av oppgavene
+              med høyeste mulige poengsum for den aktuelle derbytypen.
+            </p>
           </div>
-
-          <div class="admin-stats">
-            <article><strong>5</strong><span>bekreftet</span></article>
-            <article><strong>2</strong><span>tar pause</span></article>
-            <article><strong>1</strong><span>mangler svar</span></article>
-            <article><strong>2</strong><span>ferdige</span></article>
+          <div class="rule-note">
+            <strong>Trenger du pause?</strong>
+            <span>Velg «Jeg tar pause» før svarfristen.</span>
           </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Spillnavn</th>
-                  <th>Valg</th>
-                  <th>Fremdrift</th>
-                  <th>Status</th>
-                  <th>Tiltak</th>
-                </tr>
-              </thead>
-              <tbody id="derbyAdminTable"></tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
-      <section class="page" id="page-members" data-page="members">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Medlemmer</p>
-            <h1>Medlemsoversikt</h1>
-            <p>Alle svar og statuser er knyttet til et godkjent spillnavn.</p>
-          </div>
-        </div>
-
-        <div class="filter-bar">
-          <input id="memberSearch" type="search" placeholder="Søk etter spillnavn">
-          <select id="memberFilter">
-            <option value="all">Alle statuser</option>
-            <option value="joined">Deltar</option>
-            <option value="pause">Tar pause</option>
-            <option value="waiting">Mangler svar</option>
-            <option value="finished">Ferdig</option>
-          </select>
-        </div>
-
-        <div class="member-grid" id="memberGrid"></div>
-      </section>
-
-      <section class="page" id="page-preferences" data-page="preferences">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Oppgaver</p>
-            <h1>Oppgavepreferanser</h1>
-            <p>Velg hva du liker, kan ta, helst unngår eller ikke kan ta.</p>
-          </div>
-        </div>
-
-        <article class="card">
-          <div class="preference-list" id="preferenceList"></div>
-          <p class="helper-text">Admin vil kunne se navnene bak alle registrerte preferanser.</p>
-        </article>
-      </section>
-
-      <section class="page" id="page-discussions" data-page="discussions">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Diskusjoner</p>
-            <h1>Temabaserte samtaler</h1>
-            <p>Viktige samtaler skal ikke forsvinne i spillchatten.</p>
-          </div>
-        </div>
-
-        <div class="category-grid">
-          <article class="card"><p class="card-kicker">Kunngjøringer</p><h2>Fra lederne</h2><p class="muted">Bare admin kan opprette viktige innlegg.</p></article>
-          <article class="card"><p class="card-kicker">Derby</p><h2>Strategi og oppgaver</h2><p class="muted">Diskuter denne ukens derby.</p></article>
-          <article class="card"><p class="card-kicker">Hjelp og bytte</p><h2>Varer og assistanse</h2><p class="muted">Be om hjelp uten at meldingen forsvinner.</p></article>
-          <article class="card"><p class="card-kicker">Sosialt</p><h2>Generell prat</h2><p class="muted">Uformelle samtaler for fellesskapet.</p></article>
         </div>
       </section>
 
-      <section class="page" id="page-wiki" data-page="wiki">
-        <div class="page-heading">
+      <section class="public-section" id="join">
+        <div class="join-panel">
           <div>
-            <p class="eyebrow">WGANG Wiki</p>
-            <h1>Kunnskapsbanken</h1>
-            <p>Tips, derbytyper og erfaringer samles på ett sted.</p>
+            <p class="eyebrow">BLI MED</p>
+            <h2>Passer WGANG for deg?</h2>
+            <p>
+              Vi ønsker hyggelige naboer som bidrar til et godt miljø. Nivå og derbyfrekvens
+              er mindre viktig enn tydelig kommunikasjon og respekt for fellesskapet.
+            </p>
           </div>
-        </div>
-
-        <article class="card empty-card">
-          Wiki-strukturen er klar. Innhold legges inn trinnvis etter hvert som dere lærer mer om derbytypene.
-        </article>
-      </section>
-
-      <section class="page admin-only" id="page-admin" data-page="admin">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">Admin</p>
-            <h1>Administrasjon</h1>
-            <p>Kontrollsenter for medlemmer, derby, kunngjøringer og innhold.</p>
-          </div>
-        </div>
-
-        <div class="category-grid">
-          <article class="card"><p class="card-kicker">Medlemmer</p><h2>Godkjenning og roller</h2><p class="muted">Knytt portalbrukere til riktige spillnavn.</p></article>
-          <article class="card"><p class="card-kicker">Derby</p><h2>Maler og ukesoppsett</h2><p class="muted">Velg standardmal og korriger regler enkelt.</p></article>
-          <article class="card"><p class="card-kicker">Kommunikasjon</p><h2>Kunngjøringer</h2><p class="muted">Publiser informasjon som alle må se.</p></article>
-          <article class="card"><p class="card-kicker">Statistikk</p><h2>Oversikt og historikk</h2><p class="muted">Kommer når databasen er koblet til.</p></article>
+          <button class="button button-primary button-large" id="joinDemoButton">
+            Medlemssøknad kommer snart
+          </button>
         </div>
       </section>
     </main>
-  </div>
 
-  <nav class="bottom-nav" aria-label="Mobilmeny">
-    <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Hjem</small></a>
-    <a href="#derby" data-route="derby"><span>🏆</span><small>Derby</small></a>
-    <a href="#members" data-route="members"><span>👥</span><small>Medlemmer</small></a>
-    <a href="#discussions" data-route="discussions"><span>✉</span><small>Diskusjoner</small></a>
-  </nav>
+    <footer class="public-footer">
+      <div class="footer-brand">
+        <img src="wgang-logo.webp" alt="">
+        <div>
+          <strong>Project Rooster</strong>
+          <span>WGANG Edition · v0.4.0 Foundation · Build 001</span>
+        </div>
+      </div>
+      <p>
+        Project Rooster er et uavhengig fellesskapsverktøy utviklet for WGANG.
+        Hay Day og Supercell er varemerker som tilhører sine respektive eiere.
+        Portalen er ikke tilknyttet, godkjent eller sponset av Supercell.
+      </p>
+    </footer>
+  </section>
 
+  <!-- MEDLEMSPORTAL -->
+  <section class="portal hidden" id="portal" aria-hidden="true">
+    <header class="portal-topbar">
+      <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny">
+        <span></span><span></span><span></span>
+      </button>
+
+      <a class="portal-brand" href="#dashboard" data-route="dashboard">
+        <img src="wgang-logo.webp" alt="WGANG-logo">
+        <span>
+          <strong>WGANG</strong>
+          <small>PROJECT ROOSTER</small>
+        </span>
+      </a>
+
+      <div class="portal-actions">
+        <button class="role-switch" id="roleSwitch">Vis som admin</button>
+        <button class="profile-chip" aria-label="Profil">
+          <span class="avatar">N</span>
+          <span class="profile-copy">
+            <strong>Nabo</strong>
+            <small>Demobruker</small>
+          </span>
+        </button>
+        <button class="icon-button close-portal" id="closePortal" aria-label="Tilbake til offentlig forside">×</button>
+      </div>
+    </header>
+
+    <div class="portal-shell">
+      <aside class="sidebar" id="sidebar">
+        <nav class="main-nav" aria-label="Portalmeny">
+          <a href="#dashboard" class="active" data-route="dashboard">
+            <span class="nav-symbol">⌂</span>Dashboard
+          </a>
+          <a href="#derby" data-route="derby">
+            <span class="nav-symbol">◇</span>Derby
+          </a>
+          <a href="#members" data-route="members">
+            <span class="nav-symbol">◎</span>Medlemmer
+          </a>
+          <a href="#preferences" data-route="preferences">
+            <span class="nav-symbol">✓</span>Oppgaver
+          </a>
+          <a href="#discussions" data-route="discussions">
+            <span class="nav-symbol">□</span>Diskusjoner <em>3</em>
+          </a>
+          <a href="#wiki" data-route="wiki">
+            <span class="nav-symbol">▤</span>WGANG Wiki
+          </a>
+          <a href="#admin" class="admin-link admin-only" data-route="admin">
+            <span class="nav-symbol">⚙</span>Admin
+          </a>
+        </nav>
+
+        <div class="rooster-tip">
+          <img src="wgang-logo.webp" alt="">
+          <div>
+            <strong>Rooster sier</strong>
+            <span>Én nabo mangler fortsatt å svare på neste derby.</span>
+          </div>
+        </div>
+
+        <div class="sidebar-version">
+          <strong>v0.4.0 Foundation</strong>
+          <span>Build 001</span>
+        </div>
+      </aside>
+
+      <main class="portal-main" id="portalMain" tabindex="-1">
+        <!-- DASHBOARD -->
+        <section class="page active" data-page="dashboard">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">DASHBOARD</p>
+              <h1>God kveld, Nabo</h1>
+              <p>Her er det viktigste du trenger å vite akkurat nå.</p>
+            </div>
+            <span class="demo-label">DEMOVISNING</span>
+          </div>
+
+          <article class="action-banner">
+            <div class="action-icon">!</div>
+            <div>
+              <p class="card-kicker">HANDLING NØDVENDIG</p>
+              <h2>Bekreft neste derby</h2>
+              <p>Manglende svar innen fristen betyr at admin melder deg av derbyet.</p>
+            </div>
+            <button class="button button-primary" data-route="derby">Svar nå</button>
+          </article>
+
+          <div class="dashboard-grid">
+            <article class="portal-card dashboard-derby-card">
+              <div class="card-header">
+                <div>
+                  <p class="card-kicker">NESTE DERBY</p>
+                  <h2 id="dashboardDerbyType">Standard Derby</h2>
+                </div>
+                <span class="badge badge-gold">Planlegging</span>
+              </div>
+
+              <div class="countdown">
+                <div><strong>01</strong><span>dager</span></div>
+                <div><strong>14</strong><span>timer</span></div>
+                <div><strong>32</strong><span>min</span></div>
+              </div>
+
+              <div class="detail-grid">
+                <div><span>Minimum</span><strong>90 %</strong></div>
+                <div><span>Poengkrav</span><strong>Maks poeng</strong></div>
+              </div>
+            </article>
+
+            <article class="portal-card health-card">
+              <div class="card-header">
+                <div>
+                  <p class="card-kicker">WGANG HEALTH</p>
+                  <h2>God status</h2>
+                </div>
+                <span class="health-indicator"></span>
+              </div>
+              <p>De fleste har svart, og deltakerne ser ut til å være i rute.</p>
+              <div class="health-bar"><span style="width:88%"></span></div>
+              <small>88 % klarstatus</small>
+            </article>
+
+            <article class="portal-card">
+              <p class="card-kicker">MIN FREMGANG</p>
+              <div class="large-number">
+                <strong id="dashboardTasksDone">0</strong>
+                <span>av <b id="dashboardTasksTotal">9</b> oppgaver</span>
+              </div>
+              <div class="progress-track"><span id="dashboardProgress"></span></div>
+              <button class="button button-secondary button-full" data-route="derby">
+                Åpne Derby-senter
+              </button>
+            </article>
+
+            <article class="portal-card">
+              <p class="card-kicker">WGANG AKKURAT NÅ</p>
+              <div class="stat-grid">
+                <div><strong>5</strong><span>deltar</span></div>
+                <div><strong>2</strong><span>tar pause</span></div>
+                <div><strong>1</strong><span>mangler svar</span></div>
+                <div><strong>2</strong><span>ferdige</span></div>
+              </div>
+            </article>
+
+            <article class="portal-card card-wide announcement-card">
+              <div class="announcement-mark">WG</div>
+              <div>
+                <p class="card-kicker">OPPSLAGSTAVLE</p>
+                <h2>Alle er velkomne – derby er frivillig</h2>
+                <p>
+                  Ta pause når du trenger det. Det viktige er at du ikke er påmeldt et derby
+                  du ikke kan gi minimum 90 % i.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- DERBY -->
+        <section class="page" data-page="derby">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">DERBY</p>
+              <h1>Derby-senter</h1>
+              <p>Planlegging før derby, fremdrift underveis og oversikt etterpå.</p>
+            </div>
+            <button class="button button-primary admin-only" id="openDerbyEditor">
+              Rediger denne uken
+            </button>
+          </div>
+
+          <div class="split-layout">
+            <article class="portal-card">
+              <div class="card-header">
+                <div>
+                  <p class="card-kicker">DENNE UKEN</p>
+                  <h2 id="derbyType">Standard Derby</h2>
+                </div>
+                <span class="badge badge-pink">Planlegging</span>
+              </div>
+
+              <div class="derby-facts">
+                <div><span>Start</span><strong>Tirsdag 09.00</strong></div>
+                <div><span>Svarfrist</span><strong>Mandag 20.00</strong></div>
+                <div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div>
+                <div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div>
+              </div>
+
+              <div class="strategy-panel">
+                <p class="card-kicker">WGANG-STRATEGI</p>
+                <ul id="derbyStrategy">
+                  <li>Fullfør minst 90 % av oppgavene.</li>
+                  <li>Velg oppgaver med maks poeng for derbytypen.</li>
+                  <li>Gi beskjed tidlig dersom noe endrer seg.</li>
+                </ul>
+              </div>
+
+              <div class="participation-panel">
+                <h3>Hva ønsker du denne uken?</h3>
+                <div class="choice-row">
+                  <button class="choice-button" data-choice="joined">Jeg deltar</button>
+                  <button class="choice-button" data-choice="pause">Jeg tar pause</button>
+                  <button class="choice-button" data-choice="unsure">Usikker ennå</button>
+                </div>
+                <p class="inline-status" id="participationStatus">Du har ikke svart ennå.</p>
+              </div>
+            </article>
+
+            <article class="portal-card">
+              <p class="card-kicker">MIN DERBYFREMGANG</p>
+              <div class="large-number">
+                <strong id="tasksDone">0</strong>
+                <span>av <b id="tasksTotal">9</b> oppgaver</span>
+              </div>
+              <div class="progress-track progress-large"><span id="derbyProgress"></span></div>
+              <input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Antall fullførte oppgaver">
+
+              <label class="field">
+                <span>Status</span>
+                <select id="derbyStatus">
+                  <option>Ikke startet</option>
+                  <option>I gang</option>
+                  <option>Trenger hjelp</option>
+                  <option>Nesten ferdig</option>
+                  <option>Ferdig</option>
+                </select>
+              </label>
+
+              <button class="button button-primary button-full" id="finishDerby">Marker som ferdig</button>
+              <p class="inline-status" id="finishStatus"></p>
+            </article>
+          </div>
+
+          <section class="admin-section admin-only">
+            <div class="page-heading compact-heading">
+              <div>
+                <p class="eyebrow">ADMIN</p>
+                <h2>Derby Control Center</h2>
+              </div>
+            </div>
+
+            <div class="admin-stats">
+              <article><strong>5</strong><span>bekreftet</span></article>
+              <article><strong>2</strong><span>tar pause</span></article>
+              <article><strong>1</strong><span>mangler svar</span></article>
+              <article><strong>2</strong><span>ferdige</span></article>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Spillnavn</th>
+                    <th>Valg</th>
+                    <th>Fremdrift</th>
+                    <th>Status</th>
+                    <th>Tiltak</th>
+                  </tr>
+                </thead>
+                <tbody id="derbyAdminTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- MEDLEMMER -->
+        <section class="page" data-page="members">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">FELLESSKAP</p>
+              <h1>Medlemsoversikt</h1>
+              <p>Alle statuser er knyttet til et godkjent spillnavn.</p>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <input id="memberSearch" type="search" placeholder="Søk etter spillnavn">
+            <select id="memberFilter">
+              <option value="all">Alle statuser</option>
+              <option value="joined">Deltar</option>
+              <option value="pause">Tar pause</option>
+              <option value="waiting">Mangler svar</option>
+              <option value="finished">Ferdig</option>
+            </select>
+          </div>
+
+          <div class="member-grid" id="memberGrid"></div>
+        </section>
+
+        <!-- OPPGAVER -->
+        <section class="page" data-page="preferences">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">MINE OPPGAVER</p>
+              <h1>Oppgavepreferanser</h1>
+              <p>Velg hva du liker, kan ta, helst unngår eller ikke kan ta.</p>
+            </div>
+          </div>
+
+          <article class="portal-card">
+            <div class="preference-list" id="preferenceList"></div>
+            <p class="helper-text">Admin vil kunne se spillnavnene bak alle registrerte preferanser.</p>
+          </article>
+        </section>
+
+        <!-- DISKUSJONER -->
+        <section class="page" data-page="discussions">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">FELLESSKAP</p>
+              <h1>Diskusjoner</h1>
+              <p>Viktige samtaler skal ikke forsvinne i spillchatten.</p>
+            </div>
+          </div>
+
+          <div class="discussion-grid">
+            <article class="discussion-card">
+              <span class="discussion-code">K</span>
+              <div><p class="card-kicker">KUNNGJØRINGER</p><h2>Fra lederne</h2><p>Beskjeder alle må få med seg.</p></div>
+              <span class="badge badge-pink">2 nye</span>
+            </article>
+            <article class="discussion-card">
+              <span class="discussion-code">D</span>
+              <div><p class="card-kicker">DERBY</p><h2>Strategi og oppgaver</h2><p>Planlegg og diskuter ukens derby.</p></div>
+              <span class="badge badge-gold">12 svar</span>
+            </article>
+            <article class="discussion-card">
+              <span class="discussion-code">H</span>
+              <div><p class="card-kicker">HJELP OG BYTTE</p><h2>Varer og assistanse</h2><p>Be om hjelp uten at meldingen forsvinner.</p></div>
+              <span class="badge badge-green">4 aktive</span>
+            </article>
+            <article class="discussion-card">
+              <span class="discussion-code">S</span>
+              <div><p class="card-kicker">SOSIALT</p><h2>Generell prat</h2><p>Uformelle samtaler for fellesskapet.</p></div>
+              <span class="badge badge-neutral">I dag</span>
+            </article>
+          </div>
+        </section>
+
+        <!-- WIKI -->
+        <section class="page" data-page="wiki">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">KUNNSKAP</p>
+              <h1>WGANG Wiki</h1>
+              <p>Tips, derbytyper og erfaringer samlet på ett sted.</p>
+            </div>
+          </div>
+
+          <div class="wiki-grid">
+            <article class="wiki-card"><span>01</span><h2>Derbytyper</h2><p>Regler og WGANG-strategi for hver type.</p></article>
+            <article class="wiki-card"><span>02</span><h2>Oppgaver</h2><p>Tips til produksjon, by, fisk, båt og mer.</p></article>
+            <article class="wiki-card"><span>03</span><h2>Nye naboer</h2><p>Det viktigste du bør vite når du blir med.</p></article>
+            <article class="wiki-card"><span>04</span><h2>FAQ</h2><p>Svar på spørsmål som ofte dukker opp.</p></article>
+          </div>
+        </section>
+
+        <!-- ADMIN -->
+        <section class="page admin-only" data-page="admin">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">ADMIN</p>
+              <h1>Administrasjon</h1>
+              <p>Kontrollsenter for medlemmer, derby, kunngjøringer og innhold.</p>
+            </div>
+          </div>
+
+          <div class="admin-module-grid">
+            <article class="portal-card"><p class="card-kicker">MEDLEMMER</p><h2>Godkjenning og roller</h2><p>Knytt portalbrukere til riktige spillnavn.</p></article>
+            <article class="portal-card"><p class="card-kicker">DERBY</p><h2>Maler og ukesoppsett</h2><p>Velg standardmal og korriger regler enkelt.</p></article>
+            <article class="portal-card"><p class="card-kicker">KOMMUNIKASJON</p><h2>Kunngjøringer</h2><p>Publiser informasjon som alle må se.</p></article>
+            <article class="portal-card"><p class="card-kicker">STATISTIKK</p><h2>Oversikt og historikk</h2><p>Aktiveres når databasen er koblet til.</p></article>
+          </div>
+        </section>
+
+        <footer class="portal-footer">
+          <strong>Project Rooster · WGANG Edition</strong>
+          <span>v0.4.0 Foundation · Build 001 · Demovisning uten permanent lagring</span>
+          <p>
+            Uavhengig fellesskapsverktøy. Ikke tilknyttet, godkjent eller sponset av Supercell.
+          </p>
+        </footer>
+      </main>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Mobilmeny">
+      <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Hjem</small></a>
+      <a href="#derby" data-route="derby"><span>◇</span><small>Derby</small></a>
+      <a href="#members" data-route="members"><span>◎</span><small>Naboer</small></a>
+      <a href="#discussions" data-route="discussions"><span>□</span><small>Prat</small></a>
+    </nav>
+  </section>
+
+  <!-- ADMIN DIALOG -->
   <dialog id="derbyEditor">
     <div class="dialog-header">
       <div>
-        <p class="eyebrow">Admin</p>
+        <p class="eyebrow">ADMIN</p>
         <h2>Rediger ukens derby</h2>
       </div>
       <button id="closeDerbyEditor" aria-label="Lukk">×</button>
@@ -335,7 +575,7 @@ Velg oppgaver med maks poeng for derbytypen.
 Gi beskjed tidlig dersom noe endrer seg.</textarea>
     </label>
 
-    <button class="primary-button full" id="saveDerby">Lagre endringer</button>
+    <button class="button button-primary button-full" id="saveDerby">Lagre endringer</button>
   </dialog>
 
   <script src="demo-data.js"></script>

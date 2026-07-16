@@ -1,39 +1,54 @@
-# Project Rooster – Complete Foundation v0.3
+# Project Rooster v0.4.0 Foundation
 
-Dette er en komplett prosjektpakke for WGANG Portal.
+WGANG Portal er et uavhengig fellesskaps- og planleggingsverktøy for WGANG.
 
-## Viktig filstruktur
+## Build
 
-Alle filer ligger i rotmappen for å gjøre opplasting fra mobil trygg og enkel:
+- Version: 0.4.0 Foundation
+- Build: 001
+- Status: Frontend-prototype / release candidate
 
-- index.html
-- main.css
-- demo-data.js
-- app.js
-- README.md
-- PRODUCT.md
-- DESIGN.md
-- ROADMAP.md
+## Innhold
 
-Ikke legg filene i undermapper.
-
-## Inkluderte moduler
-
+- Offentlig landing page
+- Ny WGANG Project Rooster-logo
+- Rosa WGANG-identitet
+- Nøytral demobruker: «Nabo»
 - Dashboard
 - Derby-senter
+- Adminmodus og Derby Control Center
 - Medlemsoversikt
 - Oppgavepreferanser
 - Diskusjonskategorier
 - WGANG Wiki
-- Adminområde
-- Demo-data
+- Juridisk footer
+- Mobiltilpasset navigasjon
+
+## Filstruktur
+
+Alle filer ligger i rotmappen for enkel opplasting fra mobil:
+
+- index.html
+- main.css
+- app.js
+- demo-data.js
+- wgang-logo.webp
+- README.md
+- CHANGELOG.md
+- DESIGN.md
+- PRODUCT.md
+- ROADMAP.md
+- TEST-CHECKLIST.md
 
 ## Publisering
 
-Last opp alle filene til rotmappen i GitHub og erstatt filer med samme navn.
-Cloudflare Pages publiserer automatisk.
+Last opp alle filene til rotmappen i GitHub og erstatt eksisterende filer med samme navn.
 
-## Teknisk status
+Cloudflare Pages:
+- Framework preset: None
+- Build command: tomt
+- Build output directory: /
 
-Dette er fortsatt en frontend-prototype. Data lagres ikke permanent.
-Neste hovedsteg er innlogging og database.
+## Viktig
+
+Dette er en prototype. Valg og endringer lagres ikke permanent før database og innlogging er koblet til.

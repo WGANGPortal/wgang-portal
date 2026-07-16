@@ -1,10 +1,22 @@
-# Product – Project Rooster
+# Product Requirements – Project Rooster
 
-WGANG Portal er et uavhengig organisasjons- og fellesskapsverktøy.
+## Formål
 
-Kjernekrav:
+Gjøre WGANG enklere å organisere uten å erstatte Hay Day.
+
+## Kjernekrav
+
+- Alle er velkomne som naboer.
 - Derby er frivillig.
-- Deltakere gjør sitt beste for minst 90 % av oppgavene med maks poeng for derbytypen.
-- Svar knyttes til godkjent spillnavn.
-- Admin ser navnene bak svarene.
-- Viktig informasjon skal ikke forsvinne i chat.
+- Deltakere gjør sitt beste for minst 90 % av oppgavene.
+- Oppgaver tas med maks poeng for den aktuelle derbytypen.
+- Manglende svar innen fristen betyr avmelding av admin.
+- Alle svar knyttes til godkjent spillnavn.
+- Admin kan se spillnavnene bak svar og preferanser.
+- Viktig informasjon skal ikke forsvinne i spillchatten.
+
+## Roller
+
+- Besøkende
+- Medlem
+- Admin

@@ -1,29 +1,62 @@
 (function () {
   "use strict";
 
-  const members = window.ROOSTER_DATA.members;
-  const taskTypes = window.ROOSTER_DATA.taskTypes;
+  const landing = document.getElementById("landing");
+  const portal = document.getElementById("portal");
+  const sidebar = document.getElementById("sidebar");
+  const portalMain = document.getElementById("portalMain");
   const pages = document.querySelectorAll(".page");
   const routeLinks = document.querySelectorAll("[data-route]");
-  const sidebar = document.getElementById("sidebar");
+  const members = window.ROOSTER_DATA.members;
+  const taskTypes = window.ROOSTER_DATA.taskTypes;
 
-  function navigate(route) {
+  function openPortal() {
+    landing.classList.add("hidden");
+    portal.classList.remove("hidden");
+    portal.setAttribute("aria-hidden", "false");
+    document.body.classList.remove("no-scroll");
+    navigate("dashboard", false);
+    window.scrollTo(0, 0);
+  }
+
+  function closePortal() {
+    portal.classList.add("hidden");
+    portal.setAttribute("aria-hidden", "true");
+    landing.classList.remove("hidden");
+    document.body.classList.remove("admin-mode");
+    document.getElementById("roleSwitch").textContent = "Vis som admin";
+    sidebar.classList.remove("open");
+    window.location.hash = "landing";
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById("openPortalTop").addEventListener("click", openPortal);
+  document.getElementById("openPortalHero").addEventListener("click", openPortal);
+  document.getElementById("closePortal").addEventListener("click", closePortal);
+  document.getElementById("joinDemoButton").addEventListener("click", () => {
+    alert("Medlemssøknaden bygges når innlogging og database kobles til.");
+  });
+
+  function navigate(route, updateHash = true) {
     pages.forEach(page => page.classList.toggle("active", page.dataset.page === route));
     routeLinks.forEach(link => link.classList.toggle("active", link.dataset.route === route));
     sidebar.classList.remove("open");
-    document.getElementById("app").focus();
-    window.location.hash = route;
-    window.scrollTo({top: 0, behavior: "smooth"});
+    if (updateHash) window.location.hash = route;
+    portalMain.focus();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   routeLinks.forEach(link => {
     link.addEventListener("click", event => {
       event.preventDefault();
+      if (portal.classList.contains("hidden")) openPortal();
       navigate(link.dataset.route);
     });
   });
 
-  document.getElementById("menuToggle").addEventListener("click", () => sidebar.classList.toggle("open"));
+  document.getElementById("menuToggle").addEventListener("click", () => {
+    sidebar.classList.toggle("open");
+  });
 
   document.getElementById("roleSwitch").addEventListener("click", event => {
     document.body.classList.toggle("admin-mode");
@@ -72,13 +105,15 @@
         pause: "Du tar pause denne uken.",
         unsure: "Du er registrert som usikker. Husk å avklare før fristen."
       };
-      document.getElementById("participationStatus").textContent = messages[button.dataset.choice];
+      document.getElementById("participationStatus").textContent =
+        messages[button.dataset.choice];
     });
   });
 
   function renderMembers() {
     const query = document.getElementById("memberSearch").value.trim().toLowerCase();
     const filter = document.getElementById("memberFilter").value;
+
     const filtered = members.filter(member =>
       member.name.toLowerCase().includes(query) &&
       (filter === "all" || member.choice === filter)
@@ -91,20 +126,27 @@
           <div class="member-head">
             <div class="member-identity">
               <span class="avatar">${member.name[0]}</span>
-              <div><h3>${member.name}</h3><span class="member-role">${member.role} · nivå ${member.level}</span></div>
+              <div>
+                <h3>${member.name}</h3>
+                <span class="member-role">${member.role} · nivå ${member.level}</span>
+              </div>
             </div>
             <span class="member-status status-${member.choice}">${member.choiceText}</span>
           </div>
+
           <div class="member-info">
             <div><span>Oppgaver</span><strong>${member.done} av ${member.total}</strong></div>
             <div><span>Fremdrift</span><strong>${percentage} %</strong></div>
           </div>
+
           <div class="progress-track"><span style="width:${percentage}%"></span></div>
+
           <div class="tag-list">
             ${member.likes.map(item => `<span class="task-tag like">+ ${item}</span>`).join("")}
             ${member.dislikes.map(item => `<span class="task-tag dislike">− ${item}</span>`).join("")}
           </div>
-        </article>`;
+        </article>
+      `;
     }).join("");
   }
 
@@ -119,15 +161,20 @@
       <td>${member.done}/${member.total}</td>
       <td>${member.status}</td>
       <td><button class="table-action">Følg opp</button></td>
-    </tr>`).join("");
+    </tr>
+  `).join("");
 
   document.getElementById("preferenceList").innerHTML = taskTypes.map(task => `
     <div class="preference-row">
       <strong>${task}</strong>
       <div class="preference-actions">
-        <button>Liker</button><button>Kan ta</button><button>Helst ikke</button><button>Kan ikke</button>
+        <button>Liker</button>
+        <button>Kan ta</button>
+        <button>Helst ikke</button>
+        <button>Kan ikke</button>
       </div>
-    </div>`).join("");
+    </div>
+  `).join("");
 
   document.querySelectorAll(".preference-actions button").forEach(button => {
     button.addEventListener("click", () => {
@@ -146,13 +193,16 @@
     const taskTotal = Math.max(1, Number(document.getElementById("editTaskTotal").value) || 9);
     const maxPoints = Math.max(1, Number(document.getElementById("editMaxPoints").value) || 320);
     const strategy = document.getElementById("editStrategy").value
-      .split("\n").map(item => item.trim()).filter(Boolean);
+      .split("\n")
+      .map(item => item.trim())
+      .filter(Boolean);
 
     document.getElementById("derbyType").textContent = derbyType;
     document.getElementById("dashboardDerbyType").textContent = derbyType;
     document.getElementById("derbyTaskTotalLabel").textContent = taskTotal;
     document.getElementById("derbyMaxPoints").textContent = maxPoints;
-    document.getElementById("derbyStrategy").innerHTML = strategy.map(item => `<li>${item}</li>`).join("");
+    document.getElementById("derbyStrategy").innerHTML =
+      strategy.map(item => `<li>${item}</li>`).join("");
 
     taskRange.max = taskTotal;
     if (Number(taskRange.value) > taskTotal) taskRange.value = taskTotal;
@@ -160,6 +210,10 @@
     derbyEditor.close();
   });
 
-  const initialRoute = window.location.hash.replace("#", "");
-  if (initialRoute && document.querySelector(`[data-page="${initialRoute}"]`)) navigate(initialRoute);
+  const initialHash = window.location.hash.replace("#", "");
+  if (initialHash && initialHash !== "landing" &&
+      document.querySelector(`[data-page="${initialHash}"]`)) {
+    openPortal();
+    navigate(initialHash, false);
+  }
 })();
