@@ -1,24 +1,23 @@
-WGANG Portal v0.5.0 – File Manifest
+WGANG Portal v0.6 – Clean Release
 
-README.md
-app.js
-assets/app-icons/apple-touch-icon.png
-assets/app-icons/favicon-32.png
-assets/app-icons/favicon-64.png
-assets/app-icons/icon-192.png
-assets/app-icons/icon-512.png
-assets/backgrounds/hero-farm-desktop.webp
-assets/backgrounds/hero-farm-mobile.webp
-assets/logos/wgang-icon-cream.webp
-assets/logos/wgang-icon-pink.webp
-demo-data.js
-docs/BRAND-GUIDE.md
-docs/CHANGELOG.md
-docs/DESIGN-HISTORY.md
-docs/LICENSE.md
-docs/PRODUCT.md
-docs/RELEASE-NOTES.md
-docs/ROADMAP.md
-docs/TEST-CHECKLIST.md
+Følgende filer skal ligge i GitHub-repositoriets rotmappe:
+
 index.html
 main.css
+app.js
+demo-data.js
+wgang-logo-cream.webp
+wgang-logo-pink.webp
+hero-farm-desktop.webp
+hero-farm-mobile.webp
+favicon-32.png
+favicon-64.png
+apple-touch-icon.png
+icon-192.png
+icon-512.png
+README.md
+CHANGELOG.md
+ROADMAP.md
+FILE-MANIFEST.txt
+
+Ingen andre filer er nødvendige for v0.6.

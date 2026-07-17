@@ -7,8 +7,8 @@
   const portalMain = document.getElementById("portalMain");
   const pages = document.querySelectorAll(".page");
   const routeLinks = document.querySelectorAll("[data-route]");
-  const members = window.ROOSTER_DATA.members;
-  const taskTypes = window.ROOSTER_DATA.taskTypes;
+  const members = window.WGANG_DATA.members;
+  const taskTypes = window.WGANG_DATA.taskTypes;
 
   function openPortal() {
     landing.classList.add("hidden");

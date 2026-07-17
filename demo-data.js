@@ -1,4 +1,4 @@
-window.ROOSTER_DATA = {
+window.WGANG_DATA = {
   members: [
     {name:"Nabo 01",role:"Ass. leder",level:76,choice:"joined",choiceText:"Deltar",done:6,total:9,status:"I gang",likes:["Melk","Bacon","Hjelp"],dislikes:["Båt"]},
     {name:"Nabo 02",role:"Ass. leder",level:98,choice:"finished",choiceText:"Ferdig",done:9,total:9,status:"Ferdig",likes:["Produksjon","By"],dislikes:["Fisk"]},
