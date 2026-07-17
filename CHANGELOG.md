@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.2 – Button Fix
+- Rettet en JavaScript-feil som stoppet initialiseringen inne i innloggingsvinduet.
+- Fanene «Logg inn» og «Søk medlemskap» fungerer nå.
+- Innsending av innlogging og medlemssøknad fungerer nå.
+- Beholder forbedringene fra v0.7.1 for lokal lagring og Safari/iPhone.
+
 ## v0.7.0 – Community Foundation
 - La til registrering og innlogging
 - La til administratorgodkjenning
