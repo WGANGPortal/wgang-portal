@@ -12,3 +12,9 @@
 ## v0.6.0 – Stable Foundation
 - Offentlig forside og portalprototype
 - Derby-, medlems-, oppgave-, diskusjons-, wiki- og adminvisning
+
+
+## 0.7.1
+- Rettet innlogging som kunne feile på grunn av gamle lokalt lagrede data.
+- Fjernet avhengighet til `structuredClone` for bedre nettleserstøtte.
+- Trimmer utilsiktede mellomrom i passordfeltet.

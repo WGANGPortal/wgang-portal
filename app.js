@@ -1,13 +1,24 @@
 (function(){
 "use strict";
-const STORAGE_KEY="wgangPortalV07";
+const STORAGE_KEY="wgangPortalV071";
 const seed={accounts:[
 {id:"owner-1",name:"Leder",email:"admin@wgang.no",password:"WGANG2026",role:"owner",approved:true,choice:"joined"},
 {id:"member-1",name:"Nabo",email:"nabo@wgang.no",password:"WGANG2026",role:"member",approved:true,choice:"unsure"},
 {id:"member-2",name:"Solglimt",email:"sol@wgang.no",password:"WGANG2026",role:"member",approved:true,choice:"pause"},
 {id:"pending-1",name:"FarmFryd",email:"farmfryd@example.com",password:"WGANG2026",role:"member",approved:false,choice:"waiting"}
 ],currentUserId:null};
-function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return x&&Array.isArray(x.accounts)?x:structuredClone(seed)}catch(e){return structuredClone(seed)}}
+function freshSeed(){return JSON.parse(JSON.stringify(seed))}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return freshSeed();
+    const x=JSON.parse(raw);
+    if(!x||!Array.isArray(x.accounts))return freshSeed();
+    return x;
+  }catch(e){
+    return freshSeed();
+  }
+}
 let state=load();
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 const $=id=>document.getElementById(id); const $$=s=>document.querySelectorAll(s);
@@ -20,7 +31,7 @@ function openPortal(){const u=current();if(!u){openAuth();return}landing.classLi
 function logout(){state.currentUserId=null;save();portal.classList.add("hidden");portal.setAttribute("aria-hidden","true");landing.classList.remove("hidden");document.body.classList.remove("admin-mode");sidebar.classList.remove("open");location.hash="landing";window.scrollTo(0,0)}
 function navigate(route,hash=true){if(route==="admin"&&!isAdmin())route="dashboard";$$('.page').forEach(p=>p.classList.toggle('active',p.dataset.page===route));$$('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));sidebar.classList.remove('open');if(hash)location.hash=route;portalMain.focus();window.scrollTo({top:0,behavior:'smooth'})}
 $('openPortalTop').onclick=()=>openAuth('login');$('openPortalHero').onclick=()=>openAuth('login');$('openPortalRule').onclick=()=>openAuth('login');$('joinDemoButton').onclick=()=>openAuth('register');$('closeAuth').onclick=()=>auth.close();$('closePortal').onclick=logout;$('[data-auth-tab="login"]').onclick=()=>setAuthTab('login');$('[data-auth-tab="register"]').onclick=()=>setAuthTab('register');
-$('loginForm').onsubmit=e=>{e.preventDefault();const email=$('loginEmail').value.trim().toLowerCase(),pw=$('loginPassword').value;const u=state.accounts.find(a=>a.email.toLowerCase()===email&&a.password===pw);const msg=$('loginMessage');msg.classList.remove('success');if(!u){msg.textContent='Feil e-post eller passord.';return}if(!u.approved){msg.textContent='Søknaden din venter fortsatt på godkjenning.';return}state.currentUserId=u.id;save();auth.close();msg.textContent='';openPortal()};
+$('loginForm').onsubmit=e=>{e.preventDefault();const email=$('loginEmail').value.trim().toLowerCase(),pw=$('loginPassword').value.trim();const u=state.accounts.find(a=>a.email.toLowerCase()===email&&a.password===pw);const msg=$('loginMessage');msg.classList.remove('success');if(!u){msg.textContent='Feil e-post eller passord.';return}if(!u.approved){msg.textContent='Søknaden din venter fortsatt på godkjenning.';return}state.currentUserId=u.id;save();auth.close();msg.textContent='';openPortal()};
 $('registerForm').onsubmit=e=>{e.preventDefault();const name=$('registerName').value.trim(),email=$('registerEmail').value.trim().toLowerCase(),pw=$('registerPassword').value,msg=$('registerMessage');msg.classList.remove('success');if(state.accounts.some(a=>a.email.toLowerCase()===email)){msg.textContent='Denne e-postadressen er allerede registrert.';return}if(state.accounts.some(a=>a.name.toLowerCase()===name.toLowerCase())){msg.textContent='Dette Hay Day-navnet er allerede registrert.';return}state.accounts.push({id:'user-'+Date.now(),name,email,password:pw,role:'member',approved:false,choice:'waiting'});save();msg.textContent='Søknaden er sendt. En administrator må godkjenne deg før innlogging.';msg.classList.add('success');e.target.reset();renderAdmin()};
 $$('[data-route]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();if(portal.classList.contains('hidden')){openPortal();return}navigate(a.dataset.route)}));$('menuToggle').onclick=()=>sidebar.classList.toggle('open');$('roleSwitch').onclick=()=>navigate('admin');
 function roleLabel(r){return {owner:'Eier',admin:'Administrator',member:'Medlem'}[r]||r}

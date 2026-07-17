@@ -20,3 +20,7 @@ Last opp alle filene i rotmappen til Cloudflare Pages, GitHub Pages eller tilsva
 
 ## Viktig begrensning
 Dette er en funksjonell frontendpilot. Kontoer og passord lagres lokalt i brukerens nettleser og deles derfor ikke mellom enheter. Løsningen er ikke produksjonssikker før autentisering og database kobles til, for eksempel via Supabase.
+
+
+## v0.7.1 login-fiks
+Denne patchen bruker en ny lokal lagringsnøkkel slik at eldre nettleserdata ikke blokkerer demo-kontoene. Passordfeltet tåler også utilsiktede mellomrom ved innliming.
