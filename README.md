@@ -1,19 +1,54 @@
-# WGANG Portal v0.6 – Clean Release
+# WGANG Portal v0.6 – Stable Foundation.0
 
-Mobilvennlig fellesskapsportal for WGANG. Denne utgaven bruker en flat filstruktur for enkel opplasting via iPhone og GitHub.
+Komplett frontendpakke for WGANG-portalen.
 
-## Publisering
-Last opp samtlige filer fra ZIP-pakken til rotmappen i GitHub-repositoriet. `index.html` skal ligge i rotmappen. Cloudflare Pages kan deretter bygge direkte fra `main`.
+## Innhold
 
-## Aktiv kode
-- `index.html`
-- `main.css`
-- `app.js`
-- `demo-data.js`
+- Offentlig forside
+- Desktop- og mobiltilpasset hero-bakgrunn
+- Kremfarget og rosa logoikon
+- Dashboard
+- Derby-senter
+- Medlemsoversikt
+- Oppgavepreferanser
+- Diskusjoner
+- WGANG Wiki
+- Adminvisning
+- Appikoner og favicon
+- Dokumentasjon og testliste
 
-## Grafikk
-- `wgang-logo-pink.webp` brukes på lyse flater
-- `wgang-logo-cream.webp` brukes på rosa flater
-- `hero-farm-desktop.webp` og `hero-farm-mobile.webp` brukes i hero-seksjonen
+## Filstruktur
 
-Ingen mapper eller eldre prosjektfiler er nødvendige.
+```text
+WGANG-Portal-v0.5/
+├── index.html
+├── main.css
+├── app.js
+├── demo-data.js
+├── assets/
+│   ├── logos/
+│   ├── backgrounds/
+│   └── app-icons/
+└── docs/
+```
+
+## GitHub og Cloudflare Pages
+
+Last opp innholdet i denne mappen til rotmappen i ønsket GitHub-gren.
+
+Cloudflare Pages:
+- Framework preset: None
+- Build command: tomt
+- Build output directory: /
+
+## Anbefalt testgren
+
+Opprett en gren, for eksempel:
+
+`preview-v0.5`
+
+Last opp hele pakken i denne grenen og test den før den flettes inn i `main`.
+
+## Begrensning
+
+Dette er fortsatt en frontend-prototype. Endringer lagres ikke permanent før database og innlogging kobles til.

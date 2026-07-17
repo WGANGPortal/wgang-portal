@@ -7,8 +7,8 @@
   const portalMain = document.getElementById("portalMain");
   const pages = document.querySelectorAll(".page");
   const routeLinks = document.querySelectorAll("[data-route]");
-  const members = window.WGANG_DATA.members;
-  const taskTypes = window.WGANG_DATA.taskTypes;
+  const members = window.ROOSTER_DATA.members;
+  const taskTypes = window.ROOSTER_DATA.taskTypes;
 
   function openPortal() {
     landing.classList.add("hidden");
@@ -32,6 +32,7 @@
 
   document.getElementById("openPortalTop").addEventListener("click", openPortal);
   document.getElementById("openPortalHero").addEventListener("click", openPortal);
+  document.getElementById("openPortalRule").addEventListener("click", openPortal);
   document.getElementById("closePortal").addEventListener("click", closePortal);
   document.getElementById("joinDemoButton").addEventListener("click", () => {
     alert("Medlemssøknaden bygges når innlogging og database kobles til.");

@@ -1,13 +1,24 @@
-# WGANG Portal – Roadmap
+# Roadmap
 
-## v0.7 – Medlemmer
-Profiler, roller, medlemsstatus og godkjenning.
+## v0.4.0 Foundation
+- Offentlig forside
+- Ny identitet
+- Komplette frontendmoduler
+- Nøytrale demodata
 
-## v0.8 – Derby
-Derbyoppsett, oppgaver, poeng, deltakelse og historikk.
+## Neste milepæl
+- Utviklingsgren og testmiljø
+- Ekte innlogging
+- Database
+- Godkjenning av spillnavn
+- Permanent lagring
 
-## v0.9 – Fellesskap
-Diskusjoner, kunngjøringer, varsler og wiki.
-
-## v1.0 – Produksjonsklar beta
-Innlogging, database, tilgangsstyring og administrasjon.
+## Senere
+- Derbymaler
+- Kunngjøringer
+- Ekte diskusjonsforum
+- Wiki-redigering
+- Derbyhistorikk
+- Statistikk
+- Varsler
+- PWA/installasjon på mobil

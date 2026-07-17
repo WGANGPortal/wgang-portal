@@ -1,6 +1,12 @@
-# Release Notes – WGANG Portal v0.6 – Stable Foundation.0
+# WGANG Portal Foundation v0.6
 
-Denne versjonen samler kode, grafikk og dokumentasjon i én komplett prosjektpakke.
+A redesigned mobile-first foundation release.
 
-Hovedendringen er en ryddig `assets`-struktur og ekte WebP-filer med riktige navn.
-Pakken kan brukes i en egen GitHub-testgren før publisering til `main`.
+## Highlights
+- Completely redesigned public landing page
+- New balanced header and full brand footer
+- App-like portal dashboard
+- Refined responsive navigation for iPhone
+- Reusable cards, buttons, badges and layout components
+- Flat file structure for GitHub mobile upload
+- Demo interactions retained for derby, members, preferences and admin mode
