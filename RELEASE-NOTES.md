@@ -1,12 +1,6 @@
-# WGANG Portal Foundation v0.6
+# Release Notes – v0.7
 
-A redesigned mobile-first foundation release.
+Denne versjonen gjør WGANG Portal testbar som medlemsportal. Brukere kan søke medlemskap, godkjennes av administrator, logge inn og svare på om de deltar i neste derby.
 
-## Highlights
-- Completely redesigned public landing page
-- New balanced header and full brand footer
-- App-like portal dashboard
-- Refined responsive navigation for iPhone
-- Reusable cards, buttons, badges and layout components
-- Flat file structure for GitHub mobile upload
-- Demo interactions retained for derby, members, preferences and admin mode
+## Pilotstatus
+Klar for opplasting og funksjonell testing. Ikke klar for ekte, permanent medlemsdrift før ekstern database og sikker autentisering er koblet til.

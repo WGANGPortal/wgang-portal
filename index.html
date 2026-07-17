@@ -20,7 +20,7 @@
       <nav class="desktop-nav" aria-label="Hovedmeny">
         <a href="#about">Om oss</a><a href="#derby-info">Derby</a><a href="#join">Bli medlem</a>
       </nav>
-      <button class="button button-light" id="openPortalTop">Åpne portalen</button>
+      <button class="button button-light" id="openPortalTop">Logg inn</button>
     </header>
 
     <main>
@@ -30,7 +30,7 @@
           <h1>Sammen spiller vi bedre.</h1>
           <p class="hero-lead">WGANG samler naboer, derbyplanlegging og nyttig kunnskap i én enkel portal – bygget for samarbeid, ikke stress.</p>
           <div class="hero-actions">
-            <button class="button button-cream button-large" id="openPortalHero">Se demoportalen</button>
+            <button class="button button-cream button-large" id="openPortalHero">Logg inn i portalen</button>
             <a class="button button-ghost button-large" href="#join">Bli kjent med oss</a>
           </div>
           <div class="hero-proof"><span><b>27</b> aktive naboer</span><span><b>90 %</b> felles mål</span><span><b>1</b> samlet portal</span></div>
@@ -57,7 +57,7 @@
 
       <section class="section join-section" id="join">
         <div><p class="eyebrow light">BLI EN DEL AV WGANG</p><h2>God lagånd er viktigere enn nivå.</h2><p>Vi ser etter hyggelige naboer som kommuniserer tydelig og bidrar til et godt miljø.</p></div>
-        <button class="button button-cream button-large" id="joinDemoButton">Medlemssøknad kommer snart</button>
+        <button class="button button-cream button-large" id="joinDemoButton">Søk om medlemskap</button>
       </section>
     </main>
 
@@ -73,7 +73,7 @@
     <header class="portal-topbar">
       <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny"><span></span><span></span><span></span></button>
       <a class="portal-brand" href="#dashboard" data-route="dashboard"><img src="wgang-icon-pink.webp" alt=""><span><strong>WGANG</strong><small>PORTAL</small></span></a>
-      <div class="portal-actions"><button class="role-switch" id="roleSwitch">Vis som admin</button><button class="profile-chip"><span class="avatar">N</span><span><strong>Nabo</strong><small>Demobruker</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Lukk portal">×</button></div>
+      <div class="portal-actions"><button class="role-switch admin-only" id="roleSwitch">Adminvisning</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -87,14 +87,14 @@
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
           <a href="#admin" class="admin-only" data-route="admin"><span>⚙</span>Admin</a>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Foundation v0.6</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Community v0.7</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
         <section class="page active" data-page="dashboard">
-          <div class="page-heading"><div><p class="eyebrow">OVERSIKT</p><h1>God morgen, Nabo 👋</h1><p>Her er det viktigste som skjer i WGANG akkurat nå.</p></div><span class="demo-label">DEMODATA</span></div>
+          <div class="page-heading"><div><p class="eyebrow">OVERSIKT</p><h1 id="welcomeHeading">Hei, Nabo 👋</h1><p>Her er det viktigste for neste derby.</p></div><span class="demo-label" id="accountBadge">MEDLEM</span></div>
           <div class="spotlight-card"><div><p class="eyebrow light">UKENS DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p>God fremdrift. Du har tre oppgaver igjen.</p><div class="spotlight-progress"><div><strong><span id="dashboardTasksDone">6</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><button class="button button-cream" data-route="derby">Åpne derby-senter</button></div><span class="spotlight-icon">◇</span></div>
-          <div class="metric-grid"><article><span>Derbypoeng</span><strong>5 680</strong><small>+640 denne uken</small></article><article><span>Plassering</span><strong>#12</strong><small>av 27 naboer</small></article><article><span>Aktive oppgaver</span><strong>3</strong><small>neste frist i dag</small></article><article><span>Lagstatus</span><strong>21/27</strong><small>har svart</small></article></div>
+          <div class="metric-grid"><article><span>Din status</span><strong id="myStatusMetric">Deltar</strong><small>kan endres frem til fristen</small></article><article><span>Svarfrist</span><strong>Mandag</strong><small>kl. 20:00</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>godkjente medlemmer</small></article><article><span>Neste derby</span><strong>Standard</strong><small>oppstart tirsdag</small></article></div>
           <div class="dashboard-grid">
             <article class="portal-card"><div class="card-header"><div><p class="card-kicker">NESTE OPPGAVER</p><h2>Prioriteringer</h2></div><button class="card-action" data-route="preferences">Se alle</button></div><ul class="task-list"><li><span class="task-icon">🥚</span><div><strong>Samle egg</strong><small>40 av 320</small></div><b>12%</b></li><li><span class="task-icon">🌽</span><div><strong>Lever mais</strong><small>12 av 25</small></div><b>48%</b></li><li><span class="task-icon">🤝</span><div><strong>Hjelp naboer</strong><small>3 av 10</small></div><b>30%</b></li></ul></article>
             <article class="portal-card"><div class="card-header"><div><p class="card-kicker">SISTE NYTT</p><h2>Fra nabolaget</h2></div><button class="card-action" data-route="discussions">Åpne</button></div><ul class="news-list"><li><span></span><div><strong>Derbyet er i gang!</strong><small>For 2 timer siden</small></div></li><li><span></span><div><strong>Husk oppgavepreferanser</strong><small>I går</small></div></li><li><span></span><div><strong>Ukens tips er publisert</strong><small>For 2 dager siden</small></div></li></ul></article>
@@ -104,7 +104,7 @@
         <section class="page" data-page="derby">
           <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegg deltakelsen og følg fremdriften.</p></div><button class="button button-primary admin-only" id="openDerbyEditor">Rediger derby</button></div>
           <div class="derby-layout"><article class="portal-card derby-main"><div class="card-header"><div><p class="card-kicker">PÅGÅENDE</p><h2 id="derbyType">Standard Derby</h2></div><span class="badge">Pågår</span></div><div class="derby-score"><strong><span id="tasksDone">6</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="6" aria-label="Fullførte oppgaver"><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus"><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby">Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></article>
-          <article class="portal-card"><p class="card-kicker">DELTAR DU?</p><h2>Velg status for uken</h2><div class="choice-grid"><button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Jeg gjør mitt beste</small></button><button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button><button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button></div><p class="helper-text" id="participationStatus">Du har bekreftet at du deltar.</p><hr><p class="card-kicker">STRATEGI</p><ul class="strategy-list" id="derbyStrategy"><li>Velg oppgaver med høyest poengsum.</li><li>Gi beskjed tidlig hvis noe stopper opp.</li><li>Hjelp hverandre når det er mulig.</li></ul></article></div>
+          <article class="portal-card"><p class="card-kicker">DELTAR DU?</p><h2>Velg status for uken</h2><div class="choice-grid"><button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Jeg gjør mitt beste</small></button><button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button><button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button></div><p class="helper-text" id="participationStatus">Velg status for neste derby.</p><hr><p class="card-kicker">STRATEGI</p><ul class="strategy-list" id="derbyStrategy"><li>Velg oppgaver med høyest poengsum.</li><li>Gi beskjed tidlig hvis noe stopper opp.</li><li>Hjelp hverandre når det er mulig.</li></ul></article></div>
           <article class="portal-card admin-only"><div class="card-header"><div><p class="card-kicker">ADMINOVERSIKT</p><h2>Status per medlem</h2></div></div><div class="table-wrap"><table><thead><tr><th>Medlem</th><th>Deltakelse</th><th>Oppgaver</th><th>Status</th><th></th></tr></thead><tbody id="derbyAdminTable"></tbody></table></div></article>
         </section>
 
@@ -112,13 +112,18 @@
         <section class="page" data-page="preferences"><div class="page-heading"><div><p class="eyebrow">OPPGAVER</p><h1>Oppgavepreferanser</h1><p>Fortell laget hvilke oppgaver som passer deg best.</p></div></div><article class="portal-card"><div class="preference-list" id="preferenceList"></div><p class="helper-text">Valgene lagres bare lokalt i denne demoen.</p></article></section>
         <section class="page" data-page="discussions"><div class="page-heading"><div><p class="eyebrow">SAMTALER</p><h1>Diskusjoner</h1><p>Viktige samtaler som ikke skal forsvinne i spillchatten.</p></div></div><div class="discussion-grid"><article><span>K</span><div><p class="card-kicker">KUNNGJØRINGER</p><h2>Fra lederne</h2><p>Beskjeder alle må få med seg.</p></div></article><article><span>D</span><div><p class="card-kicker">DERBY</p><h2>Strategi og oppgaver</h2><p>Diskuter ukens prioriteringer.</p></div></article><article><span>H</span><div><p class="card-kicker">HJELP OG BYTTE</p><h2>Varer og assistanse</h2><p>Be om hjelp på ett fast sted.</p></div></article><article><span>S</span><div><p class="card-kicker">SOSIALT</p><h2>Generell prat</h2><p>Uformelle samtaler i laget.</p></div></article></div></section>
         <section class="page" data-page="wiki"><div class="page-heading"><div><p class="eyebrow">KUNNSKAP</p><h1>WGANG Wiki</h1><p>Tips, regler og erfaringer samlet på ett sted.</p></div></div><div class="wiki-grid"><article><span>01</span><h2>Derbytyper</h2><p>Regler og strategier for ulike derby.</p></article><article><span>02</span><h2>Oppgaver</h2><p>Smartere måter å løse oppgavene på.</p></article><article><span>03</span><h2>Nye naboer</h2><p>Det viktigste du bør vite om laget.</p></article><article><span>04</span><h2>Vanlige spørsmål</h2><p>Korte svar på det flest lurer på.</p></article></div></section>
-        <section class="page admin-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Administrasjon</h1><p>Kontrollsenter for medlemmer, derby og innhold.</p></div></div><div class="admin-module-grid"><article class="portal-card"><p class="card-kicker">MEDLEMMER</p><h2>Godkjenning og roller</h2><p>Administrer tilganger og spillnavn.</p></article><article class="portal-card"><p class="card-kicker">DERBY</p><h2>Maler og ukesoppsett</h2><p>Opprett og oppdater derbyinformasjon.</p></article><article class="portal-card"><p class="card-kicker">KOMMUNIKASJON</p><h2>Kunngjøringer</h2><p>Publiser beskjeder til alle medlemmer.</p></article><article class="portal-card"><p class="card-kicker">STATISTIKK</p><h2>Oversikt og historikk</h2><p>Følg aktivitet og lagets utvikling.</p></article></div></section>
+        <section class="page admin-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Administrasjon</h1><p>Godkjenn medlemmer og få oversikt over neste derby.</p></div></div>
+<article class="portal-card admin-summary"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div></article>
+<article class="portal-card"><div class="card-header"><div><p class="card-kicker">VENTER PÅ GODKJENNING</p><h2>Medlemssøknader</h2></div></div><div id="pendingMembers" class="approval-list"></div></article>
+<article class="portal-card"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Roller og tilgang</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>E-post</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article></section>
       </main>
     </div>
 
     <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-route="derby"><span>◇</span><small>Derby</small></a><a href="#members" data-route="members"><span>◎</span><small>Medlemmer</small></a><a href="#wiki" data-route="wiki"><span>▤</span><small>Wiki</small></a></nav>
   </section>
 
+
+  <dialog id="authDialog" class="auth-dialog"><div class="auth-card"><button class="icon-button auth-close" id="closeAuth" aria-label="Lukk">×</button><img src="wgang-icon-pink.webp" alt="" class="auth-logo"><p class="eyebrow">WGANG PORTAL</p><h2 id="authTitle">Logg inn</h2><p class="auth-intro" id="authIntro">Bruk e-postadressen din for å åpne portalen.</p><div class="auth-tabs"><button class="active" data-auth-tab="login">Logg inn</button><button data-auth-tab="register">Søk medlemskap</button></div><form id="loginForm" class="auth-form"><label>E-post<input id="loginEmail" type="email" autocomplete="email" required value="admin@wgang.no"></label><label>Passord<input id="loginPassword" type="password" autocomplete="current-password" required value="WGANG2026"></label><button class="button button-primary button-full" type="submit">Logg inn</button><p class="form-message" id="loginMessage"></p><p class="demo-hint"><strong>Demo admin:</strong> admin@wgang.no / WGANG2026<br><strong>Demo medlem:</strong> nabo@wgang.no / WGANG2026</p></form><form id="registerForm" class="auth-form hidden"><label>Hay Day-spillnavn<input id="registerName" required maxlength="30" placeholder="Navnet ditt i Hay Day"></label><label>E-post<input id="registerEmail" type="email" autocomplete="email" required></label><label>Passord<input id="registerPassword" type="password" minlength="6" required></label><label class="check-label"><input id="memberConfirm" type="checkbox" required><span>Jeg bekrefter at jeg er medlem av WGANG-nabolaget.</span></label><button class="button button-primary button-full" type="submit">Send søknad</button><p class="form-message" id="registerMessage"></p></form></div></dialog>
   <dialog id="derbyEditor"><form method="dialog" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Rediger derby</h2></div><button class="icon-button" id="closeDerbyEditor" value="cancel">×</button></div><label>Derbytype<input id="editDerbyType" value="Standard Derby"></label><label>Antall oppgaver<input id="editTaskTotal" type="number" min="1" value="9"></label><label>Maks poeng per oppgave<input id="editMaxPoints" type="number" min="1" value="320"></label><label>Strategi<textarea id="editStrategy" rows="5">Velg oppgaver med høyest poengsum.
 Gi beskjed tidlig hvis noe stopper opp.
 Hjelp hverandre når det er mulig.</textarea></label><button type="button" class="button button-primary button-full" id="saveDerby">Lagre endringer</button></form></dialog>

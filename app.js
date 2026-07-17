@@ -1,220 +1,42 @@
-(function () {
-  "use strict";
-
-  const landing = document.getElementById("landing");
-  const portal = document.getElementById("portal");
-  const sidebar = document.getElementById("sidebar");
-  const portalMain = document.getElementById("portalMain");
-  const pages = document.querySelectorAll(".page");
-  const routeLinks = document.querySelectorAll("[data-route]");
-  const members = window.ROOSTER_DATA.members;
-  const taskTypes = window.ROOSTER_DATA.taskTypes;
-
-  function openPortal() {
-    landing.classList.add("hidden");
-    portal.classList.remove("hidden");
-    portal.setAttribute("aria-hidden", "false");
-    document.body.classList.remove("no-scroll");
-    navigate("dashboard", false);
-    window.scrollTo(0, 0);
-  }
-
-  function closePortal() {
-    portal.classList.add("hidden");
-    portal.setAttribute("aria-hidden", "true");
-    landing.classList.remove("hidden");
-    document.body.classList.remove("admin-mode");
-    document.getElementById("roleSwitch").textContent = "Vis som admin";
-    sidebar.classList.remove("open");
-    window.location.hash = "landing";
-    window.scrollTo(0, 0);
-  }
-
-  document.getElementById("openPortalTop").addEventListener("click", openPortal);
-  document.getElementById("openPortalHero").addEventListener("click", openPortal);
-  document.getElementById("openPortalRule").addEventListener("click", openPortal);
-  document.getElementById("closePortal").addEventListener("click", closePortal);
-  document.getElementById("joinDemoButton").addEventListener("click", () => {
-    alert("Medlemssøknaden bygges når innlogging og database kobles til.");
-  });
-
-  function navigate(route, updateHash = true) {
-    pages.forEach(page => page.classList.toggle("active", page.dataset.page === route));
-    routeLinks.forEach(link => link.classList.toggle("active", link.dataset.route === route));
-    sidebar.classList.remove("open");
-    if (updateHash) window.location.hash = route;
-    portalMain.focus();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  routeLinks.forEach(link => {
-    link.addEventListener("click", event => {
-      event.preventDefault();
-      if (portal.classList.contains("hidden")) openPortal();
-      navigate(link.dataset.route);
-    });
-  });
-
-  document.getElementById("menuToggle").addEventListener("click", () => {
-    sidebar.classList.toggle("open");
-  });
-
-  document.getElementById("roleSwitch").addEventListener("click", event => {
-    document.body.classList.toggle("admin-mode");
-    event.currentTarget.textContent = document.body.classList.contains("admin-mode")
-      ? "Vis som medlem"
-      : "Vis som admin";
-  });
-
-  const taskRange = document.getElementById("taskRange");
-  const tasksDone = document.getElementById("tasksDone");
-  const tasksTotal = document.getElementById("tasksTotal");
-  const dashboardTasksDone = document.getElementById("dashboardTasksDone");
-  const dashboardTasksTotal = document.getElementById("dashboardTasksTotal");
-  const derbyProgress = document.getElementById("derbyProgress");
-  const dashboardProgress = document.getElementById("dashboardProgress");
-
-  function updateProgress() {
-    const done = Number(taskRange.value);
-    const total = Number(taskRange.max);
-    const percentage = total ? (done / total) * 100 : 0;
-    tasksDone.textContent = done;
-    tasksTotal.textContent = total;
-    dashboardTasksDone.textContent = done;
-    dashboardTasksTotal.textContent = total;
-    derbyProgress.style.width = percentage + "%";
-    dashboardProgress.style.width = percentage + "%";
-  }
-
-  taskRange.addEventListener("input", updateProgress);
-  updateProgress();
-
-  document.getElementById("finishDerby").addEventListener("click", () => {
-    taskRange.value = taskRange.max;
-    updateProgress();
-    document.getElementById("derbyStatus").value = "Ferdig";
-    document.getElementById("finishStatus").textContent =
-      "Ferdig registrert " + new Date().toLocaleString("nb-NO") + ".";
-  });
-
-  document.querySelectorAll(".choice-button").forEach(button => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".choice-button").forEach(item => item.classList.remove("selected"));
-      button.classList.add("selected");
-      const messages = {
-        joined: "Du har bekreftet at du deltar.",
-        pause: "Du tar pause denne uken.",
-        unsure: "Du er registrert som usikker. Husk å avklare før fristen."
-      };
-      document.getElementById("participationStatus").textContent =
-        messages[button.dataset.choice];
-    });
-  });
-
-  function renderMembers() {
-    const query = document.getElementById("memberSearch").value.trim().toLowerCase();
-    const filter = document.getElementById("memberFilter").value;
-
-    const filtered = members.filter(member =>
-      member.name.toLowerCase().includes(query) &&
-      (filter === "all" || member.choice === filter)
-    );
-
-    document.getElementById("memberGrid").innerHTML = filtered.map(member => {
-      const percentage = Math.round((member.done / member.total) * 100);
-      return `
-        <article class="member-card">
-          <div class="member-head">
-            <div class="member-identity">
-              <span class="avatar">${member.name[0]}</span>
-              <div>
-                <h3>${member.name}</h3>
-                <span class="member-role">${member.role} · nivå ${member.level}</span>
-              </div>
-            </div>
-            <span class="member-status status-${member.choice}">${member.choiceText}</span>
-          </div>
-
-          <div class="member-info">
-            <div><span>Oppgaver</span><strong>${member.done} av ${member.total}</strong></div>
-            <div><span>Fremdrift</span><strong>${percentage} %</strong></div>
-          </div>
-
-          <div class="progress-track"><span style="width:${percentage}%"></span></div>
-
-          <div class="tag-list">
-            ${member.likes.map(item => `<span class="task-tag like">+ ${item}</span>`).join("")}
-            ${member.dislikes.map(item => `<span class="task-tag dislike">− ${item}</span>`).join("")}
-          </div>
-        </article>
-      `;
-    }).join("");
-  }
-
-  document.getElementById("memberSearch").addEventListener("input", renderMembers);
-  document.getElementById("memberFilter").addEventListener("change", renderMembers);
-  renderMembers();
-
-  document.getElementById("derbyAdminTable").innerHTML = members.map(member => `
-    <tr>
-      <td><strong>${member.name}</strong><br><small>${member.role}</small></td>
-      <td>${member.choiceText}</td>
-      <td>${member.done}/${member.total}</td>
-      <td>${member.status}</td>
-      <td><button class="table-action">Følg opp</button></td>
-    </tr>
-  `).join("");
-
-  document.getElementById("preferenceList").innerHTML = taskTypes.map(task => `
-    <div class="preference-row">
-      <strong>${task}</strong>
-      <div class="preference-actions">
-        <button>Liker</button>
-        <button>Kan ta</button>
-        <button>Helst ikke</button>
-        <button>Kan ikke</button>
-      </div>
-    </div>
-  `).join("");
-
-  document.querySelectorAll(".preference-actions button").forEach(button => {
-    button.addEventListener("click", () => {
-      const row = button.closest(".preference-row");
-      row.querySelectorAll("button").forEach(item => item.classList.remove("selected"));
-      button.classList.add("selected");
-    });
-  });
-
-  const derbyEditor = document.getElementById("derbyEditor");
-  document.getElementById("openDerbyEditor").addEventListener("click", () => derbyEditor.showModal());
-  document.getElementById("closeDerbyEditor").addEventListener("click", () => derbyEditor.close());
-
-  document.getElementById("saveDerby").addEventListener("click", () => {
-    const derbyType = document.getElementById("editDerbyType").value.trim() || "Ukjent derby";
-    const taskTotal = Math.max(1, Number(document.getElementById("editTaskTotal").value) || 9);
-    const maxPoints = Math.max(1, Number(document.getElementById("editMaxPoints").value) || 320);
-    const strategy = document.getElementById("editStrategy").value
-      .split("\n")
-      .map(item => item.trim())
-      .filter(Boolean);
-
-    document.getElementById("derbyType").textContent = derbyType;
-    document.getElementById("dashboardDerbyType").textContent = derbyType;
-    document.getElementById("derbyTaskTotalLabel").textContent = taskTotal;
-    document.getElementById("derbyMaxPoints").textContent = maxPoints;
-    document.getElementById("derbyStrategy").innerHTML =
-      strategy.map(item => `<li>${item}</li>`).join("");
-
-    taskRange.max = taskTotal;
-    if (Number(taskRange.value) > taskTotal) taskRange.value = taskTotal;
-    updateProgress();
-    derbyEditor.close();
-  });
-
-  const initialHash = window.location.hash.replace("#", "");
-  if (initialHash && initialHash !== "landing" &&
-      document.querySelector(`[data-page="${initialHash}"]`)) {
-    openPortal();
-    navigate(initialHash, false);
-  }
+(function(){
+"use strict";
+const STORAGE_KEY="wgangPortalV07";
+const seed={accounts:[
+{id:"owner-1",name:"Leder",email:"admin@wgang.no",password:"WGANG2026",role:"owner",approved:true,choice:"joined"},
+{id:"member-1",name:"Nabo",email:"nabo@wgang.no",password:"WGANG2026",role:"member",approved:true,choice:"unsure"},
+{id:"member-2",name:"Solglimt",email:"sol@wgang.no",password:"WGANG2026",role:"member",approved:true,choice:"pause"},
+{id:"pending-1",name:"FarmFryd",email:"farmfryd@example.com",password:"WGANG2026",role:"member",approved:false,choice:"waiting"}
+],currentUserId:null};
+function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return x&&Array.isArray(x.accounts)?x:structuredClone(seed)}catch(e){return structuredClone(seed)}}
+let state=load();
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+const $=id=>document.getElementById(id); const $$=s=>document.querySelectorAll(s);
+const landing=$("landing"),portal=$("portal"),sidebar=$("sidebar"),portalMain=$("portalMain"),auth=$("authDialog");
+function current(){return state.accounts.find(a=>a.id===state.currentUserId)||null}
+function isAdmin(u=current()){return !!u&&["owner","admin"].includes(u.role)}
+function openAuth(tab="login"){auth.showModal();setAuthTab(tab)}
+function setAuthTab(tab){$$('[data-auth-tab]').forEach(b=>b.classList.toggle('active',b.dataset.authTab===tab));$('loginForm').classList.toggle('hidden',tab!=="login");$('registerForm').classList.toggle('hidden',tab!=="register");$('authTitle').textContent=tab==="login"?"Logg inn":"Søk om medlemskap";$('authIntro').textContent=tab==="login"?"Bruk e-postadressen din for å åpne portalen.":"Bruk Hay Day-navnet ditt. En administrator godkjenner søknaden."}
+function openPortal(){const u=current();if(!u){openAuth();return}landing.classList.add("hidden");portal.classList.remove("hidden");portal.setAttribute("aria-hidden","false");document.body.classList.toggle("admin-mode",isAdmin(u));renderSession();navigate("dashboard",false);window.scrollTo(0,0)}
+function logout(){state.currentUserId=null;save();portal.classList.add("hidden");portal.setAttribute("aria-hidden","true");landing.classList.remove("hidden");document.body.classList.remove("admin-mode");sidebar.classList.remove("open");location.hash="landing";window.scrollTo(0,0)}
+function navigate(route,hash=true){if(route==="admin"&&!isAdmin())route="dashboard";$$('.page').forEach(p=>p.classList.toggle('active',p.dataset.page===route));$$('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));sidebar.classList.remove('open');if(hash)location.hash=route;portalMain.focus();window.scrollTo({top:0,behavior:'smooth'})}
+$('openPortalTop').onclick=()=>openAuth('login');$('openPortalHero').onclick=()=>openAuth('login');$('openPortalRule').onclick=()=>openAuth('login');$('joinDemoButton').onclick=()=>openAuth('register');$('closeAuth').onclick=()=>auth.close();$('closePortal').onclick=logout;$('[data-auth-tab="login"]').onclick=()=>setAuthTab('login');$('[data-auth-tab="register"]').onclick=()=>setAuthTab('register');
+$('loginForm').onsubmit=e=>{e.preventDefault();const email=$('loginEmail').value.trim().toLowerCase(),pw=$('loginPassword').value;const u=state.accounts.find(a=>a.email.toLowerCase()===email&&a.password===pw);const msg=$('loginMessage');msg.classList.remove('success');if(!u){msg.textContent='Feil e-post eller passord.';return}if(!u.approved){msg.textContent='Søknaden din venter fortsatt på godkjenning.';return}state.currentUserId=u.id;save();auth.close();msg.textContent='';openPortal()};
+$('registerForm').onsubmit=e=>{e.preventDefault();const name=$('registerName').value.trim(),email=$('registerEmail').value.trim().toLowerCase(),pw=$('registerPassword').value,msg=$('registerMessage');msg.classList.remove('success');if(state.accounts.some(a=>a.email.toLowerCase()===email)){msg.textContent='Denne e-postadressen er allerede registrert.';return}if(state.accounts.some(a=>a.name.toLowerCase()===name.toLowerCase())){msg.textContent='Dette Hay Day-navnet er allerede registrert.';return}state.accounts.push({id:'user-'+Date.now(),name,email,password:pw,role:'member',approved:false,choice:'waiting'});save();msg.textContent='Søknaden er sendt. En administrator må godkjenne deg før innlogging.';msg.classList.add('success');e.target.reset();renderAdmin()};
+$$('[data-route]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();if(portal.classList.contains('hidden')){openPortal();return}navigate(a.dataset.route)}));$('menuToggle').onclick=()=>sidebar.classList.toggle('open');$('roleSwitch').onclick=()=>navigate('admin');
+function roleLabel(r){return {owner:'Eier',admin:'Administrator',member:'Medlem'}[r]||r}
+function choiceLabel(c){return {joined:'Deltar',pause:'Tar pause',unsure:'Usikker',waiting:'Mangler svar'}[c]||c}
+function renderSession(){const u=current();if(!u)return;$('profileAvatar').textContent=u.name.charAt(0).toUpperCase();$('profileName').textContent=u.name;$('profileRole').textContent=roleLabel(u.role);$('welcomeHeading').textContent='Hei, '+u.name+' 👋';$('accountBadge').textContent=roleLabel(u.role).toUpperCase();$$('.choice-button').forEach(b=>b.classList.toggle('selected',b.dataset.choice===u.choice));$('participationStatus').textContent=u.choice==='joined'?'Du har bekreftet at du deltar.':u.choice==='pause'?'Du tar pause i neste derby.':'Du er registrert som usikker.';$('myStatusMetric').textContent=choiceLabel(u.choice);renderMetrics();renderMembers();renderAdmin()}
+$$('.choice-button').forEach(b=>b.onclick=()=>{const u=current();if(!u)return;u.choice=b.dataset.choice;save();renderSession()});
+function approved(){return state.accounts.filter(a=>a.approved)}
+function renderMetrics(){const all=approved(),answered=all.filter(a=>['joined','pause','unsure'].includes(a.choice)).length;$('respondedMetric').textContent=answered+'/'+all.length}
+function renderMembers(){const grid=$('memberGrid');if(!grid)return;const q=$('memberSearch').value.trim().toLowerCase(),f=$('memberFilter').value;grid.innerHTML=approved().filter(a=>a.name.toLowerCase().includes(q)&&(f==='all'||a.choice===f)).map(a=>`<article class="member-card"><div class="member-head"><div class="member-identity"><span class="avatar">${a.name[0]}</span><div><h3>${a.name}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><span class="member-status status-${a.choice==='unsure'?'waiting':a.choice}">${choiceLabel(a.choice)}</span></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div></div></article>`).join('')||'<p class="empty-state">Ingen medlemmer matcher søket.</p>'}
+$('memberSearch').oninput=renderMembers;$('memberFilter').onchange=renderMembers;
+function renderAdmin(){if(!isAdmin())return;const pending=state.accounts.filter(a=>!a.approved),all=approved();$('pendingMembers').innerHTML=pending.length?pending.map(a=>`<div class="approval-item"><div><strong>${a.name}</strong><small>${a.email}</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join(''):'<p class="empty-state">Ingen søknader venter på godkjenning.</p>';
+$('accountAdminTable').innerHTML=all.map(a=>`<tr><td><strong>${a.name}</strong></td><td>${a.email}</td><td><select class="role-select" data-role-id="${a.id}" ${a.role==='owner'?'disabled':''}><option value="member" ${a.role==='member'?'selected':''}>Medlem</option><option value="admin" ${a.role==='admin'?'selected':''}>Administrator</option><option value="owner" ${a.role==='owner'?'selected':''}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id===current().id?'<span class="logout-note">Din konto</span>':'<button class="table-action" data-remove="'+a.id+'">Fjern</button>'}</td></tr>`).join('');
+const counts={joined:0,pause:0,unsure:0,waiting:0};all.forEach(a=>counts[a.choice]=(counts[a.choice]||0)+1);$('adminStatusGrid').innerHTML=[['Deltar',counts.joined],['Tar pause',counts.pause],['Usikker',counts.unsure],['Mangler svar',counts.waiting]].map(x=>`<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join('');$('adminResponseBadge').textContent=(all.length-counts.waiting)+' av '+all.length+' svar';
+$$('[data-approve]').forEach(b=>b.onclick=()=>{const a=state.accounts.find(x=>x.id===b.dataset.approve);if(a){a.approved=true;a.choice='unsure';save();renderAdmin();renderMetrics();renderMembers()}});$$('[data-reject]').forEach(b=>b.onclick=()=>{state.accounts=state.accounts.filter(x=>x.id!==b.dataset.reject);save();renderAdmin()});$$('[data-remove]').forEach(b=>b.onclick=()=>{if(confirm('Fjerne medlemmet fra portalen?')){state.accounts=state.accounts.filter(x=>x.id!==b.dataset.remove);save();renderAdmin();renderMetrics();renderMembers()}});$$('[data-role-id]').forEach(s=>s.onchange=()=>{const a=state.accounts.find(x=>x.id===s.dataset.roleId);if(a){a.role=s.value;save();renderAdmin();renderMembers()}})}
+const taskRange=$('taskRange');function progress(){const d=+taskRange.value,t=+taskRange.max,p=t?d/t*100:0;$('tasksDone').textContent=d;$('tasksTotal').textContent=t;$('dashboardTasksDone').textContent=d;$('dashboardTasksTotal').textContent=t;$('derbyProgress').style.width=p+'%';$('dashboardProgress').style.width=p+'%'}taskRange.oninput=progress;progress();$('finishDerby').onclick=()=>{taskRange.value=taskRange.max;progress();$('derbyStatus').value='Ferdig';$('finishStatus').textContent='Ferdig registrert '+new Date().toLocaleString('nb-NO')+'.'};
+const taskTypes=window.ROOSTER_DATA.taskTypes;$('preferenceList').innerHTML=taskTypes.map(t=>`<div class="preference-row"><strong>${t}</strong><div class="preference-actions"><button>Liker</button><button>Kan ta</button><button>Helst ikke</button><button>Kan ikke</button></div></div>`).join('');$$('.preference-actions button').forEach(b=>b.onclick=()=>{const r=b.closest('.preference-row');r.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});
+const editor=$('derbyEditor');$('openDerbyEditor').onclick=()=>editor.showModal();$('closeDerbyEditor').onclick=()=>editor.close();$('saveDerby').onclick=()=>{const type=$('editDerbyType').value.trim()||'Ukjent derby',total=Math.max(1,+$('editTaskTotal').value||9),pts=Math.max(1,+$('editMaxPoints').value||320),strategy=$('editStrategy').value.split('\n').map(x=>x.trim()).filter(Boolean);$('derbyType').textContent=type;$('dashboardDerbyType').textContent=type;$('derbyTaskTotalLabel').textContent=total;$('derbyMaxPoints').textContent=pts;$('derbyStrategy').innerHTML=strategy.map(x=>'<li>'+x+'</li>').join('');taskRange.max=total;if(+taskRange.value>total)taskRange.value=total;progress();editor.close()};
+const hash=location.hash.replace('#','');if(state.currentUserId&&current()&&current().approved){openPortal();if(hash&&hash!=='landing')navigate(hash,false)}
 })();

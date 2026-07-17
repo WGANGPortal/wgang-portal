@@ -1,24 +1,22 @@
 # Roadmap
 
-## v0.4.0 Foundation
-- Offentlig forside
-- Ny identitet
-- Komplette frontendmoduler
-- Nøytrale demodata
+## v0.7 – Community Foundation
+- Registrering
+- Godkjenning
+- Innlogging
+- Roller
+- Deltakelsesstatus
+- Adminoversikt
 
-## Neste milepæl
-- Utviklingsgren og testmiljø
-- Ekte innlogging
-- Database
-- Godkjenning av spillnavn
-- Permanent lagring
+## v0.8 – Persistent Community
+- Supabase-autentisering
+- Delt database
+- Glemt passord
+- Sikre tilgangsregler
+- Derbyopprettelse med dato og svarfrist
 
 ## Senere
-- Derbymaler
-- Kunngjøringer
-- Ekte diskusjonsforum
-- Wiki-redigering
-- Derbyhistorikk
-- Statistikk
-- Varsler
-- PWA/installasjon på mobil
+- Derby Academy og medlemstips
+- Oppgaveplanlegging
+- Historikk og statistikk
+- Varsler og PWA

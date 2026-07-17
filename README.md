@@ -1,54 +1,22 @@
-# WGANG Portal v0.6 – Stable Foundation.0
+# WGANG Portal v0.7 – Community Foundation
 
-Komplett frontendpakke for WGANG-portalen.
+Statisk, mobiltilpasset prototype for WGANGs Hay Day Derby-organisering.
 
-## Innhold
+## Nytt i v0.7
+- Registrering med Hay Day-spillnavn, e-post og passord
+- Administratorgodkjenning av nye medlemmer
+- Innlogging og utlogging
+- Roller: Eier, Administrator og Medlem
+- Deltakelsesstatus for neste derby
+- Administratoroversikt over svar og manglende svar
+- Lokal lagring i nettleseren med `localStorage`
 
-- Offentlig forside
-- Desktop- og mobiltilpasset hero-bakgrunn
-- Kremfarget og rosa logoikon
-- Dashboard
-- Derby-senter
-- Medlemsoversikt
-- Oppgavepreferanser
-- Diskusjoner
-- WGANG Wiki
-- Adminvisning
-- Appikoner og favicon
-- Dokumentasjon og testliste
+## Demo-kontoer
+- Eier: `admin@wgang.no` / `WGANG2026`
+- Medlem: `nabo@wgang.no` / `WGANG2026`
 
-## Filstruktur
+## Publisering
+Last opp alle filene i rotmappen til Cloudflare Pages, GitHub Pages eller tilsvarende statisk hosting. Ingen build-kommando er nødvendig.
 
-```text
-WGANG-Portal-v0.5/
-├── index.html
-├── main.css
-├── app.js
-├── demo-data.js
-├── assets/
-│   ├── logos/
-│   ├── backgrounds/
-│   └── app-icons/
-└── docs/
-```
-
-## GitHub og Cloudflare Pages
-
-Last opp innholdet i denne mappen til rotmappen i ønsket GitHub-gren.
-
-Cloudflare Pages:
-- Framework preset: None
-- Build command: tomt
-- Build output directory: /
-
-## Anbefalt testgren
-
-Opprett en gren, for eksempel:
-
-`preview-v0.5`
-
-Last opp hele pakken i denne grenen og test den før den flettes inn i `main`.
-
-## Begrensning
-
-Dette er fortsatt en frontend-prototype. Endringer lagres ikke permanent før database og innlogging kobles til.
+## Viktig begrensning
+Dette er en funksjonell frontendpilot. Kontoer og passord lagres lokalt i brukerens nettleser og deles derfor ikke mellom enheter. Løsningen er ikke produksjonssikker før autentisering og database kobles til, for eksempel via Supabase.

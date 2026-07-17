@@ -1,10 +1,14 @@
 # Changelog
 
-## v0.5.0
-- Ny komplett prosjektstruktur med `assets/`
-- Ekte WebP-filer
-- Separate logoer for kremfarget og rosa bakgrunn
-- Desktop- og mobilversjon av hero-bakgrunnen
-- Favicon og appikoner
-- Oppdaterte filreferanser i HTML
-- Alle funksjoner fra v0.4.2 videreført
+## v0.7.0 – Community Foundation
+- La til registrering og innlogging
+- La til administratorgodkjenning
+- La til roller og rettigheter
+- La til personlig derbystatus
+- La til adminoversikt for deltakelse
+- La til lokal datalagring
+- Oppdaterte tekster, versjonsmerking og dokumentasjon
+
+## v0.6.0 – Stable Foundation
+- Offentlig forside og portalprototype
+- Derby-, medlems-, oppgave-, diskusjons-, wiki- og adminvisning
