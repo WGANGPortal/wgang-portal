@@ -1,4 +1,4 @@
-# Release Notes – WGANG Portal v0.5.0
+# Release Notes – WGANG Portal v0.6 – Stable Foundation.0
 
 Denne versjonen samler kode, grafikk og dokumentasjon i én komplett prosjektpakke.
 

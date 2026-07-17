@@ -1,4 +1,4 @@
-# WGANG Portal v0.5.0
+# WGANG Portal v0.6 – Stable Foundation.0
 
 Komplett frontendpakke for WGANG-portalen.
 
