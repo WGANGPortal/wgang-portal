@@ -8,6 +8,10 @@
   <title>WGANG Portal</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="WGANG">
   <link rel="stylesheet" href="main.css">
 </head>
 <body>
@@ -87,7 +91,7 @@
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
           <a href="#admin" class="admin-only" data-route="admin"><span>⚙</span>Admin</a>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.9.0</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.9.1</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -112,7 +116,7 @@
         <section class="page" data-page="preferences"><div class="page-heading"><div><p class="eyebrow">OPPGAVER</p><h1>Oppgavepreferanser</h1><p>Fortell laget hvilke oppgaver som passer deg best.</p></div></div><article class="portal-card"><div class="preference-list" id="preferenceList"></div><p class="helper-text">Valgene lagres på profilen din i denne pilotversjonen og brukes i adminoversikten for å holde oppgavetavla relevant for WGANG.</p></article></section>
         <section class="page" data-page="discussions">
           <div class="page-heading"><div><p class="eyebrow">SAMTALER</p><h1>Diskusjoner</h1><p>Viktige beskjeder og derbyprat samlet på ett sted.</p></div></div>
-          <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">KUNNGJØRINGER</p><h2>Fra ledelsen</h2><p class="helper-text">Viktige beskjeder fra Eier og Administrator.</p></div><button class="button button-primary admin-only" id="openAnnouncementForm">Ny kunngjøring</button></div><div id="announcementList" class="post-list"></div></article>
+          <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">KUNNGJØRINGER</p><h2>Viktige beskjeder</h2></div><button class="button button-primary admin-only" id="openAnnouncementForm">Ny kunngjøring</button></div><div id="announcementList" class="post-list"></div></article>
           <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Prat om ukens derby</h2><p class="helper-text">Del strategi, spørsmål og koordinering med nabolaget.</p></div><button class="button button-primary" id="openDerbyPostForm">Nytt innlegg</button></div><div id="derbyPostList" class="post-list"></div></article>
         </section>
         <section class="page" data-page="wiki"><div class="page-heading"><div><p class="eyebrow">KUNNSKAP</p><h1>WGANG Tips &amp; triks</h1><p>Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.</p></div><span class="development-badge">Vokser med WGANG</span></div>
@@ -122,8 +126,10 @@
             <article class="tip-card"><span class="tip-icon">🏭</span><div><p class="card-kicker">PRODUKSJON</p><h2>La varene vente ferdige</h2><p>Produser aktuelle varer før du tar oppgaven, og la dem ligge ferdige i maskinene når det er mulig. Ta oppgaven først når du er klar til å samle inn.</p></div></article>
             <article class="tip-card"><span class="tip-icon">🏘️</span><div><p class="card-kicker">BYEN</p><h2>Bruk Town Hall strategisk</h2><p>La ferdig betjente besøkende stå klare uten å samle dem inn. Når du har nok besøkende klare, tar du derbyoppgaven og samler dem inn for å få en rask start – eller fullføre oppgaven raskt.</p></div></article>
             <article class="tip-card"><span class="tip-icon">🧹</span><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Preferanser gjør tavla bedre</h2><p>Marker hvilke oppgavetyper du liker, kan ta, helst unngår eller ikke kan ta. Jo bedre admin kjenner laget, desto enklere er det å vite hvilke 320-oppgaver som bør få stå.</p></div></article>
+            <article class="tip-card"><span class="tip-icon">💬</span><div><p class="card-kicker">SAMARBEID</p><h2>Gi beskjed når du klargjør en oppgave</h2><p>Skal du forberede deg på en bestemt derbyoppgave, gi beskjed i chatten i spillet. Da unngår vi at flere klargjør seg til den samme oppgaven, og at oppgaven blir tatt eller forsvinner før du er klar. God kommunikasjon og samarbeid gjør at vi fordeler oppgavene bedre og utnytter potensialet vårt best mulig.</p></div></article>
           </div>
           <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">FRA NABOLAGET</p><h2>Medlemmenes tips</h2><p class="helper-text">Send inn egne tips. Admin gjennomgår dem før de publiseres.</p></div><button class="button button-primary" id="openTipForm">Send inn tips</button></div><div id="communityTipsList" class="post-list"></div></article>
+          <article class="portal-card install-guide-card"><div class="card-header"><div><p class="card-kicker">WGANG SOM APP</p><h2>Legg portalen på hjemskjermen</h2><p class="helper-text">Da åpnes WGANG Portal mer som en egen app på telefonen din.</p></div><button class="button button-primary hidden" id="installAppButton">Installer WGANG Portal</button></div><div class="install-guide-grid"><div><strong>iPhone / iPad</strong><p>Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.</p></div><div><strong>Android</strong><p>Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.</p></div></div></article>
           <article class="portal-card community-tip-card"><p class="card-kicker">BYGGES SAMMEN</p><h2>Dette er bare starten</h2><p>Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips &amp; triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.</p></article>
         </section>
         <section class="page admin-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Administrasjon</h1><p>Godkjenn medlemmer og få oversikt over neste derby.</p></div></div>

@@ -57,3 +57,11 @@
 - La til medlemmenes innsending av Tips & triks med admin-godkjenning.
 - La til adminpublisering av tips og kunngjøringer.
 - La til moderering og sletting av innhold.
+
+
+## v0.9.1
+- PWA-støtte med manifest og service worker.
+- Installér som app-veiledning.
+- Grupperte oppgavepreferanser med 10 hovedkategorier.
+- Nytt samarbeidstips.
+- Forenklet kunngjøringstekst.

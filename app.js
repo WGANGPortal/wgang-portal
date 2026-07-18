@@ -7,7 +7,19 @@
     return;
   }
 
-  const TASK_TYPES = backend.taskTypes;
+  const TASK_GROUPS = [
+    { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Annen høsting"] },
+    { icon:"🐄", name:"Dyreoppgaver", tasks:["Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr"] },
+    { icon:"🏭", name:"Produksjonsoppgaver", tasks:["Produksjonsoppgaver"] },
+    { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
+    { icon:"🚢", name:"Båtoppgaver", tasks:["Båtoppgaver"] },
+    { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende","Spesifikke personer","Spesifikke hus"] },
+    { icon:"🎣", name:"Fiskeoppgaver", tasks:["Fiskeoppgaver"] },
+    { icon:"⛏️", name:"Gruveoppgaver", tasks:["Gruveoppgaver"] },
+    { icon:"🤝", name:"Hjelpeoppgaver", tasks:["Hjelpeoppgaver"] },
+    { icon:"🧺", name:"Kurvoppgaver", tasks:["Produkter","Dyr","Transportmidler","Annet"] }
+  ];
+  const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
   const PREF_LABELS = { like:"Liker", can:"Kan ta", avoid:"Helst ikke", no:"Kan ikke" };
   const $ = id => document.getElementById(id);
   const $$ = selector => document.querySelectorAll(selector);
@@ -147,7 +159,7 @@
     const user = current();
     const list = $("preferenceList");
     if (!user || !list) return;
-    list.innerHTML = TASK_TYPES.map(task => `<div class="preference-row"><strong>${esc(task)}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("");
+    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(group.name)}</h2><p>Velg hva som passer deg best.</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(task)}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("")}</section>`).join("");
     $$('[data-pref-task]').forEach(button => button.onclick = async () => {
       if (busy) return;
       const me = current();
@@ -465,4 +477,24 @@
   });
 
   renderDerbyConfig(); progress(); init();
+
+  // PWA installasjon
+  let deferredInstallPrompt = null;
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    const button = $("installAppButton");
+    if (button) button.classList.remove("hidden");
+  });
+  const installButton = $("installAppButton");
+  if (installButton) installButton.onclick = async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installButton.classList.add("hidden");
+  };
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(console.error));
+  }
 })();

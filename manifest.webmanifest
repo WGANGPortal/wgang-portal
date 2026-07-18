@@ -1,0 +1,22 @@
+{
+  "name": "WGANG Portal",
+  "short_name": "WGANG",
+  "description": "WGANG medlemsportal for Hay Day Derby.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffdfa",
+  "theme_color": "#a92f60",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

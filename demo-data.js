@@ -10,7 +10,11 @@ window.ROOSTER_DATA = {
     {name:"Nabo 07",role:"Medlem",level:84,choice:"pause",choiceText:"Tar pause",done:0,total:9,status:"Pause",likes:["Fisk","Båt"],dislikes:["Gruve"]}
   ],
   taskTypes: [
-    "Melk","Bacon","Egg","Geitemelk","Ull","Høsting","Produksjon",
-    "Lastebil","Båt","By","Fisk","Gruve","Hjelpeoppgaver"
+    "Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Annen høsting",
+    "Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr",
+    "Produksjonsoppgaver","Lastebiloppgaver","Båtoppgaver",
+    "Besøkende","Spesifikke personer","Spesifikke hus",
+    "Fiskeoppgaver","Gruveoppgaver","Hjelpeoppgaver",
+    "Produkter","Dyr","Transportmidler","Annet"
   ]
 };
