@@ -36,3 +36,11 @@
 - Admin kan godkjenne, avslå og deaktivere medlemmer.
 - Derbyinnstillinger synkroniseres mellom enheter.
 - Lokal demo beholdes som automatisk fallback når Supabase ikke er konfigurert.
+
+## v0.8.2 – Content & Development Status
+- Merket moduler uten reelle data tydelig som «Under utvikling».
+- Fjernet misvisende demo-innhold for oppgavefremdrift og nabolagsnytt fra hovedoversikten.
+- Derbyfremdrift og scoreboard vises nå som planlagte funksjoner i stedet for falske data.
+- Diskusjonsmodulen er markert som under utvikling.
+- WGANG Wiki er erstattet/utvidet med «WGANG Tips & triks» og første strategiske tips.
+- La inn tydelig beskjed om at kunnskapsdelen skal vokse gjennom nabolagets tilbakemeldinger.
