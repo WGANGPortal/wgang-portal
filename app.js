@@ -21,6 +21,7 @@
   const sidebar = $("sidebar");
   const portalMain = $("portalMain");
   const auth = $("authDialog");
+  const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
   const taskRange = $("taskRange");
 
@@ -243,7 +244,19 @@
     setModeHint();
     try {
       state = await backend.bootstrap();
+      const intent = typeof backend.getAuthIntent === "function" ? await backend.getAuthIntent() : {type:"",hasSession:false};
+      if (intent.hasSession && ["invite","recovery"].includes(intent.type)) {
+        $("passwordSetupTitle").textContent = intent.type === "recovery" ? "Velg nytt passord" : "Opprett passord";
+        $("passwordSetupIntro").textContent = intent.type === "recovery" ? "Velg et nytt passord for WGANG Portal." : "Invitasjonen er godkjent. Velg passordet du vil bruke når du logger inn.";
+        closeDialog(auth);
+        showDialog(passwordSetup);
+        return;
+      }
       if (state.currentUserId && current() && current().approved) openPortal();
+      else if (state.currentUserId && current() && !current().approved) {
+        await backend.signOut();
+        state.currentUserId = null;
+      }
     } catch (e) {
       console.error(e);
       const msg = $("loginMessage");
@@ -258,6 +271,42 @@
   $("closeAuth").onclick = () => closeDialog(auth);
   $("closePortal").onclick = logout;
   $$('[data-auth-tab]').forEach(b => b.onclick = () => setAuthTab(b.dataset.authTab));
+
+  $("forgotPassword").onclick = async () => {
+    if (busy) return;
+    let email = $("loginEmail").value.trim().toLowerCase();
+    if (!email) email = (window.prompt("Skriv inn e-postadressen du bruker til WGANG Portal:") || "").trim().toLowerCase();
+    if (!email) return;
+    const msg = $("loginMessage"); msg.classList.remove("success"); msg.textContent = "";
+    setBusy(true);
+    try {
+      await backend.requestPasswordReset(email);
+      msg.textContent = "Vi har sendt deg en e-post. Åpne lenken der for å velge nytt passord.";
+      msg.classList.add("success");
+    } catch (error) { msg.textContent = humanError(error, "Kunne ikke sende e-post for nytt passord."); }
+    setBusy(false);
+  };
+
+  $("passwordSetupForm").onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    const msg = $("passwordSetupMessage"); msg.classList.remove("success"); msg.textContent = "";
+    const password = $("newPassword").value;
+    const confirm = $("confirmPassword").value;
+    if (password.length < 8) { msg.textContent = "Passordet må være minst 8 tegn."; return; }
+    if (password !== confirm) { msg.textContent = "Passordene er ikke like."; return; }
+    setBusy(true);
+    try {
+      await backend.updatePassword(password);
+      await backend.signOut();
+      closeDialog(passwordSetup);
+      $("passwordSetupForm").reset();
+      openAuth("login");
+      const loginMsg = $("loginMessage");
+      loginMsg.textContent = "Passordet er lagret. Du kan nå logge inn.";
+      loginMsg.classList.add("success");
+    } catch (error) { msg.textContent = humanError(error, "Kunne ikke lagre passordet."); }
+    setBusy(false);
+  };
 
   $("loginForm").onsubmit = async e => {
     e.preventDefault(); if (busy) return;
@@ -314,10 +363,14 @@
     setBusy(false);
   };
 
-  backend.onAuthChange(newState => {
+  backend.onAuthChange((newState, event) => {
     state = newState;
     if (!state.currentUserId) {
       portal.classList.add("hidden"); landing.classList.remove("hidden");
+    }
+    if (event === "PASSWORD_RECOVERY") {
+      closeDialog(auth);
+      showDialog(passwordSetup);
     }
   });
 

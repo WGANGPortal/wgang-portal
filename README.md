@@ -1,4 +1,4 @@
-# WGANG Portal v0.8 – Shared Data Foundation
+# WGANG Portal v0.8.1 – Auth & Membership Flow
 
 Denne pakken bygger videre på v0.7.3 og legger til ekte autentisering og felles database via Supabase.
 
@@ -27,3 +27,8 @@ Løsningen kan lastes opp direkte som statisk nettsted til Cloudflare Pages.
 
 ## Begrensning i pilot
 Data lagres i nettleserens `localStorage`. Medlemmer på forskjellige enheter deler derfor ikke data. Neste tekniske milepæl er felles autentisering og database.
+
+
+## Første eierkonto
+
+Etter at den første brukeren er invitert og har opprettet passord, kjør `FIRST-OWNER-SETUP.sql` i Supabase SQL Editor med riktig e-postadresse. Dette setter kontoen til `owner` og `approved`.

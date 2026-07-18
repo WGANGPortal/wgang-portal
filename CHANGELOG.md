@@ -1,3 +1,12 @@
+## v0.8.1 – Auth & Membership Flow
+
+- Permanent invitasjonsflyt med oppretting av passord.
+- Glemt-passord-flyt via Supabase.
+- Medlemssøknader opprettes som `pending` og må godkjennes av admin.
+- Produksjonskonfigurasjon for WGANG Supabase lagt inn.
+- Demo-verdier fjernet fra innloggingsfeltene.
+- Nytt oppsett for første Owner-konto.
+
 # Changelog
 
 ## v0.7.3 – Derby Preference Foundation

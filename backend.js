@@ -26,7 +26,16 @@
 
   const cfg = window.WGANG_SUPABASE || {};
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
-  const client = configured ? window.supabase.createClient(cfg.url, cfg.anonKey) : null;
+  const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const initialQueryParams = new URLSearchParams(window.location.search);
+  const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
+  const client = configured ? window.supabase.createClient(cfg.url, cfg.anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }) : null;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function localLoad() {
@@ -84,6 +93,15 @@
     return { accounts, derby, currentUserId: session.user.id };
   }
 
+  function appUrl() {
+    return window.location.origin + window.location.pathname;
+  }
+
+  function cleanAuthUrl() {
+    if (!window.history || !window.history.replaceState) return;
+    window.history.replaceState({}, document.title, appUrl());
+  }
+
   const api = {
     mode: configured ? "supabase" : "local",
     taskTypes: TASK_TYPES,
@@ -119,9 +137,27 @@
         localSave(localState);
         return { needsEmailConfirmation:false };
       }
-      const { data, error } = await client.auth.signUp({ email, password, options:{ data:{ hay_day_name:name } } });
+      const { data, error } = await client.auth.signUp({ email, password, options:{ data:{ hay_day_name:name }, emailRedirectTo:appUrl() } });
       if (error) throw error;
       return { needsEmailConfirmation: !data.session };
+    },
+    async getAuthIntent() {
+      if (!configured) return { type:"", hasSession:false, user:null };
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+      return { type:initialAuthType, hasSession:!!data.session, user:data.session?.user || null };
+    },
+    async updatePassword(password) {
+      if (!configured) throw new Error("Supabase er ikke koblet til.");
+      const { data, error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+      cleanAuthUrl();
+      return data;
+    },
+    async requestPasswordReset(email) {
+      if (!configured) throw new Error("Supabase er ikke koblet til.");
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo:appUrl() });
+      if (error) throw error;
     },
     async signOut() {
       if (!configured) { localState.currentUserId = null; localSave(localState); return; }
@@ -167,8 +203,8 @@
     },
     onAuthChange(callback) {
       if (!configured) return function(){};
-      const { data } = client.auth.onAuthStateChange(async (_event, session) => {
-        try { callback(await loadRemoteState(session)); } catch (e) { console.error(e); }
+      const { data } = client.auth.onAuthStateChange(async (event, session) => {
+        try { callback(await loadRemoteState(session), event); } catch (e) { console.error(e); }
       });
       return () => data.subscription.unsubscribe();
     }
