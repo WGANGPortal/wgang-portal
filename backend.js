@@ -21,6 +21,7 @@
       {id:"pending-1",name:"FarmFryd",email:"farmfryd@example.com",role:"member",approved:false,status:"pending",choice:"waiting",preferences:{}}
     ],
     derby: DEFAULT_DERBY,
+    content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
     currentUserId: null
   };
 
@@ -66,6 +67,22 @@
     };
   }
 
+  function mapContent(rows, accounts) {
+    const names = Object.fromEntries((accounts || []).map(a => [a.id, a.name]));
+    return (rows || []).map(row => ({
+      id: row.id,
+      authorId: row.author_id,
+      authorName: names[row.author_id] || "WGANG-medlem",
+      kind: row.kind,
+      title: row.title,
+      body: row.body,
+      category: row.category || "",
+      status: row.status,
+      createdAt: row.created_at,
+      publishedAt: row.published_at || row.created_at
+    }));
+  }
+
   async function getOwnProfile(userId) {
     const { data, error } = await client.from("profiles").select("id,email,hay_day_name,role,status").eq("id", userId).single();
     if (error) throw error;
@@ -73,24 +90,32 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     if (own.status !== "approved") {
-      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), currentUserId: own.id };
+      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId: own.id };
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes] = await Promise.all([
       client.from("profiles").select("id,email,hay_day_name,role,status").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
-      client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle()
+      client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes]) {
       if (result.error) throw result.error;
     }
     const accounts = (profilesRes.data || []).map(row => mapProfile(row, participationRes.data, preferencesRes.data));
     const d = derbyRes.data;
     const derby = d ? { type:d.type, taskTotal:d.task_total, maxPoints:d.max_points, strategy:Array.isArray(d.strategy)?d.strategy:clone(DEFAULT_DERBY.strategy) } : clone(DEFAULT_DERBY);
-    return { accounts, derby, currentUserId: session.user.id };
+    const contentRows = mapContent(contentRes.data, accounts);
+    const content = {
+      announcements: contentRows.filter(x => x.kind === "announcement" && x.status === "published"),
+      derbyPosts: contentRows.filter(x => x.kind === "derby" && x.status === "published"),
+      tips: contentRows.filter(x => x.kind === "tip" && x.status === "published"),
+      pendingTips: contentRows.filter(x => x.kind === "tip" && x.status === "pending")
+    };
+    return { accounts, derby, content, currentUserId: session.user.id };
   }
 
   function appUrl() {
@@ -200,6 +225,43 @@
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }
       const { error }=await client.from("derby_settings").upsert({id:1,type:derby.type,task_total:derby.taskTotal,max_points:derby.maxPoints,strategy:derby.strategy,updated_at:new Date().toISOString()},{onConflict:"id"}); if(error)throw error;
+    },
+    async createContent(kind, title, body, category="", publishNow=false) {
+      if (!configured) {
+        const me = localState.accounts.find(x => x.id === localState.currentUserId);
+        const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString()};
+        localState.content = localState.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
+        if (kind === "announcement") localState.content.announcements.unshift(item);
+        else if (kind === "derby") localState.content.derbyPosts.unshift(item);
+        else if (item.status === "published") localState.content.tips.unshift(item); else localState.content.pendingTips.unshift(item);
+        localSave(localState); return item;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const status = kind === "derby" || publishNow ? "published" : "pending";
+      const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
+      const { data, error } = await client.from("community_content").insert(payload).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async moderateContent(id, status) {
+      if (!configured) {
+        localState.content = localState.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
+        const idx = localState.content.pendingTips.findIndex(x => String(x.id) === String(id));
+        if (idx >= 0) {
+          const [item] = localState.content.pendingTips.splice(idx,1);
+          item.status=status; if(status==="published"){item.publishedAt=new Date().toISOString();localState.content.tips.unshift(item);}
+        }
+        localSave(localState); return;
+      }
+      const changes = {status, published_at:status==="published"?new Date().toISOString():null};
+      const { error } = await client.from("community_content").update(changes).eq("id",id);
+      if (error) throw error;
+    },
+    async deleteContent(id) {
+      if (!configured) return;
+      const { error } = await client.from("community_content").delete().eq("id",id);
+      if (error) throw error;
     },
     onAuthChange(callback) {
       if (!configured) return function(){};

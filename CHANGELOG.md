@@ -1,3 +1,9 @@
+
+## v0.8.3 – Content & admin polish
+- Endret informasjonsteksten i innloggingsvinduet til en enklere medlemsrettet velkomsttekst.
+- Administrator kan nå endre andre brukere fra Eier tilbake til Administrator eller Medlem. Egen Eier-rolle er fortsatt låst i grensesnittet for å unngå utilsiktet nedgradering.
+- Beholder tydelig «Under utvikling»-merking og WGANG Tips & triks fra v0.8.2.
+
 ## v0.8.1 – Auth & Membership Flow
 
 - Permanent invitasjonsflyt med oppretting av passord.
@@ -44,3 +50,10 @@
 - Diskusjonsmodulen er markert som under utvikling.
 - WGANG Wiki er erstattet/utvidet med «WGANG Tips & triks» og første strategiske tips.
 - La inn tydelig beskjed om at kunnskapsdelen skal vokse gjennom nabolagets tilbakemeldinger.
+
+## v0.9.0 – Community Content
+- La til databasebaserte kunngjøringer.
+- La til Derbyprat for godkjente medlemmer.
+- La til medlemmenes innsending av Tips & triks med admin-godkjenning.
+- La til adminpublisering av tips og kunngjøringer.
+- La til moderering og sletting av innhold.

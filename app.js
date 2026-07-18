@@ -13,7 +13,7 @@
   const $$ = selector => document.querySelectorAll(selector);
   const esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -24,6 +24,10 @@
   const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
   const taskRange = $("taskRange");
+  const announcementDialog = $("announcementDialog");
+  const derbyPostDialog = $("derbyPostDialog");
+  const tipDialog = $("tipDialog");
+  let adminTipMode = false;
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
   function isAdmin(user=current()) { return !!user && ["owner","admin"].includes(user.role); }
@@ -39,7 +43,7 @@
     const hint = document.querySelector(".demo-hint");
     if (!hint) return;
     if (backend.mode === "supabase") {
-      hint.innerHTML = "<strong>Felles medlemsportal er aktiv.</strong><br>Data lagres sikkert i WGANG-databasen og deles mellom enheter.";
+      hint.innerHTML = "<strong>Velkommen til WGANG Portal</strong><br>Logg inn for å få tilgang til nabolagets medlemsportal.";
     } else {
       hint.innerHTML = "<strong>Oppsettmodus:</strong> Supabase er ikke koblet til ennå.<br>Demo admin: admin@wgang.no / WGANG2026";
     }
@@ -116,6 +120,7 @@
     renderMetrics();
     renderMembers();
     renderPreferences();
+    renderContent();
     renderAdmin();
   }
 
@@ -187,12 +192,64 @@
     $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Basert på medlemmenes valg</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – 320 poeng gjelder fortsatt</small></article>`;
   }
 
+  function formatDate(value) {
+    if (!value) return "";
+    try { return new Date(value).toLocaleString("nb-NO", {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
+    catch (_) { return ""; }
+  }
+
+  function postCard(item, options={}) {
+    const category = item.category ? `<span class="content-category">${esc(item.category)}</span>` : "";
+    const actions = options.admin ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">Slett</button></div>` : "";
+    return `<article class="content-post">${category}<h3>${esc(item.title)}</h3><p>${esc(item.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer></article>`;
+  }
+
+  function renderContent() {
+    const content = state.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
+    const announcementList = $("announcementList");
+    const derbyPostList = $("derbyPostList");
+    const tipsList = $("communityTipsList");
+    if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
+    if (derbyPostList) derbyPostList.innerHTML = content.derbyPosts.length ? content.derbyPosts.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
+    if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
+
+    const latestNews = document.querySelector('[data-page="dashboard"] .dashboard-grid article:nth-child(2)');
+    if (latestNews && content.announcements.length) {
+      const a = content.announcements[0];
+      latestNews.classList.remove("development-card");
+      latestNews.innerHTML = `<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${esc(a.title)}</h2></div></div><p>${esc(a.body)}</p><p class="helper-text">Publisert ${esc(formatDate(a.publishedAt))}</p><button class="text-button" data-route="discussions">Se alle kunngjøringer</button>`;
+      latestNews.querySelector('[data-route="discussions"]').onclick = () => navigate("discussions");
+    }
+
+    if (isAdmin()) {
+      const pending = $("pendingTips");
+      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p></div><div class="approval-actions"><button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button><button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
+      $$('[data-tip-approve]').forEach(b => b.onclick = async () => {
+        if (busy) return; setBusy(true);
+        try { await backend.moderateContent(b.dataset.tipApprove,"published"); await refreshState(); } catch(e) { alert(humanError(e)); }
+        setBusy(false);
+      });
+      $$('[data-tip-reject]').forEach(b => b.onclick = async () => {
+        if (busy) return; setBusy(true);
+        try { await backend.moderateContent(b.dataset.tipReject,"rejected"); await refreshState(); } catch(e) { alert(humanError(e)); }
+        setBusy(false);
+      });
+    }
+
+    $$('[data-delete-content]').forEach(b => b.onclick = async () => {
+      if (!isAdmin() || !confirm("Slette dette innholdet?")) return;
+      if (busy) return; setBusy(true);
+      try { await backend.deleteContent(b.dataset.deleteContent); await refreshState(); } catch(e) { alert(humanError(e)); }
+      setBusy(false);
+    });
+  }
+
   function renderAdmin() {
     if (!isAdmin()) return;
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
     $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>${esc(a.email)}</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
-    $("accountAdminTable").innerHTML = all.map(a => `<tr><td><strong>${esc(a.name)}</strong></td><td>${esc(a.email)}</td><td><select class="role-select" data-role-id="${a.id}" ${a.role === "owner" ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option><option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`).join("");
+    $("accountAdminTable").innerHTML = all.map(a => `<tr><td><strong>${esc(a.name)}</strong></td><td>${esc(a.email)}</td><td><select class="role-select" data-role-id="${a.id}" ${a.role === "owner" && a.id === current().id ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option><option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`).join("");
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
     $("adminStatusGrid").innerHTML = [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("");
@@ -360,6 +417,39 @@
     };
     setBusy(true);
     try { await backend.saveDerby(derby); state.derby = derby; renderDerbyConfig(); closeDialog(editor); } catch(e) { alert(humanError(e)); }
+    setBusy(false);
+  };
+
+  $$('[data-close-dialog]').forEach(button => button.onclick = () => closeDialog($(button.dataset.closeDialog)));
+  if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
+  if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
+  if ($("openTipForm")) $("openTipForm").onclick = () => { adminTipMode=false; $("tipForm").reset(); $("tipDialogTitle").textContent="Send inn tips"; $("tipSubmitButton").textContent="Send til godkjenning"; $("tipMessage").textContent=""; showDialog(tipDialog); };
+  if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { adminTipMode=true; $("tipForm").reset(); $("tipDialogTitle").textContent="Publiser tips"; $("tipSubmitButton").textContent="Publiser tips"; $("tipMessage").textContent=""; showDialog(tipDialog); };
+
+  if ($("announcementForm")) $("announcementForm").onsubmit = async e => {
+    e.preventDefault(); if (busy || !isAdmin()) return;
+    setBusy(true);
+    try { await backend.createContent("announcement", $("announcementTitle").value.trim(), $("announcementBody").value.trim(), "", true); closeDialog(announcementDialog); e.target.reset(); await refreshState(); }
+    catch(err) { $("announcementMessage").textContent=humanError(err); }
+    setBusy(false);
+  };
+
+  if ($("derbyPostForm")) $("derbyPostForm").onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    setBusy(true);
+    try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); }
+    catch(err) { $("derbyPostMessage").textContent=humanError(err); }
+    setBusy(false);
+  };
+
+  if ($("tipForm")) $("tipForm").onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    setBusy(true);
+    try {
+      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, adminTipMode && isAdmin());
+      closeDialog(tipDialog); e.target.reset(); await refreshState();
+      if (!adminTipMode) alert("Takk! Tipset er sendt til admin for gjennomgang.");
+    } catch(err) { $("tipMessage").textContent=humanError(err); }
     setBusy(false);
   };
 

@@ -16,3 +16,21 @@ body.is-busy{cursor:progress}body.is-busy button,body.is-busy input,body.is-busy
 /* v0.8.2 – tydelig status for funksjoner som ennå ikke har reelle data */
 .development-badge{display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;border-radius:999px;background:#f3eadc;color:#8a643b;font-size:.67rem;font-weight:900;letter-spacing:.08em;white-space:nowrap}.development-card{border-style:dashed}.development-copy{margin:10px 0 0;color:var(--muted);line-height:1.65}.development-note{display:grid;gap:3px;margin:18px 0;padding:13px 15px;border-radius:14px;background:var(--cream);color:var(--ink)}.development-note span{font-size:.82rem;color:var(--muted)}.development-note-light{background:rgba(255,255,255,.16);color:#fff}.development-note-light span{color:rgba(255,255,255,.8)}.hidden-development-metric{display:none!important}.muted-placeholder-grid{margin-top:16px;opacity:.72}.wiki-intro-card{margin-bottom:18px}.wiki-intro-card h2,.community-tip-card h2{margin:5px 0 9px}.wiki-intro-card p:last-child,.community-tip-card p:last-child{color:var(--muted);line-height:1.65}.tips-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:18px}.tip-card{display:flex;gap:16px;padding:24px;border:1px solid var(--border);border-radius:22px;background:#fff}.tip-icon{display:grid;place-items:center;width:48px;height:48px;flex:none;border-radius:14px;background:var(--cream);font-size:1.45rem}.tip-card h2{margin:2px 0 7px;font-size:1.2rem}.tip-card p:last-child{margin:0;color:var(--muted);line-height:1.55}.community-tip-card{background:linear-gradient(135deg,#fffaf3,#fff)}
 @media(max-width:620px){.tips-grid{grid-template-columns:1fr}.tip-card{padding:20px}.page-heading>.development-badge{margin-top:12px}}
+
+/* v0.9.0 – Community content */
+.content-section { margin-bottom: 1.25rem; }
+.post-list { display: grid; gap: 1rem; margin-top: 1rem; }
+.content-post { padding: 1rem; border: 1px solid var(--line, #eadde0); border-radius: 18px; background: rgba(255,255,255,.72); }
+.content-post h3 { margin: .35rem 0 .55rem; font-size: 1.15rem; }
+.content-post p { margin: 0; line-height: 1.55; }
+.content-post footer { display: flex; flex-wrap: wrap; gap: .45rem .8rem; align-items: center; margin-top: .85rem; color: var(--muted, #7b7073); font-size: .82rem; }
+.content-post footer time { margin-left: auto; }
+.content-category { display: inline-flex; padding: .3rem .55rem; border-radius: 999px; background: #fff3e5; color: #8b5a24; font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.content-actions { margin-left: auto; }
+.approval-card p { margin: .45rem 0 0; color: var(--muted, #70676a); line-height: 1.45; }
+.dialog-card textarea { resize: vertical; }
+@media (max-width: 700px) {
+  .content-post footer time { margin-left: 0; width: 100%; }
+  .content-section .card-header { align-items: flex-start; gap: .8rem; }
+  .content-section .card-header .button { width: auto; min-width: 0; }
+}
