@@ -18,3 +18,12 @@
 
 ## v0.7 – Community Foundation
 - Medlemsregistrering, godkjenning, innlogging, roller og derbystatus.
+
+## v0.8.0 – Shared Data Foundation
+- Supabase Auth for ekte e-post/passord-innlogging.
+- Felles Postgres-database for medlemmer, derbystatus og oppgavepreferanser.
+- RLS-beskyttede tabeller og rollebasert administrasjon.
+- Medlemssøknader opprettes automatisk ved registrering.
+- Admin kan godkjenne, avslå og deaktivere medlemmer.
+- Derbyinnstillinger synkroniseres mellom enheter.
+- Lokal demo beholdes som automatisk fallback når Supabase ikke er konfigurert.

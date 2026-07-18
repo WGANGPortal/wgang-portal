@@ -1,3 +1,11 @@
+# WGANG Portal v0.8 – Shared Data Foundation
+
+Denne pakken bygger videre på v0.7.3 og legger til ekte autentisering og felles database via Supabase.
+
+**Før produksjonsbruk:** Følg `SETUP-SUPABASE.md`, kjør `supabase-schema.sql`, og legg Project URL + publishable/anon key i `config.js`.
+
+---
+
 # WGANG Portal v0.7.3
 
 Statisk pilotportal for WGANG-nabolaget i Hay Day, med fokus på Derby-organisering.
