@@ -1,22 +1,21 @@
 # Roadmap
 
-## v0.7 – Community Foundation
-- Registrering
-- Godkjenning
-- Innlogging
-- Roller
-- Deltakelsesstatus
-- Adminoversikt
+## v0.7.x – Stabil Community Foundation
+- Stabil innlogging og registrering
+- Medlemsroller og godkjenning
+- Derbydeltakelse
+- Persistente oppgavepreferanser
+- Adminoversikt for oppgavetavla
 
-## v0.8 – Persistent Community
-- Supabase-autentisering
-- Delt database
-- Glemt passord
-- Sikre tilgangsregler
-- Derbyopprettelse med dato og svarfrist
+## Neste tekniske milepæl – Shared Community Backend
+- Felles database
+- Sikker autentisering
+- Kontoer tilgjengelige på tvers av enheter
+- Admin godkjenner ekte medlemssøknader
+- Deltakelse og preferanser deles i sanntid
 
 ## Senere
-- Derby Academy og medlemstips
-- Oppgaveplanlegging
-- Historikk og statistikk
-- Varsler og PWA
+- Derbyhistorikk
+- Statistikk og scoreboard
+- Derby Academy og tips
+- Utvidede adminverktøy

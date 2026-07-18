@@ -1,26 +1,20 @@
 # Changelog
 
+## v0.7.3 – Derby Preference Foundation
+- Gjorde oppgavepreferanser persistente per medlem.
+- La til adminmatrise for nabolagets oppgavepreferanser.
+- La til tavleanbefalinger basert på preferansedata.
+- Oppdaterte Standard Derby-strategi til 320-poengsfokus.
+- Viser medlemmenes positive preferanser på medlemskort.
+- Lagrer derbyinnstillinger lokalt.
+- La til migrering av eldre v0.7-localStorage.
+- Bedret dialog-fallback og HTML-escaping.
+
 ## v0.7.2 – Button Fix
-- Rettet en JavaScript-feil som stoppet initialiseringen inne i innloggingsvinduet.
-- Fanene «Logg inn» og «Søk medlemskap» fungerer nå.
-- Innsending av innlogging og medlemssøknad fungerer nå.
-- Beholder forbedringene fra v0.7.1 for lokal lagring og Safari/iPhone.
+- Rettet JavaScript-feil som gjorde auth-knapper inaktive.
 
-## v0.7.0 – Community Foundation
-- La til registrering og innlogging
-- La til administratorgodkjenning
-- La til roller og rettigheter
-- La til personlig derbystatus
-- La til adminoversikt for deltakelse
-- La til lokal datalagring
-- Oppdaterte tekster, versjonsmerking og dokumentasjon
+## v0.7.1 – Login Fix
+- Ny lokal lagringsnøkkel og mer robust innlogging.
 
-## v0.6.0 – Stable Foundation
-- Offentlig forside og portalprototype
-- Derby-, medlems-, oppgave-, diskusjons-, wiki- og adminvisning
-
-
-## 0.7.1
-- Rettet innlogging som kunne feile på grunn av gamle lokalt lagrede data.
-- Fjernet avhengighet til `structuredClone` for bedre nettleserstøtte.
-- Trimmer utilsiktede mellomrom i passordfeltet.
+## v0.7 – Community Foundation
+- Medlemsregistrering, godkjenning, innlogging, roller og derbystatus.
