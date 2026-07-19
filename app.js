@@ -25,6 +25,54 @@
   const $$ = selector => document.querySelectorAll(selector);
   const esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 
+  const LANG_KEY = "wgangLanguage";
+  let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
+  const I18N_EN = {
+    "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
+    "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin view",
+    "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
+    "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
+    "Din status":"Your status","Svarfrist":"Response deadline","Har svart":"Responded","Neste derby":"Next derby",
+    "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Administrator":"Administrator","Eier":"Owner",
+    "Derby-senter":"Derby Center","Planlegg deltakelsen og følg fremdriften.":"Plan your participation and follow progress.",
+    "Medlemsoversikt":"Member overview","Finn naboene dine og se derby-status.":"Find your neighbors and see their Derby status.",
+    "Oppgavepreferanser":"Task preferences","Velg hva som passer deg best.":"Choose what suits you best.",
+    "KUNNGJØRINGER":"ANNOUNCEMENTS","Viktige beskjeder":"Important messages","DERBYPRAT":"DERBY TALK",
+    "Send inn tips":"Submit a tip","Medlemmenes tips":"Members' tips","Dette er bare starten":"This is just the beginning",
+    "Administrasjon":"Administration","Godkjenn medlemmer og få oversikt over neste derby.":"Approve members and get an overview of the next Derby.",
+    "KREVER HANDLING":"ACTION REQUIRED","Adminvarsler":"Admin alerts","Publiser neste derby":"Publish next Derby",
+    "Deltakelsesoversikt":"Participation overview","Medlemssøknader":"Membership applications",
+    "Hva passer WGANG best?":"What suits WGANG best?","Hvem foretrekker hva?":"Who prefers what?",
+    "Tips som venter på gjennomgang":"Tips awaiting review","Roller og tilgang":"Roles and access",
+    "Godkjenn":"Approve","Avslå":"Reject","Fjern":"Remove","Din konto":"Your account",
+    "Liker":"Like","Kan ta":"Can do","Helst ikke":"Prefer not","Kan ikke":"Cannot do",
+    "Ingen data":"No data","Ingen preferanser registrert ennå.":"No task preferences registered yet.",
+    "Ingen medlemmer matcher søket.":"No members match the search.",
+    "Profil":"Profile","Rediger profil":"Edit profile","Lagre profil":"Save profile","Om meg":"About me",
+    "Kjønn":"Gender","Aldersgruppe":"Age group","Land / sted":"Country / place",
+    "Hvor lenge har du spilt Hay Day?":"How long have you played Hay Day?","Hva liker du best i spillet?":"What do you like most about the game?",
+    "Frivillig å fylle ut.":"Optional to fill in.","Ingen profilinformasjon er delt ennå.":"No profile information has been shared yet.",
+    "Norsk":"Norwegian","Engelsk":"English"
+  };
+  const originalText = new WeakMap();
+  function translateUi(root=document) {
+    const english = currentLanguage === "en";
+    document.documentElement.lang = english ? "en" : "no";
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const raw = originalText.has(node) ? originalText.get(node) : node.nodeValue;
+      if (!originalText.has(node)) originalText.set(node, raw);
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+      if (english && I18N_EN[trimmed]) node.nodeValue = raw.replace(trimmed, I18N_EN[trimmed]);
+      else if (!english) node.nodeValue = raw;
+    });
+    const selector = document.getElementById("languageSelect");
+    if (selector) selector.value = currentLanguage;
+  }
+
   let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
   let busy = false;
 
@@ -39,7 +87,9 @@
   const announcementDialog = $("announcementDialog");
   const derbyPostDialog = $("derbyPostDialog");
   const tipDialog = $("tipDialog");
+  const memberProfileDialog = $("memberProfileDialog");
   let adminTipMode = false;
+  let openProfileUserId = null;
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
   function isAdmin(user=current()) { return !!user && ["owner","admin"].includes(user.role); }
@@ -120,6 +170,7 @@
   function renderSession() {
     const user = current();
     if (!user) return;
+    user.name = String(user.name || "").toUpperCase();
     $("profileAvatar").textContent = user.name.charAt(0).toUpperCase();
     $("profileName").textContent = user.name;
     $("profileRole").textContent = roleLabel(user.role);
@@ -135,6 +186,7 @@
     renderContent();
     renderAdmin();
     renderDerbyManagement();
+    translateUi(portal);
   }
 
   function renderMetrics() {
@@ -152,8 +204,41 @@
       .filter(a => a.name.toLowerCase().includes(q) && (filter === "all" || a.choice === filter))
       .map(a => {
         const prefs = topPreferences(a);
-        return `<article class="member-card"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div></div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}</article>`;
+        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div></div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
+    $$('[data-profile-id]').forEach(card => {
+      card.onclick = () => openMemberProfile(card.dataset.profileId);
+      card.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMemberProfile(card.dataset.profileId); } };
+    });
+    translateUi(grid);
+  }
+
+  function openMemberProfile(userId) {
+    const account = state.accounts.find(a => String(a.id) === String(userId));
+    if (!account || !memberProfileDialog) return;
+    openProfileUserId = account.id;
+    const editable = current() && String(current().id) === String(account.id);
+    $("memberProfileName").textContent = String(account.name || "").toUpperCase();
+    $("memberProfileRole").textContent = roleLabel(account.role);
+    $("memberProfileBio").textContent = account.bio || "Ingen profilinformasjon er delt ennå.";
+    const details = [];
+    if (account.gender) details.push(["Kjønn", account.gender]);
+    if (account.ageGroup) details.push(["Aldersgruppe", account.ageGroup]);
+    if (account.countryPlace) details.push(["Land / sted", account.countryPlace]);
+    if (account.hayDaySince) details.push(["Hvor lenge har du spilt Hay Day?", account.hayDaySince]);
+    if (account.favoriteGameAspect) details.push(["Hva liker du best i spillet?", account.favoriteGameAspect]);
+    $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Frivillig å fylle ut.</p>`;
+    $("profileEditSection").classList.toggle("hidden", !editable);
+    if (editable) {
+      $("profileBioInput").value = account.bio || "";
+      $("profileGenderInput").value = account.gender || "";
+      $("profileAgeInput").value = account.ageGroup || "";
+      $("profileCountryInput").value = account.countryPlace || "";
+      $("profileSinceInput").value = account.hayDaySince || "";
+      $("profileFavoriteInput").value = account.favoriteGameAspect || "";
+    }
+    showDialog(memberProfileDialog);
+    translateUi(memberProfileDialog);
   }
 
   function renderPreferences() {
@@ -288,8 +373,8 @@
     if (!isAdmin()) return;
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
-    $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>${esc(a.email)}</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
-    $("accountAdminTable").innerHTML = all.map(a => `<tr><td><strong>${esc(a.name)}</strong></td><td>${esc(a.email)}</td><td><select class="role-select" data-role-id="${a.id}" ${a.role === "owner" && a.id === current().id ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option><option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`).join("");
+    $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
+    $("accountAdminTable").innerHTML = all.map(a => `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${a.role === "owner" && a.id === current().id ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option><option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`).join("");
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
     $("adminStatusGrid").innerHTML = [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("");
@@ -383,6 +468,7 @@
 
   async function init() {
     setModeHint();
+    translateUi(document);
     try {
       state = await backend.bootstrap();
       const intent = typeof backend.getAuthIntent === "function" ? await backend.getAuthIntent() : {type:"",hasSession:false};
@@ -465,7 +551,7 @@
     const msg = $("registerMessage"); msg.classList.remove("success"); msg.textContent = "";
     setBusy(true);
     try {
-      const result = await backend.signUp($("registerName").value.trim(), $("registerEmail").value.trim().toLowerCase(), $("registerPassword").value);
+      const result = await backend.signUp($("registerName").value.trim().toUpperCase(), $("registerEmail").value.trim().toLowerCase(), $("registerPassword").value);
       msg.textContent = result.needsEmailConfirmation ? "Søknaden er opprettet. Bekreft e-postadressen din først. Deretter må en administrator godkjenne medlemskapet." : "Søknaden er sendt. En administrator må godkjenne deg før innlogging.";
       msg.classList.add("success"); e.target.reset();
       if (backend.mode === "local") await refreshState();
@@ -476,6 +562,39 @@
   $$('[data-route]').forEach(a => a.addEventListener("click", e => { e.preventDefault(); if (portal.classList.contains("hidden")) { openPortal(); return; } navigate(a.dataset.route); }));
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   $("roleSwitch").onclick = () => navigate("admin");
+  $("profileChip").onclick = () => { if (current()) openMemberProfile(current().id); };
+  if ($("languageSelect")) $("languageSelect").onchange = e => {
+    currentLanguage = e.target.value;
+    localStorage.setItem(LANG_KEY, currentLanguage);
+    translateUi(document);
+  };
+  if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
+  if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
+    e.preventDefault();
+    if (busy || !current()) return;
+    setBusy(true);
+    const me = current();
+    const payload = {
+      id: me.id,
+      bio: $("profileBioInput").value.trim(),
+      gender: $("profileGenderInput").value,
+      ageGroup: $("profileAgeInput").value,
+      countryPlace: $("profileCountryInput").value.trim(),
+      hayDaySince: $("profileSinceInput").value.trim(),
+      favoriteGameAspect: $("profileFavoriteInput").value.trim()
+    };
+    try {
+      await backend.updatePublicProfile(payload);
+      Object.assign(me, payload);
+      $("profileSaveMessage").textContent = "Profilen er lagret.";
+      $("profileSaveMessage").classList.add("success");
+      await refreshState();
+      openMemberProfile(me.id);
+    } catch(e) {
+      $("profileSaveMessage").textContent = humanError(e, "Kunne ikke lagre profilen.");
+    }
+    setBusy(false);
+  };
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
 

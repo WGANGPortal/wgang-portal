@@ -77,7 +77,7 @@
     <header class="portal-topbar">
       <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny"><span></span><span></span><span></span></button>
       <a class="portal-brand" href="#dashboard" data-route="dashboard"><img src="wgang-icon-pink.webp" alt=""><span><strong>WGANG</strong><small>PORTAL</small></span></a>
-      <div class="portal-actions"><button class="role-switch admin-only" id="roleSwitch">Adminvisning</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
+      <div class="portal-actions"><label class="language-picker" aria-label="Velg språk"><select id="languageSelect"><option value="no">🇳🇴 Norsk</option><option value="en">🇬🇧 English</option></select></label><button class="role-switch admin-only" id="roleSwitch">Adminvisning</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -91,7 +91,7 @@
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
           <a href="#admin" class="admin-only admin-nav-link" data-route="admin"><span>⚙</span>Admin <b id="notificationBadge" class="notification-badge hidden">0</b></a>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.10.0</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.11.0</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -139,7 +139,7 @@
 <article class="portal-card"><div class="card-header"><div><p class="card-kicker">VENTER PÅ GODKJENNING</p><h2>Medlemssøknader</h2></div></div><div id="pendingMembers" class="approval-list"></div></article>
 <article class="portal-card admin-preference-card"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Hva passer WGANG best?</h2><p class="helper-text">Bruk preferansene som støtte når du vurderer hvilke oppgaver som bør stå, og hvem som liker hva.</p></div></div><div class="preference-summary-grid" id="adminPreferenceSummary"></div><div class="table-wrap"><table><thead><tr><th>Oppgavetype</th><th>❤️ Liker</th><th>👍 Kan ta</th><th>😐 Helst ikke</th><th>🚫 Kan ikke</th><th>Anbefaling</th></tr></thead><tbody id="adminPreferenceTable"></tbody></table></div><div class="preference-member-detail"><h3>Hvem foretrekker hva?</h3><div id="adminPreferenceMembers"></div></div></article>
 <article class="portal-card"><div class="card-header"><div><p class="card-kicker">INNHOLD</p><h2>Tips som venter på gjennomgang</h2></div><button class="button button-primary" id="openAdminTipForm">Publiser tips</button></div><div id="pendingTips" class="approval-list"></div></article>
-<article class="portal-card"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Roller og tilgang</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>E-post</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article></section>
+<article class="portal-card"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Roller og tilgang</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article></section>
       </main>
     </div>
 
@@ -165,6 +165,57 @@
   <dialog id="announcementDialog"><form id="announcementForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Ny kunngjøring</h2></div><button type="button" class="icon-button" data-close-dialog="announcementDialog">×</button></div><label>Tittel<input id="announcementTitle" maxlength="100" required></label><label>Beskjed<textarea id="announcementBody" rows="6" maxlength="2000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser kunngjøring</button><p class="form-message" id="announcementMessage"></p></form></dialog>
   <dialog id="derbyPostDialog"><form id="derbyPostForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Nytt innlegg</h2></div><button type="button" class="icon-button" data-close-dialog="derbyPostDialog">×</button></div><label>Tittel<input id="derbyPostTitle" maxlength="100" required></label><label>Innlegg<textarea id="derbyPostBody" rows="6" maxlength="3000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser innlegg</button><p class="form-message" id="derbyPostMessage"></p></form></dialog>
   <dialog id="tipDialog"><form id="tipForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">TIPS &amp; TRIKS</p><h2 id="tipDialogTitle">Send inn tips</h2></div><button type="button" class="icon-button" data-close-dialog="tipDialog">×</button></div><label>Kategori<select id="tipCategory"><option>Standard Derby</option><option>Oppgavetavla</option><option>Høsting</option><option>Produksjon</option><option>Byen</option><option>Fiske</option><option>Båt</option><option>Annet</option></select></label><label>Tittel<input id="tipTitle" maxlength="100" required></label><label>Tips<textarea id="tipBody" rows="6" maxlength="3000" required></textarea></label><button class="button button-primary button-full" type="submit" id="tipSubmitButton">Send til godkjenning</button><p class="form-message" id="tipMessage"></p></form></dialog>
+
+
+  <dialog id="memberProfileDialog" class="profile-dialog">
+    <div class="dialog-card profile-dialog-card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">PROFIL</p>
+          <h2 id="memberProfileName">WGANG-MEDLEM</h2>
+          <p id="memberProfileRole" class="helper-text">Medlem</p>
+        </div>
+        <button type="button" class="icon-button" id="closeMemberProfile" aria-label="Lukk">×</button>
+      </div>
+      <div class="profile-public-view">
+        <h3>Om meg</h3>
+        <p id="memberProfileBio">Ingen profilinformasjon er delt ennå.</p>
+        <div id="memberProfileDetails" class="profile-detail-grid"></div>
+      </div>
+      <section id="profileEditSection" class="profile-edit-section hidden">
+        <div class="profile-divider"></div>
+        <h3>Rediger profil</h3>
+        <p class="helper-text">Alt er frivillig. Du kan dele mye, litt eller ingenting. E-postadressen din vises aldri til andre medlemmer.</p>
+        <form id="memberProfileForm" class="auth-form">
+          <label>Om meg<textarea id="profileBioInput" rows="4" maxlength="1200" placeholder="Fortell litt om deg selv hvis du ønsker"></textarea></label>
+          <label>Kjønn
+            <select id="profileGenderInput">
+              <option value="">Vil ikke oppgi</option>
+              <option value="Kvinne">Kvinne</option>
+              <option value="Mann">Mann</option>
+              <option value="Annet">Annet</option>
+            </select>
+          </label>
+          <label>Aldersgruppe
+            <select id="profileAgeInput">
+              <option value="">Vil ikke oppgi</option>
+              <option value="0–13 år">0–13 år</option>
+              <option value="14–20 år">14–20 år</option>
+              <option value="21–30 år">21–30 år</option>
+              <option value="31–40 år">31–40 år</option>
+              <option value="41–50 år">41–50 år</option>
+              <option value="Over 50 år">Over 50 år</option>
+            </select>
+          </label>
+          <label>Land / sted<input id="profileCountryInput" maxlength="100" placeholder="Valgfritt"></label>
+          <label>Hvor lenge har du spilt Hay Day?<input id="profileSinceInput" maxlength="120" placeholder="Valgfritt"></label>
+          <label>Hva liker du best i spillet?<input id="profileFavoriteInput" maxlength="200" placeholder="Valgfritt"></label>
+          <button class="button button-primary button-full" type="submit">Lagre profil</button>
+          <p class="form-message" id="profileSaveMessage"></p>
+        </form>
+      </section>
+    </div>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="demo-data.js"></script><script src="config.js"></script><script src="backend.js"></script><script src="app.js"></script>
 </body>

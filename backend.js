@@ -58,9 +58,14 @@
     const part = (participation || []).find(p => p.user_id === row.id);
     return {
       id: row.id,
-      name: row.hay_day_name,
-      email: row.email || "",
+      name: String(row.hay_day_name || "").toUpperCase(),
       role: row.role || "member",
+      bio: row.bio || "",
+      gender: row.gender || "",
+      ageGroup: row.age_group || "",
+      countryPlace: row.country_place || "",
+      hayDaySince: row.hay_day_since || "",
+      favoriteGameAspect: row.favorite_game_aspect || "",
       status: row.status || "pending",
       approved: row.status === "approved",
       choice: part ? part.choice : "waiting",
@@ -85,7 +90,7 @@
   }
 
   async function getOwnProfile(userId) {
-    const { data, error } = await client.from("profiles").select("id,email,hay_day_name,role,status").eq("id", userId).single();
+    const { data, error } = await client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").eq("id", userId).single();
     if (error) throw error;
     return data;
   }
@@ -97,7 +102,7 @@
       return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes] = await Promise.all([
-      client.from("profiles").select("id,email,hay_day_name,role,status").order("hay_day_name"),
+      client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
@@ -164,6 +169,7 @@
       return loadRemoteState(data.session);
     },
     async signUp(name, email, password) {
+      name = String(name || "").trim().toUpperCase();
       if (!configured) {
         if (localState.accounts.some(a => a.email.toLowerCase() === email.toLowerCase())) throw new Error("Denne e-postadressen er allerede registrert.");
         if (localState.accounts.some(a => a.name.toLowerCase() === name.toLowerCase())) throw new Error("Dette Hay Day-navnet er allerede registrert.");
@@ -237,6 +243,29 @@
     async setRole(userId, role) {
       if (!configured) { const a=localState.accounts.find(x=>x.id===userId); if(a)a.role=role; localSave(localState); return; }
       const { error }=await client.from("profiles").update({role}).eq("id",userId); if(error)throw error;
+    },
+    async updatePublicProfile(profile) {
+      if (!configured) {
+        const a=localState.accounts.find(x=>x.id===profile.id);
+        if(a){
+          a.bio=profile.bio||"";
+          a.gender=profile.gender||"";
+          a.ageGroup=profile.ageGroup||"";
+          a.countryPlace=profile.countryPlace||"";
+          a.hayDaySince=profile.hayDaySince||"";
+          a.favoriteGameAspect=profile.favoriteGameAspect||"";
+        }
+        localSave(localState); return;
+      }
+      const { error } = await client.rpc("update_my_public_profile", {
+        p_bio: profile.bio || null,
+        p_gender: profile.gender || null,
+        p_age_group: profile.ageGroup || null,
+        p_country_place: profile.countryPlace || null,
+        p_hay_day_since: profile.hayDaySince || null,
+        p_favorite_game_aspect: profile.favoriteGameAspect || null
+      });
+      if (error) throw error;
     },
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }

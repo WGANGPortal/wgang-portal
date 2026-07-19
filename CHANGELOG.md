@@ -73,3 +73,10 @@
 - Utvidet adminoversikt for oppgavepreferanser med medlem → oppgaver.
 - La til Tomat under innhøstingsoppgaver.
 - Oppdatert svarfrist til mandag kl. 23:00.
+
+## v0.11.0
+- Added voluntary member profiles.
+- Added uppercase normalization for Hay Day names.
+- Removed email from member/admin presentation and browser-readable profile columns.
+- Added safe self-service profile editing through Supabase RPC.
+- Added Norwegian/English language selector foundation.
