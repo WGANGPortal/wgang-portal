@@ -65,3 +65,11 @@
 - Grupperte oppgavepreferanser med 10 hovedkategorier.
 - Nytt samarbeidstips.
 - Forenklet kunngjøringstekst.
+
+## v0.10.0
+- La til derbyadministrasjon med grunnmaler og publisering av neste derby.
+- La til per-derby deltakelse.
+- La til adminvarsler for saker som krever handling.
+- Utvidet adminoversikt for oppgavepreferanser med medlem → oppgaver.
+- La til Tomat under innhøstingsoppgaver.
+- Oppdatert svarfrist til mandag kl. 23:00.

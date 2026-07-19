@@ -8,7 +8,7 @@
   }
 
   const TASK_GROUPS = [
-    { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Annen høsting"] },
+    { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Tomat","Annen høsting"] },
     { icon:"🐄", name:"Dyreoppgaver", tasks:["Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr"] },
     { icon:"🏭", name:"Produksjonsoppgaver", tasks:["Produksjonsoppgaver"] },
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
@@ -25,7 +25,7 @@
   const $$ = selector => document.querySelectorAll(selector);
   const esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -126,7 +126,7 @@
     $("welcomeHeading").textContent = "Hei, " + user.name + " 👋";
     $("accountBadge").textContent = roleLabel(user.role).toUpperCase();
     $$(".choice-button").forEach(b => b.classList.toggle("selected", b.dataset.choice === user.choice));
-    $("participationStatus").textContent = user.choice === "joined" ? "Du har bekreftet at du deltar." : user.choice === "pause" ? "Du tar pause i neste derby." : "Du er registrert som usikker.";
+    $("participationStatus").textContent = user.choice === "joined" ? "Du har bekreftet at du deltar." : user.choice === "pause" ? "Du tar pause i neste derby." : user.choice === "unsure" ? "Du er registrert som usikker." : "Du har ikke svart på deltakelse ennå.";
     $("myStatusMetric").textContent = choiceLabel(user.choice);
     renderDerbyConfig();
     renderMetrics();
@@ -134,6 +134,7 @@
     renderPreferences();
     renderContent();
     renderAdmin();
+    renderDerbyManagement();
   }
 
   function renderMetrics() {
@@ -201,13 +202,40 @@
     $("adminPreferenceTable").innerHTML = rows.map(x => `<tr><td><strong>${esc(x.t)}</strong></td><td>${x.s.like}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td>${x.s.no}</td><td><span class="recommendation ${x.r.cls}">${x.r.label}</span></td></tr>`).join("");
     const most = rows.slice().sort((a,b) => (b.s.like*2+b.s.can)-(a.s.like*2+a.s.can)).slice(0,3);
     const clear = rows.slice().sort((a,b) => (b.s.no*2+b.s.avoid)-(a.s.no*2+a.s.avoid)).filter(x => x.s.no+x.s.avoid>0).slice(0,3);
-    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Basert på medlemmenes valg</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – 320 poeng gjelder fortsatt</small></article>`;
+    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Basert på medlemmenes valg</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
+    const memberBox = $("adminPreferenceMembers");
+    if (memberBox) {
+      memberBox.className = "preference-member-grid";
+      memberBox.innerHTML = approved().map(a => {
+        const likes = TASK_TYPES.filter(t => a.preferences?.[t] === "like");
+        const can = TASK_TYPES.filter(t => a.preferences?.[t] === "can");
+        return `<article class="preference-member-card"><h4>${esc(a.name)}</h4><p><strong>❤️ Liker:</strong> ${likes.map(esc).join(", ") || "Ikke registrert"}</p><p><strong>👍 Kan ta:</strong> ${can.map(esc).join(", ") || "Ikke registrert"}</p></article>`;
+      }).join("") || `<p class="empty-state">Ingen preferanser registrert ennå.</p>`;
+    }
   }
 
   function formatDate(value) {
     if (!value) return "";
     try { return new Date(value).toLocaleString("nb-NO", {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
     catch (_) { return ""; }
+  }
+
+  function nextDerbyDates() {
+    const now = new Date();
+    const start = new Date(now);
+    const day = start.getDay();
+    let add = (2 - day + 7) % 7;
+    if (add === 0 && (start.getHours() > 10 || (start.getHours() === 10 && start.getMinutes() > 0))) add = 7;
+    start.setDate(start.getDate() + add);
+    start.setHours(10,0,0,0);
+    const end = new Date(start); end.setDate(end.getDate()+6); end.setHours(10,0,0,0);
+    const deadline = new Date(start); deadline.setDate(deadline.getDate()-1); deadline.setHours(23,0,0,0);
+    return {start,end,deadline};
+  }
+
+  function toLocalInput(date) {
+    const z = n => String(n).padStart(2,"0");
+    return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}T${z(date.getHours())}:${z(date.getMinutes())}`;
   }
 
   function postCard(item, options={}) {
@@ -299,14 +327,58 @@
   }
 
   function renderDerbyConfig() {
-    const d = state.derby;
+    const next = state.derbyManagement?.next;
+    const d = next ? {
+      type: next.name,
+      taskTotal: next.task_total || state.derby.taskTotal || 9,
+      maxPoints: next.max_points || state.derby.maxPoints || 320,
+      strategy: Array.isArray(next.strategy) ? next.strategy : [],
+      startAt: next.start_at,
+      signupDeadline: next.signup_deadline,
+      dailyTaskLimit: next.daily_task_limit,
+      extraTasks: next.extra_tasks,
+      description: next.description,
+      rules: Array.isArray(next.rules) ? next.rules : []
+    } : state.derby;
     $("derbyType").textContent = d.type; $("dashboardDerbyType").textContent = d.type;
-    $("derbyTaskTotalLabel").textContent = d.taskTotal; $("derbyMaxPoints").textContent = d.maxPoints;
-    $("derbyStrategy").innerHTML = d.strategy.map(x => `<li>${esc(x)}</li>`).join("");
-    taskRange.max = d.taskTotal;
-    if (+taskRange.value > d.taskTotal) taskRange.value = d.taskTotal;
-    $("editDerbyType").value = d.type; $("editTaskTotal").value = d.taskTotal; $("editMaxPoints").value = d.maxPoints; $("editStrategy").value = d.strategy.join("\n");
+    const metricNext = $("dashboardNextDerbyName"); if (metricNext) metricNext.textContent = d.type.replace(" Derby","");
+    const deadlineText = $("dashboardDeadline"); if (deadlineText) deadlineText.textContent = "Mandag kl. 23:00";
+    const startText = $("nextDerbyStart"); if (startText) startText.textContent = d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00";
+    $("derbyTaskTotalLabel").textContent = d.taskTotal || "–"; $("derbyMaxPoints").textContent = d.maxPoints || "–";
+    $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(x)}</li>`).join("") || `<li>Strategi publiseres av admin før derbyet starter.</li>`;
+    const info = $("nextDerbyInfo");
+    if (info) {
+      const rules = (d.rules || []).map(x=>`<li>${esc(x)}</li>`).join("");
+      info.innerHTML = `${d.description ? `<p>${esc(d.description)}</p>` : ""}${d.dailyTaskLimit ? `<p><strong>Daglig kvote:</strong> ${d.dailyTaskLimit} oppgaver${d.extraTasks ? ` + ${d.extraTasks} ekstra` : ""}</p>` : ""}${rules ? `<ul class="strategy-list">${rules}</ul>` : ""}`;
+    }
+    taskRange.max = d.taskTotal || 9;
+    if (+taskRange.value > taskRange.max) taskRange.value = taskRange.max;
     progress();
+  }
+
+  function renderDerbyManagement() {
+    if (!isAdmin()) return;
+    const dm = state.derbyManagement || {templates:[],events:[],next:null};
+    const select = $("derbyTemplateSelect");
+    if (select) {
+      const currentValue = select.value;
+      select.innerHTML = `<option value="">Velg derbytype</option>` + dm.templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+      if (currentValue) select.value = currentValue;
+    }
+    const nextBox = $("publishedDerbySummary");
+    if (nextBox) nextBox.innerHTML = dm.next ? `<strong>${esc(dm.next.name)}</strong><span>${dm.next.start_at ? `Starter ${esc(formatDate(dm.next.start_at))}` : "Publisert"}</span>` : `<span>Ingen neste derby er publisert ennå.</span>`;
+    renderAdminActions();
+  }
+
+  function renderAdminActions() {
+    if (!isAdmin()) return;
+    const pendingMembers = state.accounts.filter(a=>a.status==="pending").length;
+    const pendingTips = state.content?.pendingTips?.length || 0;
+    const total = pendingMembers + pendingTips;
+    const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
+    const list = $("adminActionList");
+    if (list) list.innerHTML = total ? `${pendingMembers ? `<button class="action-item" data-action-route="admin"><strong>${pendingMembers}</strong><span>medlemsforespørsel${pendingMembers===1?"":"er"} venter</span></button>`:""}${pendingTips ? `<button class="action-item" data-action-route="admin"><strong>${pendingTips}</strong><span>tips venter på godkjenning</span></button>`:""}` : `<p class="empty-state">Ingen saker krever handling akkurat nå.</p>`;
+    $$('[data-action-route]').forEach(b=>b.onclick=()=>navigate(b.dataset.actionRoute));
   }
 
   async function init() {
@@ -417,18 +489,49 @@
 
   taskRange.oninput = progress;
   $("finishDerby").onclick = () => { taskRange.value = taskRange.max; progress(); $("derbyStatus").value = "Ferdig"; $("finishStatus").textContent = "Ferdig registrert " + new Date().toLocaleString("nb-NO") + "."; };
-  $("openDerbyEditor").onclick = () => showDialog(editor);
+  function openDerbyEditorDialog() {
+    const dates = nextDerbyDates();
+    $("derbyStartAt").value = toLocalInput(dates.start);
+    $("derbyEndAt").value = toLocalInput(dates.end);
+    $("derbySignupDeadline").value = toLocalInput(dates.deadline);
+    renderDerbyManagement();
+    showDialog(editor);
+  }
+  $("openDerbyEditor").onclick = openDerbyEditorDialog;
+  if ($("openDerbyPublisher")) $("openDerbyPublisher").onclick = openDerbyEditorDialog;
   $("closeDerbyEditor").onclick = () => closeDialog(editor);
+  if ($("derbyTemplateSelect")) $("derbyTemplateSelect").onchange = () => {
+    const t = state.derbyManagement?.templates?.find(x=>String(x.id) === $("derbyTemplateSelect").value);
+    if (!t) return;
+    $("editDerbyType").value = t.name || "";
+    $("editTaskTotal").value = t.default_task_total || "";
+    $("editExtraTasks").value = t.default_extra_tasks ?? 0;
+    $("editMaxPoints").value = t.default_max_points || "";
+    $("editDailyTaskLimit").value = t.daily_task_limit || "";
+    $("editDerbyDescription").value = t.description || "";
+    $("editRules").value = (t.rules || []).join("\n");
+    $("editStrategy").value = (t.strategy || []).join("\n");
+  };
+
   $("saveDerby").onclick = async () => {
     if (busy) return;
-    const derby = {
-      type: $("editDerbyType").value.trim() || "Ukjent derby",
-      taskTotal: Math.max(1, +$("editTaskTotal").value || 9),
-      maxPoints: Math.max(1, +$("editMaxPoints").value || 320),
-      strategy: $("editStrategy").value.split("\n").map(x => x.trim()).filter(Boolean)
+    const templateId = $("derbyTemplateSelect").value || null;
+    const event = {
+      template_id: templateId ? Number(templateId) : null,
+      name: $("editDerbyType").value.trim() || "Ukjent derby",
+      start_at: $("derbyStartAt").value ? new Date($("derbyStartAt").value).toISOString() : null,
+      end_at: $("derbyEndAt").value ? new Date($("derbyEndAt").value).toISOString() : null,
+      signup_deadline: $("derbySignupDeadline").value ? new Date($("derbySignupDeadline").value).toISOString() : null,
+      task_total: $("editTaskTotal").value ? Number($("editTaskTotal").value) : null,
+      extra_tasks: Number($("editExtraTasks").value || 0),
+      max_points: $("editMaxPoints").value ? Number($("editMaxPoints").value) : null,
+      daily_task_limit: $("editDailyTaskLimit").value ? Number($("editDailyTaskLimit").value) : null,
+      description: $("editDerbyDescription").value.trim() || null,
+      rules: $("editRules").value.split("\n").map(x=>x.trim()).filter(Boolean),
+      strategy: $("editStrategy").value.split("\n").map(x=>x.trim()).filter(Boolean)
     };
     setBusy(true);
-    try { await backend.saveDerby(derby); state.derby = derby; renderDerbyConfig(); closeDialog(editor); } catch(e) { alert(humanError(e)); }
+    try { await backend.publishDerbyEvent(event); await refreshState(); closeDialog(editor); } catch(e) { alert(humanError(e)); }
     setBusy(false);
   };
 

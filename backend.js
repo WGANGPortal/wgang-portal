@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "wgangPortalV080";
-  const TASK_TYPES = (window.ROOSTER_DATA && window.ROOSTER_DATA.taskTypes) || ["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Annen høsting","Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr","Produksjonsoppgaver","Lastebiloppgaver","Båtoppgaver","Besøkende","Spesifikke personer","Spesifikke hus","Fiskeoppgaver","Gruveoppgaver","Hjelpeoppgaver","Produkter","Dyr","Transportmidler","Annet"];
+  const TASK_TYPES = (window.ROOSTER_DATA && window.ROOSTER_DATA.taskTypes) || ["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Tomat","Annen høsting","Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr","Produksjonsoppgaver","Lastebiloppgaver","Båtoppgaver","Besøkende","Spesifikke personer","Spesifikke hus","Fiskeoppgaver","Gruveoppgaver","Hjelpeoppgaver","Produkter","Dyr","Transportmidler","Annet"];
   const DEFAULT_DERBY = {
     type: "Standard Derby",
     taskTotal: 9,
@@ -22,6 +22,7 @@
     ],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
+    derbyManagement: { templates: [], events: [], next: null },
     currentUserId: null
   };
 
@@ -90,24 +91,32 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     if (own.status !== "approved") {
-      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, currentUserId: own.id };
+      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes] = await Promise.all([
       client.from("profiles").select("id,email,hay_day_name,role,status").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
-      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false})
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
+      client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active").eq("is_active", true).order("name"),
+      client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
+      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at")
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes]) {
       if (result.error) throw result.error;
     }
-    const accounts = (profilesRes.data || []).map(row => mapProfile(row, participationRes.data, preferencesRes.data));
     const d = derbyRes.data;
     const derby = d ? { type:d.type, taskTotal:d.task_total, maxPoints:d.max_points, strategy:Array.isArray(d.strategy)?d.strategy:clone(DEFAULT_DERBY.strategy) } : clone(DEFAULT_DERBY);
+    const templates = templatesRes.data || [];
+    const events = eventsRes.data || [];
+    const next = events.find(e => ["published","active"].includes(e.status)) || null;
+    const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
+    const participationForView = next ? eventParticipation : (participationRes.data || []);
+    const accounts = (profilesRes.data || []).map(row => mapProfile(row, participationForView, preferencesRes.data));
     const contentRows = mapContent(contentRes.data, accounts);
     const content = {
       announcements: contentRows.filter(x => x.kind === "announcement" && x.status === "published"),
@@ -115,7 +124,7 @@
       tips: contentRows.filter(x => x.kind === "tip" && x.status === "published"),
       pendingTips: contentRows.filter(x => x.kind === "tip" && x.status === "pending")
     };
-    return { accounts, derby, content, currentUserId: session.user.id };
+    return { accounts, derby, content, derbyManagement:{templates,events,next}, currentUserId: session.user.id };
   }
 
   function appUrl() {
@@ -197,8 +206,15 @@
       if (!configured) {
         const a=localState.accounts.find(x=>x.id===userId); if(a)a.choice=choice; localSave(localState); return;
       }
-      const { error } = await client.from("derby_participation").upsert({user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"user_id"});
-      if (error) throw error;
+      const { data:event, error:eventError } = await client.from("derby_events").select("id").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
+      if (eventError) throw eventError;
+      if (event) {
+        const { error } = await client.from("derby_event_participation").upsert({event_id:event.id,user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("derby_participation").upsert({user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+        if (error) throw error;
+      }
     },
     async setPreference(userId, taskType, preference) {
       if (!configured) {
@@ -225,6 +241,23 @@
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }
       const { error }=await client.from("derby_settings").upsert({id:1,type:derby.type,task_total:derby.taskTotal,max_points:derby.maxPoints,strategy:derby.strategy,updated_at:new Date().toISOString()},{onConflict:"id"}); if(error)throw error;
+    },
+    async publishDerbyEvent(event) {
+      if (!configured) {
+        localState.derbyManagement = localState.derbyManagement || {templates:[],events:[],next:null};
+        event.id = Date.now(); event.status = "published"; event.published_at = new Date().toISOString();
+        localState.derbyManagement.events.unshift(event); localState.derbyManagement.next = event;
+        localState.derby = {type:event.name,taskTotal:event.task_total || 9,maxPoints:event.max_points || 320,strategy:event.strategy || []};
+        localSave(localState); return event;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      await client.from("derby_events").update({status:"completed",updated_at:new Date().toISOString()}).in("status",["published","active"]);
+      const payload = Object.assign({}, event, {status:"published",created_by:user.id,published_at:new Date().toISOString(),updated_at:new Date().toISOString()});
+      const { data, error } = await client.from("derby_events").insert(payload).select().single();
+      if (error) throw error;
+      await client.from("derby_settings").upsert({id:1,type:data.name,task_total:data.task_total || 9,max_points:data.max_points || 320,strategy:data.strategy || [],updated_at:new Date().toISOString()},{onConflict:"id"});
+      return data;
     },
     async createContent(kind, title, body, category="", publishNow=false) {
       if (!configured) {
