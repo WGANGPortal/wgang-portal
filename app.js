@@ -33,7 +33,7 @@
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
     "Din status":"Your status","Svarfrist":"Response deadline","Har svart":"Responded","Neste derby":"Next derby",
-    "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Administrator":"Administrator","Eier":"Owner",
+    "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Ass. leder":"Assistant leader","Administrator":"Administrator","Eier":"Owner",
     "Derby-senter":"Derby Center","Planlegg deltakelsen og følg fremdriften.":"Plan your participation and follow progress.",
     "Medlemsoversikt":"Member overview","Finn naboene dine og se derby-status.":"Find your neighbors and see their Derby status.",
     "Oppgavepreferanser":"Task preferences","Velg hva som passer deg best.":"Choose what suits you best.",
@@ -93,8 +93,10 @@
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
   function isAdmin(user=current()) { return !!user && ["owner","admin"].includes(user.role); }
+  function isOwner(user=current()) { return !!user && user.role === "owner"; }
+  function isLeadership(user=current()) { return !!user && ["owner","admin","assistant_leader"].includes(user.role); }
   function approved() { return state.accounts.filter(a => a.approved); }
-  function roleLabel(role) { return {owner:"Eier",admin:"Administrator",member:"Medlem"}[role] || role; }
+  function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
@@ -121,7 +123,7 @@
   }
 
   function navigate(route, useHash=true) {
-    if (route === "admin" && !isAdmin()) route = "dashboard";
+    if (route === "admin" && !isLeadership()) route = "dashboard";
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
     sidebar.classList.remove("open");
@@ -137,6 +139,8 @@
     portal.classList.remove("hidden");
     portal.setAttribute("aria-hidden", "false");
     document.body.classList.toggle("admin-mode", isAdmin(user));
+    document.body.classList.toggle("leadership-mode", isLeadership(user));
+    document.body.classList.toggle("owner-mode", isOwner(user));
     renderSession();
     const hash = location.hash.replace("#", "");
     navigate(hash && hash !== "landing" ? hash : "dashboard", false);
@@ -152,6 +156,8 @@
     portal.setAttribute("aria-hidden", "true");
     landing.classList.remove("hidden");
     document.body.classList.remove("admin-mode");
+    document.body.classList.remove("leadership-mode");
+    document.body.classList.remove("owner-mode");
     sidebar.classList.remove("open");
     location.hash = "landing";
     window.scrollTo(0, 0);
@@ -185,6 +191,7 @@
     renderPreferences();
     renderContent();
     renderAdmin();
+    if (isLeadership()) renderAdminPreferences();
     renderDerbyManagement();
     translateUi(portal);
   }
@@ -374,13 +381,16 @@
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
     $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
-    $("accountAdminTable").innerHTML = all.map(a => `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${a.role === "owner" && a.id === current().id ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option><option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option></select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`).join("");
+    $("accountAdminTable").innerHTML = all.map(a => {
+      const lockedOwner = a.role === "owner" && !isOwner();
+      const ownOwner = a.role === "owner" && a.id === current().id;
+      const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
+      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${ownOwner || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`;
+    }).join("");
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
     $("adminStatusGrid").innerHTML = [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("");
     $("adminResponseBadge").textContent = (all.length - counts.waiting) + " av " + all.length + " svar";
-    renderAdminPreferences();
-
     $$('[data-approve]').forEach(b => b.onclick = async () => {
       if (busy) return; setBusy(true);
       try { await backend.approve(b.dataset.approve); await refreshState(); } catch(e) { alert(humanError(e)); }
@@ -449,6 +459,14 @@
       const currentValue = select.value;
       select.innerHTML = `<option value="">Velg derbytype</option>` + dm.templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
       if (currentValue) select.value = currentValue;
+    }
+    const templateAudit = $("templateAudit");
+    if (templateAudit && select && select.value) {
+      const t = dm.templates.find(x => String(x.id) === String(select.value));
+      if (t && t.updated_at) {
+        const updater = state.accounts.find(a => String(a.id) === String(t.updated_by));
+        templateAudit.textContent = `Sist oppdatert${updater ? ` av ${updater.name}` : ""}: ${new Date(t.updated_at).toLocaleString("nb-NO")}`;
+      } else templateAudit.textContent = "";
     }
     const nextBox = $("publishedDerbySummary");
     if (nextBox) nextBox.innerHTML = dm.next ? `<strong>${esc(dm.next.name)}</strong><span>${dm.next.start_at ? `Starter ${esc(formatDate(dm.next.start_at))}` : "Publisert"}</span>` : `<span>Ingen neste derby er publisert ennå.</span>`;
@@ -630,12 +648,16 @@
     $("editDerbyDescription").value = t.description || "";
     $("editRules").value = (t.rules || []).join("\n");
     $("editStrategy").value = (t.strategy || []).join("\n");
+    const audit = $("templateAudit");
+    if (audit) {
+      const updater = state.accounts.find(a => String(a.id) === String(t.updated_by));
+      audit.textContent = t.updated_at ? `Sist oppdatert${updater ? ` av ${updater.name}` : ""}: ${new Date(t.updated_at).toLocaleString("nb-NO")}` : "";
+    }
   };
 
-  $("saveDerby").onclick = async () => {
-    if (busy) return;
+  function derbyEditorPayload() {
     const templateId = $("derbyTemplateSelect").value || null;
-    const event = {
+    return {
       template_id: templateId ? Number(templateId) : null,
       name: $("editDerbyType").value.trim() || "Ukjent derby",
       start_at: $("derbyStartAt").value ? new Date($("derbyStartAt").value).toISOString() : null,
@@ -649,8 +671,31 @@
       rules: $("editRules").value.split("\n").map(x=>x.trim()).filter(Boolean),
       strategy: $("editStrategy").value.split("\n").map(x=>x.trim()).filter(Boolean)
     };
+  }
+
+  $("saveDerby").onclick = async () => {
+    if (busy) return;
+    const event = derbyEditorPayload();
     setBusy(true);
     try { await backend.publishDerbyEvent(event); await refreshState(); closeDialog(editor); } catch(e) { alert(humanError(e)); }
+    setBusy(false);
+  };
+
+  if ($("saveDerbyTemplate")) $("saveDerbyTemplate").onclick = async () => {
+    if (busy || !isOwner()) return;
+    const event = derbyEditorPayload();
+    if (!event.template_id) { alert("Velg en grunnmal først."); return; }
+    if (!confirm("Lagre disse opplysningene som ny standard for denne derbytypen?")) return;
+    setBusy(true);
+    try {
+      await backend.updateDerbyTemplate({
+        id:event.template_id, name:event.name, description:event.description,
+        taskTotal:event.task_total, extraTasks:event.extra_tasks, maxPoints:event.max_points,
+        dailyTaskLimit:event.daily_task_limit, rules:event.rules, strategy:event.strategy
+      });
+      await refreshState();
+      alert("Grunnmalen er oppdatert. Endringene brukes neste gang derbytypen velges.");
+    } catch(e) { alert(humanError(e)); }
     setBusy(false);
   };
 

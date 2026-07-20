@@ -107,7 +107,7 @@
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
-      client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active").eq("is_active", true).order("name"),
+      client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at")
     ]);
@@ -270,6 +270,21 @@
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }
       const { error }=await client.from("derby_settings").upsert({id:1,type:derby.type,task_total:derby.taskTotal,max_points:derby.maxPoints,strategy:derby.strategy,updated_at:new Date().toISOString()},{onConflict:"id"}); if(error)throw error;
+    },
+    async updateDerbyTemplate(template) {
+      if (!configured) return;
+      const { error } = await client.rpc("update_derby_template", {
+        p_template_id: template.id,
+        p_name: template.name,
+        p_description: template.description || null,
+        p_task_total: template.taskTotal ?? null,
+        p_extra_tasks: template.extraTasks ?? 0,
+        p_max_points: template.maxPoints ?? null,
+        p_daily_task_limit: template.dailyTaskLimit ?? null,
+        p_rules: template.rules || [],
+        p_strategy: template.strategy || []
+      });
+      if (error) throw error;
     },
     async publishDerbyEvent(event) {
       if (!configured) {

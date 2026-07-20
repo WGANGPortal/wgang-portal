@@ -74,7 +74,7 @@
 - La til Tomat under innhøstingsoppgaver.
 - Oppdatert svarfrist til mandag kl. 23:00.
 
-## v0.11.0
+## v0.12.0
 - Added voluntary member profiles.
 - Added uppercase normalization for Hay Day names.
 - Removed email from member/admin presentation and browser-readable profile columns.
