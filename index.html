@@ -83,7 +83,7 @@
     <button type="button" data-language-choice="no" role="menuitem">🇳🇴 <span>Norsk</span></button>
     <button type="button" data-language-choice="en" role="menuitem">🇬🇧 <span>English</span></button>
   </div>
-</div><button class="role-switch leadership-only" id="roleSwitch">Admin</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
+</div><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -95,9 +95,21 @@
           <a href="#preferences" data-route="preferences"><span>✓</span>Oppgaver</a>
           <a href="#discussions" data-route="discussions"><span>□</span>Diskusjoner</a>
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
-          <a href="#admin" class="leadership-only admin-nav-link" data-route="admin"><span>⚙</span>Admin <b id="notificationBadge" class="notification-badge hidden">0</b></a>
+          <div class="admin-nav-group leadership-only">
+  <button class="admin-nav-toggle" id="adminNavToggle" type="button" aria-expanded="false">
+    <span>⚙</span><span>Admin</span><b id="notificationBadge" class="notification-badge hidden">0</b><span class="admin-nav-chevron">⌄</span>
+  </button>
+  <div class="admin-subnav hidden" id="adminSubnav">
+    <a href="#leadership" class="leadership-only" data-route="leadership"><span>♟</span>Lederprat</a>
+    <a href="#admin-actions" class="admin-only" data-admin-route="actions"><span>🔔</span>Til behandling</a>
+    <a href="#admin-derby" class="admin-only" data-admin-route="derby"><span>◇</span>Derbyadministrasjon</a>
+    <a href="#admin-applications" class="admin-only" data-admin-route="applications"><span>◎</span>Medlemssøknader</a>
+    <a href="#admin-board" class="leadership-only" data-admin-route="board"><span>✓</span>Oppslagstavla</a>
+    <a href="#admin-roles" class="admin-only" data-admin-route="roles"><span>⚙</span>Medlemmer og roller</a>
+  </div>
+</div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.15.0</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.15.1</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -151,16 +163,9 @@
           <article class="portal-card install-guide-card"><div class="card-header"><div><p class="card-kicker">WGANG SOM APP</p><h2>Legg portalen på hjemskjermen</h2><p class="helper-text">Da åpnes WGANG Portal mer som en egen app på telefonen din.</p></div><button class="button button-primary hidden" id="installAppButton">Installer WGANG Portal</button></div><div class="install-guide-grid"><div><strong>iPhone / iPad</strong><p>Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.</p></div><div><strong>Android</strong><p>Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.</p></div></div></article>
           <article class="portal-card community-tip-card"><p class="card-kicker">BYGGES SAMMEN</p><h2>Dette er bare starten</h2><p>Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips &amp; triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.</p></article>
         </section>
-        <section class="page leadership-only" data-page="admin"><div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1>Admin</h1><p>Velg området du vil arbeide med.</p></div></div>
-<div class="admin-hub-grid">
-  <button class="admin-hub-card leadership-only" data-admin-target="leadership"><span>♟</span><div><strong>Lederprat</strong><small>Strategi og intern planlegging</small></div></button>
-  <button class="admin-hub-card admin-only" data-admin-module-button="actions"><span>🔔</span><div><strong>Til behandling</strong><small>Varsler og tips som venter</small></div></button>
-  <button class="admin-hub-card admin-only" data-admin-module-button="derby"><span>◇</span><div><strong>Derbyadministrasjon</strong><small>Velg og publiser neste derby</small></div></button>
-  <button class="admin-hub-card admin-only" data-admin-module-button="applications"><span>◎</span><div><strong>Medlemssøknader</strong><small>Godkjenn eller avslå søknader</small></div></button>
-  <button class="admin-hub-card leadership-only" data-admin-module-button="board"><span>✓</span><div><strong>Oppslagstavla</strong><small>Oppgavepreferanser og tavlestrategi</small></div></button>
-  <button class="admin-hub-card admin-only" data-admin-module-button="roles"><span>⚙</span><div><strong>Medlemmer og roller</strong><small>Administrer roller og tilgang</small></div></button>
-</div>
-<div class="admin-module-panel hidden" id="adminModulePanel"><button class="text-button admin-back-button" id="adminBackButton">← Tilbake til Admin</button>
+        <section class="page leadership-only" data-page="admin">
+<div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1 id="adminPageTitle">Admin</h1><p id="adminPageDescription"></p></div></div>
+<div class="admin-module-panel" id="adminModulePanel">
 <article class="portal-card admin-action-card admin-only admin-module" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">🔔 KREVER HANDLING</p><h2>Adminvarsler</h2><p class="helper-text">Nye medlemsforespørsler og tips til godkjenning vises her.</p></div></div><div id="adminActionList" class="admin-action-list"></div></article>
 <article class="portal-card derby-management-card admin-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
 <article class="portal-card admin-summary admin-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div></article>

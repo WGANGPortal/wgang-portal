@@ -191,8 +191,8 @@
 
   function navigate(route, useHash=true) {
     if ((route === "admin" || route === "leadership") && !isLeadership()) route = "dashboard";
+    if (route === "admin") { showAdminModule(isAdmin() ? "actions" : "board", useHash); return; }
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
-    if (route === "admin") showAdminHome();
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
     sidebar.classList.remove("open");
     if (useHash) location.hash = route;
@@ -200,20 +200,27 @@
     window.scrollTo({top:0, behavior:"smooth"});
   }
 
-  function showAdminHome() {
-    document.querySelectorAll(".admin-hub-card").forEach(el => el.classList.remove("hidden"));
-    const panel = $("adminModulePanel");
-    if (panel) panel.classList.add("hidden");
-    document.querySelectorAll(".admin-module").forEach(el => el.classList.remove("admin-module-active"));
-  }
+  const ADMIN_MODULE_META = {
+    actions: ["Til behandling", "Varsler, tips og andre saker som venter på gjennomgang."],
+    derby: ["Derbyadministrasjon", "Velg, kontroller og publiser neste derby."],
+    applications: ["Medlemssøknader", "Godkjenn eller avslå nye medlemsforespørsler."],
+    board: ["Oppslagstavla", "Se lagets oppgavepreferanser og planlegg hvilke oppgaver som bør beholdes."],
+    roles: ["Medlemmer og roller", "Administrer medlemmer, roller og tilgang."]
+  };
 
-  function showAdminModule(name) {
+  function showAdminModule(name, useHash=true) {
     if (!isLeadership()) { navigate("dashboard"); return; }
-    if (!isAdmin() && name !== "board") { showAdminHome(); return; }
-    document.querySelectorAll(".admin-hub-card").forEach(el => el.classList.add("hidden"));
-    const panel = $("adminModulePanel");
-    if (panel) panel.classList.remove("hidden");
+    if (!isAdmin() && name !== "board") { navigate("dashboard"); return; }
+    $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === "admin"));
     document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
+    const meta = ADMIN_MODULE_META[name] || ["Admin", ""];
+    if ($("adminPageTitle")) $("adminPageTitle").textContent = meta[0];
+    if ($("adminPageDescription")) $("adminPageDescription").textContent = meta[1];
+    $$(".side-nav a").forEach(a => a.classList.remove("active"));
+    document.querySelectorAll("[data-admin-route]").forEach(a => a.classList.toggle("active", a.dataset.adminRoute === name));
+    if (useHash) history.replaceState(null, "", "#admin-" + name);
+    closeMenu();
+    translateUi(document);
   }
 
   function openPortal() {
@@ -585,7 +592,7 @@
     const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
     const list = $("adminActionList");
     if (list) list.innerHTML = total ? `${pendingMembers ? `<button class="action-item" data-action-route="admin"><strong>${pendingMembers}</strong><span>medlemsforespørsel${pendingMembers===1?"":"er"} venter</span></button>`:""}${pendingTips ? `<button class="action-item" data-action-route="admin"><strong>${pendingTips}</strong><span>tips venter på godkjenning</span></button>`:""}` : `<p class="empty-state">Ingen saker krever handling akkurat nå.</p>`;
-    $$("[data-action-route]").forEach(b=>b.onclick=()=>{ navigate("admin"); showAdminModule("actions"); });
+    $$("[data-action-route]").forEach(b=>b.onclick=()=>{ showAdminModule("actions"); });
   }
 
   async function init() {
@@ -683,10 +690,16 @@
 
   $$('[data-route]').forEach(a => a.addEventListener("click", e => { e.preventDefault(); if (portal.classList.contains("hidden")) { openPortal(); return; } navigate(a.dataset.route); }));
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
-  $("roleSwitch").onclick = () => navigate("admin");
-  document.querySelectorAll("[data-admin-target='leadership']").forEach(b => b.onclick = () => navigate("leadership"));
-  document.querySelectorAll("[data-admin-module-button]").forEach(b => b.onclick = () => showAdminModule(b.dataset.adminModuleButton));
-  if ($("adminBackButton")) $("adminBackButton").onclick = () => showAdminHome();
+  if ($("adminNavToggle")) $("adminNavToggle").onclick = () => {
+    const sub = $("adminSubnav");
+    if (!sub) return;
+    sub.classList.toggle("hidden");
+    $("adminNavToggle").setAttribute("aria-expanded", sub.classList.contains("hidden") ? "false" : "true");
+  };
+  document.querySelectorAll("[data-admin-route]").forEach(a => a.onclick = e => {
+    e.preventDefault();
+    showAdminModule(a.dataset.adminRoute);
+  });
   $("profileChip").onclick = () => { if (current()) openMemberProfile(current().id); };
   function refreshLanguageButton() {
     const flag = $("languageFlag");
