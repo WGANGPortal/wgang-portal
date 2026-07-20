@@ -146,6 +146,9 @@
   const landing = $("landing");
   const portal = $("portal");
   const sidebar = $("sidebar");
+  function closeMenu() {
+    if (sidebar) sidebar.classList.remove("open");
+  }
   const portalMain = $("portalMain");
   const auth = $("authDialog");
   const passwordSetup = $("passwordSetupDialog");
@@ -694,7 +697,16 @@
     setBusy(false);
   };
 
-  $$('[data-route]').forEach(a => a.addEventListener("click", e => { e.preventDefault(); if (portal.classList.contains("hidden")) { openPortal(); return; } navigate(a.dataset.route); }));
+  $$('[data-route]').forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    if (portal.classList.contains("hidden")) {
+      openPortal();
+      closeMenu();
+      return;
+    }
+    navigate(a.dataset.route);
+    closeMenu();
+  }));
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   if ($("adminNavToggle")) $("adminNavToggle").onclick = () => {
     const sub = $("adminSubnav");
