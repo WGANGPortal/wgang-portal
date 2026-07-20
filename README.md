@@ -34,5 +34,5 @@ Data lagres i nettleserens `localStorage`. Medlemmer på forskjellige enheter de
 Etter at den første brukeren er invitert og har opprettet passord, kjør `FIRST-OWNER-SETUP.sql` i Supabase SQL Editor med riktig e-postadresse. Dette setter kontoen til `owner` og `approved`.
 
 
-## v0.13.0 database
-Kjør `MIGRATION-v0.13.0-DERBY-PARTICIPATION.sql` etter Derby Management Foundation-migreringen før publisering.
+## v0.14.0 database
+Kjør `MIGRATION-v0.14.0-DERBY-PARTICIPATION.sql` etter Derby Management Foundation-migreringen før publisering.

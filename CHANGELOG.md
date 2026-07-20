@@ -1,4 +1,11 @@
-## v0.13.0
+
+## v0.14.0 – Complete Language Support
+- Mer komplett norsk/engelsk systemoversettelse.
+- Oppgavekategorier og oppgavenavn oversettes dynamisk.
+- Forbedret engelsk visning av derby- og admininnhold.
+- Ingen databaseendring.
+
+## v0.14.0
 - Added private Leadership Chat for Assistant Leaders, Administrators and Owner.
 - Added compact flag-only language selector.
 - Expanded English translation coverage for portal UI and known Derby content.

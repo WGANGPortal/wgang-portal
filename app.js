@@ -67,6 +67,30 @@
     "Regler":"Rules","WGANG-strategi":"WGANG strategy","Oppgaver":"Tasks","Maks poeng":"Max points","Status":"Status",
     "Publiser kun dette derbyet":"Publish this Derby only","Lagre som standard":"Save as default","Velg grunnmal":"Choose template","Velg derbytype":"Choose Derby type",
     "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description"
+    ,"OVERSIKT":"OVERVIEW","OPPGAVER":"TASKS","MEDLEMMER":"MEMBERS","ADMINISTRASJON":"ADMINISTRATION",
+    "Fortell laget hvilke oppgaver som passer deg best.":"Tell the team which tasks suit you best.",
+    "Innhøstingsoppgaver":"Harvesting Tasks","Hvete":"Wheat","Mais":"Corn","Gulrot":"Carrot","Bønner":"Soybeans","Sukkererter":"Sugarcane","Jordbær":"Strawberries","Potet":"Potatoes","Tomat":"Tomatoes","Annen høsting":"Other harvesting",
+    "Dyreoppgaver":"Animal Tasks","Melk":"Milk","Bacon":"Bacon","Egg":"Eggs","Ull":"Wool","Geitemelk":"Goat Milk","Mate dyr":"Feed Animals",
+    "Produksjonsoppgaver":"Production Tasks","Lastebiloppgaver":"Truck Tasks","Båtoppgaver":"Boat Tasks","Byoppgaver":"Town Tasks",
+    "Besøkende":"Visitors","Spesifikke personer":"Specific Visitors","Spesifikke hus":"Specific Buildings",
+    "Fiskeoppgaver":"Fishing Tasks","Gruveoppgaver":"Mining Tasks","Hjelpeoppgaver":"Help Tasks","Kurvoppgaver":"Basket Tasks",
+    "Produkter":"Products","Dyr":"Animals","Transportmidler":"Vehicles","Annet":"Other",
+    "Personlig derbyoversikt":"Personal Derby Overview","Din derbyoversikt":"Your Derby Overview",
+    "Kan endres frem til fristen.":"Can be changed until the deadline.",
+    "Godkjente medlemmer":"Approved members","Ingen svar ennå":"No responses yet",
+    "Neste derby er ikke publisert ennå.":"The next Derby has not been published yet.",
+    "Ingen kunngjøringer ennå.":"No announcements yet.","Ingen innlegg ennå.":"No posts yet.",
+    "Lederprat":"Leadership Chat","Lukket chat for Ass. leder, Admin og Eier.":"Private chat for Assistant Leaders, Admins and the Owner.",
+    "Skriv en melding":"Write a message","Send melding":"Send message","Ingen meldinger ennå.":"No messages yet.",
+    "Slett melding":"Delete message","Rediger melding":"Edit message",
+    "Påmeldt":"Participating","Pause":"Taking a break","Venter":"Waiting","Ikke svart":"No response",
+    "Pågående derby":"Current Derby","Forrige derby":"Previous Derby","Publisert":"Published","Aktiv":"Active","Avsluttet":"Completed","Kladd":"Draft",
+    "Sist oppdatert av":"Last updated by","Ikke registrert":"Not registered",
+    "Oppgaver vi bør beholde":"Tasks we should keep","Populære – ikke slett":"Popular – do not delete","Kan beholdes":"Can be kept","Lav interesse":"Low interest",
+    "Søk":"Search","Alle":"All","Velg medlem":"Choose member","Velg oppgave":"Choose task","Velg preferanse":"Choose preference",
+    "Ingen tips ennå.":"No tips yet.","Venter på godkjenning":"Awaiting approval","Godkjent":"Approved",
+    "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal."
+
   };
   const DYNAMIC_EN = {
     "Standard Derby":"Standard Derby","Bingo Derby":"Bingo Derby","Styrke Derby":"Power Derby","Blomsterderby":"Blossom Derby","Harepusderby":"Bunny Derby","Chill Derby":"Chill Derby","Chill Harepus Derby":"Chill Bunny Derby","Mystery Derby":"Mystery Derby",
@@ -79,6 +103,11 @@
     "Hver fullførte oppgave gir 50 poeng.":"Each completed task gives 50 points.",
     "Chill Derby kombineres med Harepus Derby.":"Chill Derby is combined with Bunny Derby.",
     "Klargjør oppgaver på forhånd slik at du kan gjennomføre dem mens harepusen er aktiv. Harepusoppgavene vises som rosa oppgaver.":"Prepare tasks in advance so you can complete them while the Bunny is active. Bunny tasks are shown as pink tasks."
+    ,"Innhøstingsoppgaver":"Harvesting Tasks","Hvete":"Wheat","Mais":"Corn","Gulrot":"Carrot","Bønner":"Soybeans","Sukkererter":"Sugarcane","Jordbær":"Strawberries","Potet":"Potatoes","Tomat":"Tomatoes","Annen høsting":"Other harvesting",
+    "Dyreoppgaver":"Animal Tasks","Melk":"Milk","Bacon":"Bacon","Egg":"Eggs","Ull":"Wool","Geitemelk":"Goat Milk","Mate dyr":"Feed Animals",
+    "Produksjonsoppgaver":"Production Tasks","Lastebiloppgaver":"Truck Tasks","Båtoppgaver":"Boat Tasks","Byoppgaver":"Town Tasks","Besøkende":"Visitors","Spesifikke personer":"Specific Visitors","Spesifikke hus":"Specific Buildings",
+    "Fiskeoppgaver":"Fishing Tasks","Gruveoppgaver":"Mining Tasks","Hjelpeoppgaver":"Help Tasks","Kurvoppgaver":"Basket Tasks","Produkter":"Products","Dyr":"Animals","Transportmidler":"Vehicles","Annet":"Other"
+
   };
   function tText(value) {
     if (currentLanguage !== "en") return value;
@@ -293,7 +322,7 @@
     const user = current();
     const list = $("preferenceList");
     if (!user || !list) return;
-    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(group.name)}</h2><p>Velg hva som passer deg best.</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(task)}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("")}</section>`).join("");
+    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>Velg hva som passer deg best.</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("")}</section>`).join("");
     $$('[data-pref-task]').forEach(button => button.onclick = async () => {
       if (busy) return;
       const me = current();
