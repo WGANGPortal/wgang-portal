@@ -265,6 +265,12 @@
   }
 
   function renderSession() {
+    if (!isLeadership()) {
+      document.body.classList.remove("leadership-mode", "admin-mode");
+      $("adminSubnav")?.classList.add("hidden");
+      $("adminNavToggle")?.setAttribute("aria-expanded", "false");
+    }
+
     const user = current();
     if (!user) return;
     user.name = String(user.name || "").toUpperCase();
@@ -699,6 +705,7 @@
   document.querySelectorAll("[data-admin-route]").forEach(a => a.onclick = e => {
     e.preventDefault();
     showAdminModule(a.dataset.adminRoute);
+    closeMenu();
   });
   $("profileChip").onclick = () => { if (current()) openMemberProfile(current().id); };
   function refreshLanguageButton() {

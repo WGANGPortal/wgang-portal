@@ -95,3 +95,63 @@ body:not(.leadership-mode) [data-page="admin"],body:not(.leadership-mode) [data-
 .admin-module{display:none!important}
 .admin-module.admin-module-active{display:block!important}
 .admin-hub-grid,.admin-back-button{display:none!important}
+
+/* v0.15.2 – mobile navigation + strict role visibility hotfix */
+
+/* Role visibility must override generic layout rules. */
+body:not(.leadership-mode) .leadership-only,
+body:not(.leadership-mode) .admin-nav-group,
+body:not(.leadership-mode) #adminSubnav,
+body:not(.leadership-mode) [data-page="admin"],
+body:not(.leadership-mode) [data-page="leadership"] {
+  display: none !important;
+}
+
+body:not(.admin-mode) .admin-only {
+  display: none !important;
+}
+
+/* Keep the drawer usable on short mobile screens. */
+.side-menu,
+.sidebar,
+.side-nav {
+  max-height: 100dvh;
+}
+
+.side-menu,
+.sidebar {
+  overflow: hidden;
+}
+
+.side-nav {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(120px, calc(env(safe-area-inset-bottom) + 100px));
+}
+
+.admin-subnav {
+  padding-bottom: 12px;
+}
+
+.admin-subnav a {
+  min-height: 44px;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+@media (max-width: 760px) {
+  .admin-subnav {
+    padding-left: 24px;
+  }
+  .admin-subnav a {
+    font-size: .88rem;
+    line-height: 1.2;
+  }
+  .side-menu-footer,
+  .sidebar-footer {
+    position: static !important;
+    margin-top: 28px;
+  }
+}
