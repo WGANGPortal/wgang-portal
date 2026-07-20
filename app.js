@@ -763,10 +763,11 @@
   });
   $("profileChip").onclick = () => {
     if (!current()) return;
-    renderOwnProfile();
-    if($("profileHubName")) $("profileHubName").textContent=current()?.gameName||"PROFIL";
-    showProfileHubSection("menu");
-    $("memberProfileDialog").showModal();
+    openMemberProfile(current().id);
+    setTimeout(() => {
+      if (typeof showProfileHubSection === "function") showProfileHubSection("menu");
+      if ($("profileHubName")) $("profileHubName").textContent = current()?.gameName || "PROFIL";
+    }, 0);
   };
   function refreshLanguageButton() {
     const flag = $("languageFlag");
