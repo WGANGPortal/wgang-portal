@@ -1,0 +1,2 @@
+-- Already executed before deployment of v0.13.0. See conversation setup.
+-- Creates public.leadership_messages with RLS restricted to public.is_wgang_leadership().

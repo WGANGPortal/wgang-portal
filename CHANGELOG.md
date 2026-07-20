@@ -1,3 +1,8 @@
+## v0.13.0
+- Added private Leadership Chat for Assistant Leaders, Administrators and Owner.
+- Added compact flag-only language selector.
+- Expanded English translation coverage for portal UI and known Derby content.
+
 
 ## v0.8.3 – Content & admin polish
 - Endret informasjonsteksten i innloggingsvinduet til en enklere medlemsrettet velkomsttekst.

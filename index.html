@@ -77,7 +77,7 @@
     <header class="portal-topbar">
       <button class="icon-button menu-toggle" id="menuToggle" aria-label="Åpne meny"><span></span><span></span><span></span></button>
       <a class="portal-brand" href="#dashboard" data-route="dashboard"><img src="wgang-icon-pink.webp" alt=""><span><strong>WGANG</strong><small>PORTAL</small></span></a>
-      <div class="portal-actions"><label class="language-picker" aria-label="Velg språk"><select id="languageSelect"><option value="no">🇳🇴 Norsk</option><option value="en">🇬🇧 English</option></select></label><button class="role-switch leadership-only" id="roleSwitch">Adminvisning</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
+      <div class="portal-actions"><label class="language-picker language-picker-flags" aria-label="Velg språk"><select id="languageSelect" title="Velg språk"><option value="no" aria-label="Norsk">🇳🇴</option><option value="en" aria-label="English">🇬🇧</option></select></label><button class="role-switch leadership-only" id="roleSwitch">Adminvisning</button><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -87,11 +87,11 @@
           <a href="#derby" data-route="derby"><span>◇</span>Derby</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
           <a href="#preferences" data-route="preferences"><span>✓</span>Oppgaver</a>
-          <a href="#discussions" data-route="discussions"><span>□</span>Diskusjoner</a>
+          <a href="#discussions" data-route="discussions"><span>□</span>Diskusjoner</a><a href="#leadership" class="leadership-only" data-route="leadership"><span>♟</span>Lederprat</a>
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
           <a href="#admin" class="admin-only admin-nav-link" data-route="admin"><span>⚙</span>Admin <b id="notificationBadge" class="notification-badge hidden">0</b></a>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.11.0</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.13.0</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -118,6 +118,19 @@
           <div class="page-heading"><div><p class="eyebrow">SAMTALER</p><h1>Diskusjoner</h1><p>Viktige beskjeder og derbyprat samlet på ett sted.</p></div></div>
           <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">KUNNGJØRINGER</p><h2>Viktige beskjeder</h2></div><button class="button button-primary admin-only" id="openAnnouncementForm">Ny kunngjøring</button></div><div id="announcementList" class="post-list"></div></article>
           <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Prat om ukens derby</h2><p class="helper-text">Del strategi, spørsmål og koordinering med nabolaget.</p></div><button class="button button-primary" id="openDerbyPostForm">Nytt innlegg</button></div><div id="derbyPostList" class="post-list"></div></article>
+        </section>
+        <section class="page leadership-only" data-page="leadership">
+          <div class="page-heading"><div><p class="eyebrow">LEDELSE</p><h1>Lederprat</h1><p>Et lukket rom for Ass. leder, Administrator og Eier.</p></div></div>
+          <article class="portal-card leadership-chat-card">
+            <div class="card-header"><div><p class="card-kicker">STRATEGIROM</p><h2>Planlegg derbyet sammen</h2><p class="helper-text">Meldingene her er kun synlige for WGANG-ledelsen.</p></div></div>
+            <div id="leadershipMessageList" class="leadership-message-list"></div>
+            <form id="leadershipMessageForm" class="leadership-message-form">
+              <label for="leadershipMessageInput">Ny melding</label>
+              <textarea id="leadershipMessageInput" rows="3" maxlength="5000" placeholder="Skriv en melding til ledelsen …" required></textarea>
+              <div class="leadership-message-actions"><button class="button button-primary" type="submit">Send melding</button></div>
+              <p class="form-message" id="leadershipMessageStatus"></p>
+            </form>
+          </article>
         </section>
         <section class="page" data-page="wiki"><div class="page-heading"><div><p class="eyebrow">KUNNSKAP</p><h1>WGANG Tips &amp; triks</h1><p>Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.</p></div><span class="development-badge">Vokser med WGANG</span></div>
           <article class="portal-card wiki-intro-card"><p class="card-kicker">WGANGS GRUNNSTRATEGI</p><h2>320 poeng – og en tavle som holdes i bevegelse</h2><p>I Standard Derby er hovedregelen enkel: Vi tar oppgaver med 320 poeng. Admin rydder bort oppgaver som få eller ingen ønsker, slik at nye og bedre oppgaver får plass på tavla. Oppgavepreferansene hjelper admin å se hvilke 320-oppgaver som passer nabolaget best.</p></article>

@@ -96,12 +96,12 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     if (own.status !== "approved") {
-      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
+      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -109,9 +109,10 @@
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
-      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at")
+      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at"),
+      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300)
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -129,7 +130,16 @@
       tips: contentRows.filter(x => x.kind === "tip" && x.status === "published"),
       pendingTips: contentRows.filter(x => x.kind === "tip" && x.status === "pending")
     };
-    return { accounts, derby, content, derbyManagement:{templates,events,next}, currentUserId: session.user.id };
+    const nameById = Object.fromEntries(accounts.map(a => [a.id, a.name]));
+    const leadershipMessages = (leadershipRes.data || []).map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      authorName: nameById[row.user_id] || "WGANG-ledelse",
+      message: row.message,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+    return { accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next}, currentUserId: session.user.id };
   }
 
   function appUrl() {
@@ -338,6 +348,29 @@
     async deleteContent(id) {
       if (!configured) return;
       const { error } = await client.from("community_content").delete().eq("id",id);
+      if (error) throw error;
+    },
+    async sendLeadershipMessage(message) {
+      if (!configured) {
+        localState.leadershipMessages = localState.leadershipMessages || [];
+        const me = localState.accounts.find(x => x.id === localState.currentUserId);
+        const item = {id:Date.now(),userId:me?.id,authorName:me?.name||"WGANG-ledelse",message,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        localState.leadershipMessages.push(item); localSave(localState); return item;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message}).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async updateLeadershipMessage(id, message) {
+      if (!configured) return;
+      const { error } = await client.from("leadership_messages").update({message,updated_at:new Date().toISOString()}).eq("id",id);
+      if (error) throw error;
+    },
+    async deleteLeadershipMessage(id) {
+      if (!configured) return;
+      const { error } = await client.from("leadership_messages").delete().eq("id",id);
       if (error) throw error;
     },
     onAuthChange(callback) {

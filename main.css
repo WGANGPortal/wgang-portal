@@ -53,3 +53,12 @@ body:has(#profileRole) .owner-only{display:none!important}
 .derby-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
 @media(max-width:620px){.derby-editor-actions{grid-template-columns:1fr}}
 .owner-mode .owner-only{display:inline-flex!important}
+
+
+/* v0.13.0 – compact language picker + Leadership Chat */
+.language-picker-flags select{width:56px;min-width:56px;padding:.55rem .5rem;text-align:center;font-size:1.15rem;border-radius:999px;appearance:auto}
+.leadership-message-list{display:flex;flex-direction:column;gap:12px;max-height:520px;overflow:auto;padding:4px 2px 18px}
+.leadership-message{max-width:86%;padding:12px 14px;border-radius:16px;background:var(--surface-soft,#f7eef2);border:1px solid rgba(169,47,96,.12)}
+.leadership-message.own{margin-left:auto;background:#f8e4ec}
+.leadership-message-head{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:6px}.leadership-message-head small{opacity:.65;white-space:nowrap}.leadership-message p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.leadership-message-tools{margin-top:8px;text-align:right}.leadership-message-form{border-top:1px solid rgba(0,0,0,.08);padding-top:18px}.leadership-message-form textarea{width:100%;resize:vertical}.leadership-message-actions{display:flex;justify-content:flex-end;margin-top:10px}
+@media(max-width:680px){.leadership-message{max-width:94%}.language-picker-flags select{width:50px;min-width:50px;padding:.45rem .35rem}}

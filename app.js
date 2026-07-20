@@ -52,8 +52,48 @@
     "Kjønn":"Gender","Aldersgruppe":"Age group","Land / sted":"Country / place",
     "Hvor lenge har du spilt Hay Day?":"How long have you played Hay Day?","Hva liker du best i spillet?":"What do you like most about the game?",
     "Frivillig å fylle ut.":"Optional to fill in.","Ingen profilinformasjon er delt ennå.":"No profile information has been shared yet.",
-    "Norsk":"Norwegian","Engelsk":"English"
+    "Norsk":"Norwegian","Engelsk":"English",
+    "SAMTALER":"CONVERSATIONS","Viktige beskjeder og derbyprat samlet på ett sted.":"Important messages and Derby talk in one place.",
+    "Prat om ukens derby":"Talk about this week's Derby","Del strategi, spørsmål og koordinering med nabolaget.":"Share strategy, questions and coordination with the Neighborhood.",
+    "Nytt innlegg":"New post","Ny kunngjøring":"New announcement","Publiser kunngjøring":"Publish announcement","Publiser innlegg":"Publish post",
+    "KUNNSKAP":"KNOWLEDGE","WGANG Tips & triks":"WGANG Tips & Tricks","Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.":"What we already know works well – gathered in one place and developed together with the Neighborhood.",
+    "WGANGS GRUNNSTRATEGI":"WGANG'S CORE STRATEGY","320 poeng – og en tavle som holdes i bevegelse":"320 points – and a task board that keeps moving",
+    "LEDELSE":"LEADERSHIP","Lederprat":"Leadership Chat","Et lukket rom for Ass. leder, Administrator og Eier.":"A private space for Assistant Leaders, Administrators and the Owner.",
+    "STRATEGIROM":"STRATEGY ROOM","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to WGANG leadership.",
+    "Ny melding":"New message","Send melding":"Send message","Skriv en melding til ledelsen …":"Write a message to the leadership …",
+    "Starter tirsdag kl. 10:00":"Starts Tuesday at 10:00","Mandag kl. 23:00":"Monday at 23:00","Svar gjerne innen mandag kl. 23:00.":"Please respond by Monday at 23:00.",
+    "Jeg deltar":"I'm participating","Jeg gjør mitt beste":"I'll do my best","Jeg tar pause":"I'm taking a break","Ikke med denne uken":"Not participating this week","Jeg er usikker":"I'm unsure","Avklarer før fristen":"I'll decide before the deadline",
+    "Velg status for uken":"Choose your status for the week","Velg status for neste derby.":"Choose your status for the next Derby.",
+    "Regler":"Rules","WGANG-strategi":"WGANG strategy","Oppgaver":"Tasks","Maks poeng":"Max points","Status":"Status",
+    "Publiser kun dette derbyet":"Publish this Derby only","Lagre som standard":"Save as default","Velg grunnmal":"Choose template","Velg derbytype":"Choose Derby type",
+    "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description"
   };
+  const DYNAMIC_EN = {
+    "Standard Derby":"Standard Derby","Bingo Derby":"Bingo Derby","Styrke Derby":"Power Derby","Blomsterderby":"Blossom Derby","Harepusderby":"Bunny Derby","Chill Derby":"Chill Derby","Chill Harepus Derby":"Chill Bunny Derby","Mystery Derby":"Mystery Derby",
+    "WGANG har som mål å ta oppgaver med 320 poeng.":"WGANG aims to take 320-point tasks.",
+    "Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at oppgavetavla holdes i bevegelse.":"Admins remove tasks the Neighborhood rarely wants so the task board keeps moving.",
+    "Medlemmenes oppgavepreferanser brukes for å vurdere hvilke oppgaver som bør få stå.":"Members' task preferences are used to decide which tasks should remain on the board.",
+    "Alle som melder seg på og skal delta, skal fullføre 5 oppgaver hver dag.":"Everyone who signs up to participate must complete 5 tasks every day.",
+    "Det kan gjennomføres 5 ordinære oppgaver per dag.":"You can complete 5 regular tasks per day.",
+    "Det kan kjøpes 1 ekstra oppgave per dag.":"You can buy 1 extra task per day.",
+    "Hver fullførte oppgave gir 50 poeng.":"Each completed task gives 50 points.",
+    "Chill Derby kombineres med Harepus Derby.":"Chill Derby is combined with Bunny Derby.",
+    "Klargjør oppgaver på forhånd slik at du kan gjennomføre dem mens harepusen er aktiv. Harepusoppgavene vises som rosa oppgaver.":"Prepare tasks in advance so you can complete them while the Bunny is active. Bunny tasks are shown as pink tasks."
+  };
+  function tText(value) {
+    if (currentLanguage !== "en") return value;
+    const text = String(value ?? "");
+    if (DYNAMIC_EN[text]) return DYNAMIC_EN[text];
+    if (I18N_EN[text]) return I18N_EN[text];
+    return text
+      .replace(/Neste derby:/g,"Next Derby:")
+      .replace(/Starter tirsdag kl\. 10:00/g,"Starts Tuesday at 10:00")
+      .replace(/Svar gjerne innen mandag kl\. 23:00/g,"Please respond by Monday at 23:00")
+      .replace(/oppgaver per dag/g,"tasks per day")
+      .replace(/ekstraoppgave/g,"extra task")
+      .replace(/poeng per oppgave/g,"points per task");
+  }
+
   const originalText = new WeakMap();
   function translateUi(root=document) {
     const english = currentLanguage === "en";
@@ -66,14 +106,14 @@
       if (!originalText.has(node)) originalText.set(node, raw);
       const trimmed = raw.trim();
       if (!trimmed) return;
-      if (english && I18N_EN[trimmed]) node.nodeValue = raw.replace(trimmed, I18N_EN[trimmed]);
+      if (english) { const translated = tText(trimmed); if (translated !== trimmed) node.nodeValue = raw.replace(trimmed, translated); }
       else if (!english) node.nodeValue = raw;
     });
     const selector = document.getElementById("languageSelect");
     if (selector) selector.value = currentLanguage;
   }
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -190,6 +230,7 @@
     renderMembers();
     renderPreferences();
     renderContent();
+    renderLeadershipChat();
     renderAdmin();
     if (isLeadership()) renderAdminPreferences();
     renderDerbyManagement();
@@ -372,6 +413,25 @@
       if (!isAdmin() || !confirm("Slette dette innholdet?")) return;
       if (busy) return; setBusy(true);
       try { await backend.deleteContent(b.dataset.deleteContent); await refreshState(); } catch(e) { alert(humanError(e)); }
+      setBusy(false);
+    });
+  }
+
+  function renderLeadershipChat() {
+    const list = $("leadershipMessageList");
+    if (!list) return;
+    if (!isLeadership()) { list.innerHTML = ""; return; }
+    const messages = state.leadershipMessages || [];
+    list.innerHTML = messages.length ? messages.map(m => {
+      const own = m.userId === current()?.id;
+      const canDelete = own || isOwner();
+      return `<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(m.message)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">Slett</button></div>` : ""}</article>`;
+    }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
+    translateUi(list);
+    $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
+      if (!confirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
+      if (busy) return; setBusy(true);
+      try { await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
   }
@@ -585,6 +645,7 @@
     currentLanguage = e.target.value;
     localStorage.setItem(LANG_KEY, currentLanguage);
     translateUi(document);
+    if (!portal.classList.contains("hidden")) renderSession();
   };
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
@@ -613,6 +674,24 @@
     }
     setBusy(false);
   };
+  if ($("leadershipMessageForm")) $("leadershipMessageForm").onsubmit = async e => {
+    e.preventDefault();
+    if (busy || !isLeadership()) return;
+    const input = $("leadershipMessageInput");
+    const status = $("leadershipMessageStatus");
+    const message = input.value.trim();
+    if (!message) return;
+    setBusy(true);
+    try {
+      await backend.sendLeadershipMessage(message);
+      input.value = "";
+      status.textContent = currentLanguage === "en" ? "Message sent." : "Meldingen er sendt.";
+      status.classList.add("success");
+      await refreshState();
+    } catch(e) { status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen."); }
+    setBusy(false);
+  };
+
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
 
