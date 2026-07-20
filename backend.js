@@ -101,7 +101,7 @@
     if (own.status !== "approved") {
       return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -112,9 +112,13 @@
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
-      client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle()
+      client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle(),
+      client.from("social_likes").select("user_id,target_type,target_id,created_at"),
+      client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at").order("created_at", {ascending:true}),
+      client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
+      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100)
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -146,6 +150,12 @@
       notifications:{
         preferences: notificationPrefsRes.data || null,
         readState: notificationReadRes.data || null
+      },
+      social:{
+        likes: likesRes.data || [],
+        comments: commentsRes.data || [],
+        translations: translationsRes.data || [],
+        activityNotifications: activityNotificationsRes.data || []
       },
       currentUserId: session.user.id
     };
@@ -418,6 +428,49 @@
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const payload = {user_id:user.id,updated_at:now}; payload[column]=now;
       const { data, error } = await client.from("notification_read_state").upsert(payload,{onConflict:"user_id"}).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async toggleLike(targetType, targetId, currentlyLiked) {
+      if (!configured) return;
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      if (currentlyLiked) {
+        const { error } = await client.from("social_likes").delete()
+          .eq("user_id",user.id).eq("target_type",targetType).eq("target_id",String(targetId));
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("social_likes").insert({
+          user_id:user.id,target_type:targetType,target_id:String(targetId)
+        });
+        if (error) throw error;
+      }
+    },
+    async addComment(targetType, targetId, body) {
+      if (!configured) return;
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const { error } = await client.from("social_comments").insert({
+        user_id:user.id,target_type:targetType,target_id:String(targetId),body
+      });
+      if (error) throw error;
+    },
+    async deleteComment(id) {
+      if (!configured) return;
+      const { error } = await client.from("social_comments").delete().eq("id",id);
+      if (error) throw error;
+    },
+    async markActivityNotificationRead(id) {
+      if (!configured) return;
+      const { error } = await client.from("activity_notifications")
+        .update({read_at:new Date().toISOString()}).eq("id",id);
+      if (error) throw error;
+    },
+    async requestTranslation(targetType, targetId, title, body) {
+      if (!configured) throw new Error("KI-oversettelse krever Supabase.");
+      const { data, error } = await client.functions.invoke("translate-content", {
+        body:{targetType,targetId:String(targetId),title:title||"",body:body||"",language:"en"}
+      });
       if (error) throw error;
       return data;
     },

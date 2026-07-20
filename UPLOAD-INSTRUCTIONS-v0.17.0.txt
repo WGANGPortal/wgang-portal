@@ -1,0 +1,17 @@
+WGANG Portal v0.17.0 – READY FOR UPLOAD
+
+Portal files are ready for upload after the database migration has been run.
+
+IMPORTANT:
+- MIGRATION-v0.17.0-SOCIAL-BILINGUAL.sql must be run in Supabase.
+- Likes, comments and activity notifications depend on that migration.
+- AI translation additionally requires deployment of:
+  supabase/functions/translate-content/index.ts
+- The Edge Function requires server-side secrets:
+  OPENAI_API_KEY
+  OPENAI_TRANSLATION_MODEL
+- Never place API keys in frontend files or GitHub.
+
+The portal itself can be uploaded now. Until the Edge Function is configured,
+static English translations will work, while AI translation of newly published
+dynamic content will not yet be available.

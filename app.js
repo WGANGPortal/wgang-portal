@@ -93,6 +93,26 @@
     "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings"
 
   };
+  const STATIC_EN_EXTRA = {
+    "Automatisk oppgavefremdrift, poeng og scoreboard er ikke koblet til reelle derbydata ennå. Dette bygges senere på grunnlag av hvordan WGANG faktisk bruker portalen.":"Automatic task progress, points and the scoreboard are not connected to live Derby data yet. This will be developed based on how WGANG actually uses the portal.",
+    "oppgaver fullført":"tasks completed","I gang":"In progress","Ferdig":"Completed","Marker som ferdig":"Mark as completed",
+    "DELTAR DU?":"ARE YOU PARTICIPATING?","STRATEGI":"STRATEGY","ADMINOVERSIKT":"ADMIN OVERVIEW","Status per medlem":"Status by member","Deltakelse":"Participation",
+    "Viktige beskjeder og derbyprat samlet på ett sted.":"Important announcements and Derby Talk gathered in one place.",
+    "Prat om ukens derby":"Talk about this week's Derby","Del strategi, spørsmål og koordinering med nabolaget.":"Share strategy, questions and coordination with the Neighborhood.",
+    "Et lukket rom for lederne.":"A private space for the leadership team.","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to the WGANG leadership team.",
+    "Vokser med WGANG":"Growing with WGANG","320 poeng – og en tavle som holdes i bevegelse":"320 points – and a task board that keeps moving",
+    "I Standard Derby er hovedregelen enkel: Vi tar oppgaver med 320 poeng. Admin rydder bort oppgaver som få eller ingen ønsker, slik at nye og bedre oppgaver får plass på tavla. Oppgavepreferansene hjelper admin å se hvilke 320-oppgaver som passer nabolaget best.":"In Standard Derby, the main rule is simple: we take 320-point tasks. Admins remove tasks that few or no one wants, making room for new and better tasks on the board. Members' task preferences help admins see which 320-point tasks suit the Neighborhood best.",
+    "HØSTING":"HARVESTING","Forbered før du tar oppgaven":"Prepare before taking the task","Plant avlinger med lang veksttid på forhånd når du forventer en høsteoppgave. Da kan mye være klart til innhøsting idet du tar oppgaven.":"Plant long-growing crops in advance when you expect a harvesting task. That way, much of the crop can be ready to harvest as soon as you take the task.",
+    "PRODUKSJON":"PRODUCTION","La varene vente ferdige":"Leave finished products ready","Produser aktuelle varer før du tar oppgaven, og la dem ligge ferdige i maskinene når det er mulig. Ta oppgaven først når du er klar til å samle inn.":"Produce the relevant items before taking the task, and leave them finished in the machines whenever possible. Take the task only when you are ready to collect them.",
+    "BYEN":"TOWN","Bruk Town Hall strategisk":"Use the Town Hall strategically","La ferdig betjente besøkende stå klare uten å samle dem inn. Når du har nok besøkende klare, tar du derbyoppgaven og samler dem inn for å få en rask start – eller fullføre oppgaven raskt.":"Leave fully served visitors ready without collecting them. Once you have enough visitors prepared, take the Derby task and collect them for a fast start – or to complete the task quickly.",
+    "OPPGAVETAVLA":"TASK BOARD","Preferanser gjør tavla bedre":"Preferences improve the task board","Marker hvilke oppgavetyper du liker, kan ta, helst unngår eller ikke kan ta. Jo bedre admin kjenner laget, desto enklere er det å vite hvilke 320-oppgaver som bør få stå.":"Mark which task types you like, can do, prefer to avoid or cannot do. The better admins know the team, the easier it is to decide which 320-point tasks should stay on the board.",
+    "SAMARBEID":"TEAMWORK","Gi beskjed når du klargjør en oppgave":"Let the team know when you are preparing for a task","Skal du forberede deg på en bestemt derbyoppgave, gi beskjed i chatten i spillet. Da unngår vi at flere klargjør seg til den samme oppgaven, og at oppgaven blir tatt eller forsvinner før du er klar. God kommunikasjon og samarbeid gjør at vi fordeler oppgavene bedre og utnytter potensialet vårt best mulig.":"When preparing for a specific Derby task, let the team know in the in-game chat. This prevents several players from preparing for the same task and reduces the risk of the task being taken or disappearing before you are ready. Good communication and teamwork help us distribute tasks better and make the most of our potential.",
+    "FRA NABOLAGET":"FROM THE NEIGHBORHOOD","Send inn egne tips. Admin gjennomgår dem før de publiseres.":"Submit your own tips. An admin reviews them before they are published.",
+    "WGANG SOM APP":"WGANG AS AN APP","Legg portalen på hjemskjermen":"Add the portal to your Home Screen","Da åpnes WGANG Portal mer som en egen app på telefonen din.":"WGANG Portal will then open more like a dedicated app on your phone.",
+    "Installer WGANG Portal":"Install WGANG Portal","iPhone / iPad":"iPhone / iPad","Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.":"Open the portal in Safari → tap the Share button → choose “Add to Home Screen” → tap Add.",
+    "Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.":"Open the portal in Chrome. Choose “Install app” or “Add to Home screen” when the option appears.",
+    "BYGGES SAMMEN":"BUILT TOGETHER","Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips & triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.":"More tips, strategies and experiences will be added over time. WGANG Tips & Tricks will grow from the Neighborhood's own feedback and what members find works best in practice."
+  };
   const DYNAMIC_EN = {
     "Standard Derby":"Standard Derby","Bingo Derby":"Bingo Derby","Styrke Derby":"Power Derby","Blomsterderby":"Blossom Derby","Harepusderby":"Bunny Derby","Chill Derby":"Chill Derby","Chill Harepus Derby":"Chill Bunny Derby","Mystery Derby":"Mystery Derby",
     "WGANG har som mål å ta oppgaver med 320 poeng.":"WGANG aims to take 320-point tasks.",
@@ -113,6 +133,7 @@
   function tText(value) {
     if (currentLanguage !== "en") return value;
     const text = String(value ?? "");
+    if (STATIC_EN_EXTRA[text]) return STATIC_EN_EXTRA[text];
     if (DYNAMIC_EN[text]) return DYNAMIC_EN[text];
     if (I18N_EN[text]) return I18N_EN[text];
     return text
@@ -141,7 +162,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -284,11 +305,16 @@
     const latestMsg=msgs[msgs.length-1]; if(isLeadership() && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
     if(isAdmin() && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications"}); }
     if(isAdmin() && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt}); }
+    const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
+    activity.forEach(n=>{
+      const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
+      items.push({category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at});
+    });
     const next=state.derbyManagement?.next; if(prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)) items.push({category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
-    try { await backend.markNotificationSeen(item.category); if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
+    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
     if(item.admin) showAdminModule(item.admin); else navigate(item.route||"dashboard");
     renderNotifications();
@@ -337,6 +363,7 @@
     renderNotifications();
     renderNotificationSettings();
     translateUi(portal);
+    queueVisibleTranslations();
   }
 
   function renderMetrics() {
@@ -473,10 +500,63 @@
     return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}T${z(date.getHours())}:${z(date.getMinutes())}`;
   }
 
+  const translationRequests = new Set();
+  function socialData() { return state.social || {likes:[],comments:[],translations:[],activityNotifications:[]}; }
+  function targetLikes(type,id) { return socialData().likes.filter(x=>x.target_type===type && String(x.target_id)===String(id)); }
+  function targetComments(type,id) { return socialData().comments.filter(x=>x.target_type===type && String(x.target_id)===String(id)); }
+  function translationFor(type,id) { return socialData().translations.find(x=>x.target_type===type && String(x.target_id)===String(id) && x.language==="en") || null; }
+  function translatedContent(type,item) {
+    const original={title:item.title||"",body:item.body||item.message||""};
+    if(currentLanguage!=="en") return {...original,translated:false};
+    const tr=translationFor(type,item.id);
+    return tr ? {title:tr.title||original.title,body:tr.body||original.body,translated:true} : {...original,translated:false};
+  }
+  function socialBlock(type,item) {
+    const likes=targetLikes(type,item.id), comments=targetComments(type,item.id);
+    const liked=likes.some(x=>String(x.user_id)===String(current()?.id));
+    const commentsHtml=comments.map(cm=>{
+      const author=state.accounts.find(a=>String(a.id)===String(cm.user_id));
+      const tr=currentLanguage==="en"?translationFor("comment",cm.id):null;
+      const canDelete=String(cm.user_id)===String(current()?.id) || (type==="community"&&isAdmin()) || (type==="leadership"&&isOwner());
+      return `<div class="social-comment"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p>${canDelete?`<button class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>`;
+    }).join("");
+    return `<div class="social-bar"><button class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-id="${item.id}" data-liked="${liked}">👍🏼 <span>${likes.length}</span></button><button class="social-comment-toggle" data-comment-toggle="${type}:${item.id}">💬 <span>${comments.length}</span></button></div><div class="social-comments hidden" data-comments-for="${type}:${item.id}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div><form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form></div>`;
+  }
+  function bindSocialActions(root=document) {
+    root.querySelectorAll("[data-like-type]").forEach(btn=>btn.onclick=async()=>{
+      try { await backend.toggleLike(btn.dataset.likeType,btn.dataset.likeId,btn.dataset.liked==="true"); await refreshState(); } catch(e) { alert(humanError(e)); }
+    });
+    root.querySelectorAll("[data-comment-toggle]").forEach(btn=>btn.onclick=()=>root.querySelector(`[data-comments-for="${btn.dataset.commentToggle}"]`)?.classList.toggle("hidden"));
+    root.querySelectorAll("[data-comment-form]").forEach(form=>form.onsubmit=async e=>{
+      e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector("input"); if(!input.value.trim()) return;
+      try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); } catch(err) { alert(humanError(err)); }
+    });
+    root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
+      if(!confirm(currentLanguage==="en"?"Delete this comment?":"Slette denne kommentaren?")) return;
+      try { await backend.deleteComment(btn.dataset.deleteComment); await refreshState(); } catch(err) { alert(humanError(err)); }
+    });
+  }
+  async function ensureEnglishTranslation(type,item) {
+    if(currentLanguage!=="en" || !item?.id || translationFor(type,item.id)) return;
+    const key=`${type}:${item.id}`; if(translationRequests.has(key)) return;
+    translationRequests.add(key);
+    try { await backend.requestTranslation(type,item.id,item.title||"",item.body||item.message||""); await refreshState(); }
+    catch(e) { console.warn("Translation unavailable",e); }
+    finally { translationRequests.delete(key); }
+  }
+  function queueVisibleTranslations() {
+    if(currentLanguage!=="en") return;
+    const content=state.content||{};
+    [...(content.announcements||[]),...(content.derbyPosts||[]),...(content.tips||[])].forEach(x=>ensureEnglishTranslation("community",x));
+    if(isLeadership()) (state.leadershipMessages||[]).forEach(x=>ensureEnglishTranslation("leadership",x));
+    (socialData().comments||[]).forEach(x=>ensureEnglishTranslation("comment",x));
+  }
+
   function postCard(item, options={}) {
-    const category = item.category ? `<span class="content-category">${esc(item.category)}</span>` : "";
-    const actions = options.admin ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">Slett</button></div>` : "";
-    return `<article class="content-post">${category}<h3>${esc(item.title)}</h3><p>${esc(item.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer></article>`;
+    const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
+    const actions = options.admin ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
+    const view=translatedContent("community",item);
+    return `<article class="content-post"><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item)}</article>`;
   }
 
   function renderContent() {
@@ -512,11 +592,12 @@
     }
 
     $$('[data-delete-content]').forEach(b => b.onclick = async () => {
-      if (!isAdmin() || !confirm("Slette dette innholdet?")) return;
+      if (!isAdmin() || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
       if (busy) return; setBusy(true);
       try { await backend.deleteContent(b.dataset.deleteContent); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
+    bindSocialActions(document);
   }
 
   function renderLeadershipChat() {
@@ -527,7 +608,7 @@
     list.innerHTML = messages.length ? messages.map(m => {
       const own = m.userId === current()?.id;
       const canDelete = own || isOwner();
-      return `<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(m.message)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">Slett</button></div>` : ""}</article>`;
+      const view=translatedContent("leadership",m); return `<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
     }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
     translateUi(list);
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
@@ -536,6 +617,7 @@
       try { await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
+    bindSocialActions(list);
   }
 
   function renderAdmin() {
