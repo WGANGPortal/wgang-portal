@@ -66,6 +66,8 @@
       countryPlace: row.country_place || "",
       hayDaySince: row.hay_day_since || "",
       favoriteGameAspect: row.favorite_game_aspect || "",
+      languages: Array.isArray(row.languages) ? row.languages : [],
+      otherLanguages: row.other_languages || "",
       status: row.status || "pending",
       approved: row.status === "approved",
       choice: part ? part.choice : "waiting",
@@ -90,7 +92,7 @@
   }
 
   async function getOwnProfile(userId) {
-    const { data, error } = await client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").eq("id", userId).single();
+    const { data, error } = await client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages").eq("id", userId).single();
     if (error) throw error;
     return data;
   }
@@ -283,6 +285,8 @@
           a.countryPlace=profile.countryPlace||"";
           a.hayDaySince=profile.hayDaySince||"";
           a.favoriteGameAspect=profile.favoriteGameAspect||"";
+          a.languages=profile.languages||[];
+          a.otherLanguages=profile.otherLanguages||"";
         }
         localSave(localState); return;
       }
@@ -292,7 +296,9 @@
         p_age_group: profile.ageGroup || null,
         p_country_place: profile.countryPlace || null,
         p_hay_day_since: profile.hayDaySince || null,
-        p_favorite_game_aspect: profile.favoriteGameAspect || null
+        p_favorite_game_aspect: profile.favoriteGameAspect || null,
+        p_languages: profile.languages || [],
+        p_other_languages: profile.otherLanguages || null
       });
       if (error) throw error;
     },

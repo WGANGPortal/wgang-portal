@@ -404,6 +404,9 @@
     if (account.countryPlace) details.push(["Land / sted", account.countryPlace]);
     if (account.hayDaySince) details.push(["Hvor lenge har du spilt Hay Day?", account.hayDaySince]);
     if (account.favoriteGameAspect) details.push(["Hva liker du best i spillet?", account.favoriteGameAspect]);
+    const spokenLanguages=[...(account.languages||[])].map(x=>x==="no"?"Norsk":x==="en"?"Engelsk":x);
+    if(account.otherLanguages) spokenLanguages.push(...String(account.otherLanguages).split(",").map(x=>x.trim()).filter(Boolean));
+    if(spokenLanguages.length) details.push(["Språk", [...new Set(spokenLanguages)].join(", ")]);
     $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Frivillig å fylle ut.</p>`;
     $("profileEditSection").classList.toggle("hidden", !editable);
     if (editable) {
@@ -413,6 +416,11 @@
       $("profileCountryInput").value = account.countryPlace || "";
       $("profileSinceInput").value = account.hayDaySince || "";
       $("profileFavoriteInput").value = account.favoriteGameAspect || "";
+      if($("profileLanguageNo")) $("profileLanguageNo").checked=(account.languages||[]).includes("no");
+      if($("profileLanguageEn")) $("profileLanguageEn").checked=(account.languages||[]).includes("en");
+      if($("profileLanguageOther")) $("profileLanguageOther").checked=!!account.otherLanguages;
+      if($("profileOtherLanguagesInput")) $("profileOtherLanguagesInput").value=account.otherLanguages||"";
+      $("profileOtherLanguagesWrap")?.classList.toggle("hidden",!account.otherLanguages);
     }
     showDialog(memberProfileDialog);
     translateUi(memberProfileDialog);
@@ -885,7 +893,18 @@
       in_app_derby_deadline_reminders:!!$("notifyDerbyDeadline")?.checked,
       email_enabled:!!$("emailNotificationsEnabled")?.checked
     };
-    try{const saved=await backend.saveNotificationPreferences(payload);state.notifications=state.notifications||{};state.notifications.preferences=saved;$("notificationSettingsStatus").textContent=currentLanguage==="en"?"Notification settings saved.":"Varslingsinnstillingene er lagret.";renderNotifications();}catch(e){$("notificationSettingsStatus").textContent=humanError(e);}
+    try{
+      const saved=await backend.saveNotificationPreferences(payload);
+      state.notifications=state.notifications||{};
+      state.notifications.preferences=saved;
+      $("notificationSettingsStatus").textContent=currentLanguage==="en"?"Notification settings saved.":"Varslingsinnstillingene er lagret.";
+      renderNotifications();
+    }catch(e){
+      $("notificationSettingsStatus").textContent=humanError(e);
+    }finally{
+      setBusy(false);
+      document.body.classList.remove("modal-open");
+    }
   };
   function accountGameNameValue(user){
     return user?.gameName || user?.game_name || user?.displayName || user?.display_name || user?.name || (user?.role==="owner" ? "TJENTA" : "–");
@@ -905,11 +924,6 @@
     $(map[section]||map.menu)?.classList.remove("hidden");
     if(section==="settings"){
       const settings=$("notificationSettings"), mount=$("profileHubSettingsMount");
-      if(mount && !$("profileLanguageSetting")){
-        const wrap=document.createElement("div"); wrap.id="profileLanguageSetting"; wrap.className="profile-language-setting";
-        wrap.innerHTML=`<h4>Språk</h4><div class="profile-language-buttons"><button type="button" data-set-lang="no">🇳🇴 Norsk</button><button type="button" data-set-lang="en">🇬🇧 English</button></div>`;
-        mount.appendChild(wrap); wrap.querySelectorAll("[data-set-lang]").forEach(b=>b.onclick=()=>setLanguage(b.dataset.setLang));
-      }
       if(settings&&mount&&!mount.contains(settings)) mount.appendChild(settings);
       renderNotificationSettings();
     }
@@ -934,6 +948,7 @@
       window.location.reload();
     }
   };
+  if($("profileLanguageOther")) $("profileLanguageOther").onchange=()=>$("profileOtherLanguagesWrap")?.classList.toggle("hidden",!$("profileLanguageOther").checked);
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
@@ -947,7 +962,9 @@
       ageGroup: $("profileAgeInput").value,
       countryPlace: $("profileCountryInput").value.trim(),
       hayDaySince: $("profileSinceInput").value.trim(),
-      favoriteGameAspect: $("profileFavoriteInput").value.trim()
+      favoriteGameAspect: $("profileFavoriteInput").value.trim(),
+      languages:[$("profileLanguageNo")?.checked?"no":null,$("profileLanguageEn")?.checked?"en":null].filter(Boolean),
+      otherLanguages:$("profileLanguageOther")?.checked ? $("profileOtherLanguagesInput")?.value.trim()||"" : ""
     };
     try {
       await backend.updatePublicProfile(payload);
