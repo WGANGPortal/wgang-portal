@@ -919,9 +919,13 @@
     return new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{day:"numeric",month:"long",year:"numeric"}).format(d);
   }
   function showProfileHubSection(section="menu") {
-    ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount"].forEach(id=>$(id)?.classList.add("hidden"));
+    ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount"].forEach(id=>{
+      const el=$(id);
+      if(el){ el.classList.add("hidden"); el.setAttribute("aria-hidden","true"); }
+    });
     const map={menu:"profileHubMenu",notifications:"profileHubNotifications",settings:"profileHubSettings",profile:"profileHubProfile",account:"profileHubAccount"};
-    $(map[section]||map.menu)?.classList.remove("hidden");
+    const active=$(map[section]||map.menu);
+    if(active){ active.classList.remove("hidden"); active.setAttribute("aria-hidden","false"); }
     if(section==="settings"){
       const settings=$("notificationSettings"), mount=$("profileHubSettingsMount");
       if(settings&&mount&&!mount.contains(settings)) mount.appendChild(settings);
@@ -940,13 +944,8 @@
   document.querySelectorAll(".profile-hub-back").forEach(btn=>btn.onclick=()=>showProfileHubSection("menu"));
   if($("closeProfileHub")) $("closeProfileHub").onclick=()=>$("memberProfileDialog")?.close();
   if($("profileHubLogout")) $("profileHubLogout").onclick=async()=>{
-    try{
-      await backend.logout();
-    }catch(err){
-      console.error("Logout failed",err);
-    }finally{
-      window.location.reload();
-    }
+    $("memberProfileDialog")?.close();
+    await logout();
   };
   if($("profileLanguageOther")) $("profileLanguageOther").onchange=()=>$("profileOtherLanguagesWrap")?.classList.toggle("hidden",!$("profileLanguageOther").checked);
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
