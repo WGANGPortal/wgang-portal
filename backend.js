@@ -101,7 +101,7 @@
     if (own.status !== "approved") {
       return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -110,9 +110,11 @@
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at"),
-      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300)
+      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
+      client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
+      client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle()
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -139,7 +141,14 @@
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
-    return { accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next}, currentUserId: session.user.id };
+    return {
+      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next},
+      notifications:{
+        preferences: notificationPrefsRes.data || null,
+        readState: notificationReadRes.data || null
+      },
+      currentUserId: session.user.id
+    };
   }
 
   function appUrl() {
@@ -372,6 +381,45 @@
       if (!configured) return;
       const { error } = await client.from("leadership_messages").delete().eq("id",id);
       if (error) throw error;
+    },
+    async saveNotificationPreferences(changes) {
+      if (!configured) {
+        localState.notifications = localState.notifications || {preferences:{},readState:{}};
+        localState.notifications.preferences = Object.assign({}, localState.notifications.preferences || {}, changes);
+        localSave(localState);
+        return localState.notifications.preferences;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const payload = Object.assign({user_id:user.id,updated_at:new Date().toISOString()}, changes);
+      const { data, error } = await client.from("notification_preferences").upsert(payload,{onConflict:"user_id"}).select().single();
+      if (error) throw error;
+      return data;
+    },
+    async markNotificationSeen(category) {
+      const columns = {
+        announcements:"announcements_seen_at",
+        derby_chat:"derby_chat_seen_at",
+        leadership_chat:"leadership_chat_seen_at",
+        membership_requests:"membership_requests_seen_at",
+        pending_tips:"pending_tips_seen_at",
+        derby_published:"derby_published_seen_at",
+        derby_deadline:"derby_deadline_seen_at"
+      };
+      const column = columns[category];
+      if (!column) return;
+      const now = new Date().toISOString();
+      if (!configured) {
+        localState.notifications = localState.notifications || {preferences:{},readState:{}};
+        localState.notifications.readState = Object.assign({}, localState.notifications.readState || {}, {[column]:now,updated_at:now});
+        localSave(localState); return localState.notifications.readState;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const payload = {user_id:user.id,updated_at:now}; payload[column]=now;
+      const { data, error } = await client.from("notification_read_state").upsert(payload,{onConflict:"user_id"}).select().single();
+      if (error) throw error;
+      return data;
     },
     onAuthChange(callback) {
       if (!configured) return function(){};

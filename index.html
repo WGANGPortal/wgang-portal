@@ -83,7 +83,7 @@
     <button type="button" data-language-choice="no" role="menuitem">🇳🇴 <span>Norsk</span></button>
     <button type="button" data-language-choice="en" role="menuitem">🇬🇧 <span>English</span></button>
   </div>
-</div><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
+</div><div class="notification-menu" id="notificationMenu"><button class="notification-button" id="notificationButton" type="button" aria-label="Varsler">🔔<b id="globalNotificationBadge" class="notification-badge hidden">0</b></button><div class="notification-dropdown hidden" id="notificationDropdown"><div class="notification-dropdown-head"><strong>Varsler</strong><button type="button" id="closeNotificationDropdown">×</button></div><div id="notificationDropdownList"></div></div></div><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -109,12 +109,13 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.15.3</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.16.0</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
         <section class="page active" data-page="dashboard">
           <div class="page-heading"><div><p class="eyebrow">OVERSIKT</p><h1 id="welcomeHeading">Hei, Nabo 👋</h1><p>Her er det viktigste for neste derby.</p></div><span class="demo-label" id="accountBadge">MEDLEM</span></div>
+          <article class="portal-card whats-new-card hidden" id="whatsNewCard"><div class="card-header"><div><p class="card-kicker">NYTT SIDEN SIST</p><h2>Du har nye varsler</h2></div><span class="notification-count-pill" id="whatsNewCount">0</span></div><div id="whatsNewList"></div></article>
           <div class="spotlight-card"><div><p class="eyebrow light">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 10:00</p><p>Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="development-note development-note-light"><strong>Under utvikling</strong><span>Fremdrift og poengstatistikk kobles på når vi har nok reelle derbydata.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><button class="button button-cream" data-route="derby">Åpne derby-senter</button></div><span class="spotlight-icon">◇</span></div>
           <div class="metric-grid"><article><span>Din status</span><strong id="myStatusMetric">Deltar</strong><small>kan endres frem til fristen</small></article><article><span>Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small>svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>godkjente medlemmer</small></article><article><span>Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small>oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">
@@ -217,6 +218,25 @@
         <div id="memberProfileDetails" class="profile-detail-grid"></div>
       </div>
       <section id="profileEditSection" class="profile-edit-section hidden">
+        <div class="profile-divider"></div>
+        <section class="notification-settings" id="notificationSettings">
+          <h3>Varslingsinnstillinger</h3>
+          <p class="helper-text">Velg hvilke varsler du ønsker. E-postvarsling er frivillig og selve e-postutsendingen kobles på i et senere steg.</p>
+          <div class="notification-setting-list">
+            <label><input type="checkbox" id="notifyAnnouncements"> Nye kunngjøringer</label>
+            <label><input type="checkbox" id="notifyDerbyChat"> Nye innlegg i Derbyprat</label>
+            <label class="leadership-only"><input type="checkbox" id="notifyLeadershipChat"> Nye innlegg i Lederprat</label>
+            <label class="admin-only"><input type="checkbox" id="notifyMembershipRequests"> Nye medlemssøknader</label>
+            <label class="admin-only"><input type="checkbox" id="notifyPendingTips"> Tips som venter på behandling</label>
+            <label><input type="checkbox" id="notifyDerbyPublished"> Nytt derby publisert</label>
+            <label><input type="checkbox" id="notifyDerbyDeadline"> Påminnelse før svarfrist</label>
+          </div>
+          <div class="profile-divider"></div>
+          <label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>
+          <p class="helper-text">E-postutsending er ikke aktivert ennå. Valget lagres slik at funksjonen er klar når vi kobler på utsending.</p>
+          <button type="button" class="button button-secondary" id="saveNotificationSettings">Lagre varslingsinnstillinger</button>
+          <p class="form-message" id="notificationSettingsStatus"></p>
+        </section>
         <div class="profile-divider"></div>
         <h3>Rediger profil</h3>
         <p class="helper-text">Alt er frivillig. Du kan dele mye, litt eller ingenting. E-postadressen din vises aldri til andre medlemmer.</p>

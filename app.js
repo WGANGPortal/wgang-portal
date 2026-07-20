@@ -89,7 +89,8 @@
     "Oppgaver vi bør beholde":"Tasks we should keep","Populære – ikke slett":"Popular – do not delete","Kan beholdes":"Can be kept","Lav interesse":"Low interest",
     "Søk":"Search","Alle":"All","Velg medlem":"Choose member","Velg oppgave":"Choose task","Velg preferanse":"Choose preference",
     "Ingen tips ennå.":"No tips yet.","Venter på godkjenning":"Awaiting approval","Godkjent":"Approved",
-    "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal."
+    "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
+    "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings"
 
   };
   const DYNAMIC_EN = {
@@ -140,7 +141,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -267,6 +268,44 @@
     return TASK_TYPES.filter(t => ["like","can"].includes(account.preferences?.[t])).slice(0, 3);
   }
 
+  const NOTIFICATION_DEFAULTS = {
+    in_app_announcements:true,in_app_derby_chat:true,in_app_leadership_chat:true,
+    in_app_membership_requests:true,in_app_pending_tips:true,in_app_derby_published:true,
+    in_app_derby_deadline_reminders:true,email_enabled:false
+  };
+  function notificationPrefs() { return Object.assign({}, NOTIFICATION_DEFAULTS, state.notifications?.preferences || {}); }
+  function notificationRead() { return state.notifications?.readState || {}; }
+  function newerThan(value, seen) { return value && new Date(value).getTime() > new Date(seen || "1970-01-01").getTime(); }
+  function buildNotifications() {
+    const prefs=notificationPrefs(), read=notificationRead(), items=[];
+    const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
+    const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
+    const latestPost=posts[0]; if(prefs.in_app_derby_chat && latestPost && newerThan(latestPost.publishedAt||latestPost.createdAt,read.derby_chat_seen_at)) items.push({category:"derby_chat",title:"Nytt innlegg i Derbyprat",text:latestPost.title||latestPost.body||"",route:"discussions",time:latestPost.publishedAt||latestPost.createdAt});
+    const latestMsg=msgs[msgs.length-1]; if(isLeadership() && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
+    if(isAdmin() && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications"}); }
+    if(isAdmin() && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt}); }
+    const next=state.derbyManagement?.next; if(prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)) items.push({category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
+    return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
+  }
+  async function openNotification(item) {
+    try { await backend.markNotificationSeen(item.category); if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
+    $("notificationDropdown")?.classList.add("hidden");
+    if(item.admin) showAdminModule(item.admin); else navigate(item.route||"dashboard");
+    renderNotifications();
+  }
+  function renderNotifications() {
+    const items=buildNotifications(), badge=$("globalNotificationBadge"), card=$("whatsNewCard");
+    if(badge){badge.textContent=items.length;badge.classList.toggle("hidden",!items.length);}
+    if($("whatsNewCount")) $("whatsNewCount").textContent=items.length;
+    if(card) card.classList.toggle("hidden",!items.length);
+    const renderList=(target,compact=false)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
+    renderList($("notificationDropdownList"),true); renderList($("whatsNewList"));
+  }
+  function renderNotificationSettings() {
+    const p=notificationPrefs(), set=(id,key)=>{const el=$(id);if(el)el.checked=!!p[key];};
+    set("notifyAnnouncements","in_app_announcements");set("notifyDerbyChat","in_app_derby_chat");set("notifyLeadershipChat","in_app_leadership_chat");set("notifyMembershipRequests","in_app_membership_requests");set("notifyPendingTips","in_app_pending_tips");set("notifyDerbyPublished","in_app_derby_published");set("notifyDerbyDeadline","in_app_derby_deadline_reminders");set("emailNotificationsEnabled","email_enabled");
+  }
+
   function renderSession() {
     if (!isLeadership()) {
       document.body.classList.remove("leadership-mode", "admin-mode");
@@ -294,6 +333,8 @@
     renderAdmin();
     if (isLeadership()) renderAdminPreferences();
     renderDerbyManagement();
+    renderNotifications();
+    renderNotificationSettings();
     translateUi(portal);
   }
 
@@ -743,6 +784,22 @@
   document.addEventListener("click", e => {
     if (!e.target.closest("#languageMenu")) $("languageDropdown")?.classList.add("hidden");
   });
+  if ($("notificationButton")) $("notificationButton").onclick=e=>{e.stopPropagation();$("notificationDropdown")?.classList.toggle("hidden");};
+  if ($("closeNotificationDropdown")) $("closeNotificationDropdown").onclick=()=>$("notificationDropdown")?.classList.add("hidden");
+  document.addEventListener("click",e=>{if(!e.target.closest("#notificationMenu"))$("notificationDropdown")?.classList.add("hidden");});
+  if ($("saveNotificationSettings")) $("saveNotificationSettings").onclick=async()=>{
+    const payload={
+      in_app_announcements:!!$("notifyAnnouncements")?.checked,
+      in_app_derby_chat:!!$("notifyDerbyChat")?.checked,
+      in_app_leadership_chat:!!$("notifyLeadershipChat")?.checked,
+      in_app_membership_requests:!!$("notifyMembershipRequests")?.checked,
+      in_app_pending_tips:!!$("notifyPendingTips")?.checked,
+      in_app_derby_published:!!$("notifyDerbyPublished")?.checked,
+      in_app_derby_deadline_reminders:!!$("notifyDerbyDeadline")?.checked,
+      email_enabled:!!$("emailNotificationsEnabled")?.checked
+    };
+    try{const saved=await backend.saveNotificationPreferences(payload);state.notifications=state.notifications||{};state.notifications.preferences=saved;$("notificationSettingsStatus").textContent=currentLanguage==="en"?"Notification settings saved.":"Varslingsinnstillingene er lagret.";renderNotifications();}catch(e){$("notificationSettingsStatus").textContent=humanError(e);}
+  };
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
