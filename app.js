@@ -766,7 +766,7 @@
   $("openPortalRule").onclick = () => openAuth("login");
   $("joinDemoButton").onclick = () => openAuth("register");
   $("closeAuth").onclick = () => closeDialog(auth);
-  $("closePortal").onclick = logout;
+  if ($("closePortal")) $("closePortal").onclick = logout;
   $$('[data-auth-tab]').forEach(b => b.onclick = () => setAuthTab(b.dataset.authTab));
 
   $("forgotPassword").onclick = async () => {
