@@ -62,3 +62,21 @@ body:has(#profileRole) .owner-only{display:none!important}
 .leadership-message.own{margin-left:auto;background:#f8e4ec}
 .leadership-message-head{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:6px}.leadership-message-head small{opacity:.65;white-space:nowrap}.leadership-message p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.leadership-message-tools{margin-top:8px;text-align:right}.leadership-message-form{border-top:1px solid rgba(0,0,0,.08);padding-top:18px}.leadership-message-form textarea{width:100%;resize:vertical}.leadership-message-actions{display:flex;justify-content:flex-end;margin-top:10px}
 @media(max-width:680px){.leadership-message{max-width:94%}.language-picker-flags select{width:50px;min-width:50px;padding:.45rem .35rem}}
+
+/* v0.15.0 – Admin structure, language menu and role-safe navigation */
+.language-menu{position:relative}
+.language-button{display:flex;align-items:center;gap:5px;min-width:52px;height:42px;padding:0 10px;border:1px solid var(--border);border-radius:13px;background:#fff;font-size:1.15rem;cursor:pointer}
+.language-chevron{font-size:.8rem;color:var(--muted)}
+.language-dropdown{position:absolute;right:0;top:48px;z-index:120;min-width:170px;padding:8px;border:1px solid var(--border);border-radius:16px;background:#fff;box-shadow:var(--shadow)}
+.language-dropdown button{display:flex;width:100%;gap:10px;padding:11px 12px;border:0;border-radius:10px;background:transparent;text-align:left;font:inherit;cursor:pointer}
+.language-dropdown button:hover{background:var(--pink-soft)}
+.admin-hub-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:22px}
+.admin-hub-card{display:flex;align-items:center;gap:14px;padding:20px;border:1px solid var(--border);border-radius:18px;background:#fff;text-align:left;cursor:pointer}
+.admin-hub-card>span{font-size:1.5rem}.admin-hub-card strong,.admin-hub-card small{display:block}.admin-hub-card small{color:var(--muted);font-weight:400}
+.admin-hub-card:hover{border-color:var(--pink);background:var(--pink-soft)}
+.admin-module{display:none!important}
+.admin-module.admin-module-active{display:block!important;margin-top:16px}
+.admin-back-button{margin-bottom:14px}
+body:not(.leadership-mode) [data-page="leadership"],body:not(.leadership-mode) [data-route="leadership"]{display:none!important}
+body:not(.leadership-mode) [data-page="admin"],body:not(.leadership-mode) [data-route="admin"]{display:none!important}
+@media(max-width:620px){.admin-hub-grid{grid-template-columns:1fr}.language-dropdown{right:-10px}}

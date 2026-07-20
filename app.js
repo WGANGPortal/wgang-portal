@@ -29,7 +29,7 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const I18N_EN = {
     "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
-    "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin view",
+    "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Medlemmer og roller":"Members and roles",
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
     "Din status":"Your status","Svarfrist":"Response deadline","Har svart":"Responded","Neste derby":"Next derby",
@@ -138,8 +138,6 @@
       if (english) { const translated = tText(trimmed); if (translated !== trimmed) node.nodeValue = raw.replace(trimmed, translated); }
       else if (!english) node.nodeValue = raw;
     });
-    const selector = document.getElementById("languageSelect");
-    if (selector) selector.value = currentLanguage;
   }
 
   let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId:null };
@@ -192,13 +190,30 @@
   }
 
   function navigate(route, useHash=true) {
-    if (route === "admin" && !isLeadership()) route = "dashboard";
+    if ((route === "admin" || route === "leadership") && !isLeadership()) route = "dashboard";
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
+    if (route === "admin") showAdminHome();
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
     sidebar.classList.remove("open");
     if (useHash) location.hash = route;
     portalMain.focus();
     window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function showAdminHome() {
+    document.querySelectorAll(".admin-hub-card").forEach(el => el.classList.remove("hidden"));
+    const panel = $("adminModulePanel");
+    if (panel) panel.classList.add("hidden");
+    document.querySelectorAll(".admin-module").forEach(el => el.classList.remove("admin-module-active"));
+  }
+
+  function showAdminModule(name) {
+    if (!isLeadership()) { navigate("dashboard"); return; }
+    if (!isAdmin() && name !== "board") { showAdminHome(); return; }
+    document.querySelectorAll(".admin-hub-card").forEach(el => el.classList.add("hidden"));
+    const panel = $("adminModulePanel");
+    if (panel) panel.classList.remove("hidden");
+    document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
   }
 
   function openPortal() {
@@ -570,7 +585,7 @@
     const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
     const list = $("adminActionList");
     if (list) list.innerHTML = total ? `${pendingMembers ? `<button class="action-item" data-action-route="admin"><strong>${pendingMembers}</strong><span>medlemsforespørsel${pendingMembers===1?"":"er"} venter</span></button>`:""}${pendingTips ? `<button class="action-item" data-action-route="admin"><strong>${pendingTips}</strong><span>tips venter på godkjenning</span></button>`:""}` : `<p class="empty-state">Ingen saker krever handling akkurat nå.</p>`;
-    $$('[data-action-route]').forEach(b=>b.onclick=()=>navigate(b.dataset.actionRoute));
+    $$("[data-action-route]").forEach(b=>b.onclick=()=>{ navigate("admin"); showAdminModule("actions"); });
   }
 
   async function init() {
@@ -669,13 +684,33 @@
   $$('[data-route]').forEach(a => a.addEventListener("click", e => { e.preventDefault(); if (portal.classList.contains("hidden")) { openPortal(); return; } navigate(a.dataset.route); }));
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   $("roleSwitch").onclick = () => navigate("admin");
+  document.querySelectorAll("[data-admin-target='leadership']").forEach(b => b.onclick = () => navigate("leadership"));
+  document.querySelectorAll("[data-admin-module-button]").forEach(b => b.onclick = () => showAdminModule(b.dataset.adminModuleButton));
+  if ($("adminBackButton")) $("adminBackButton").onclick = () => showAdminHome();
   $("profileChip").onclick = () => { if (current()) openMemberProfile(current().id); };
-  if ($("languageSelect")) $("languageSelect").onchange = e => {
-    currentLanguage = e.target.value;
+  function refreshLanguageButton() {
+    const flag = $("languageFlag");
+    if (flag) flag.textContent = currentLanguage === "en" ? "🇬🇧" : "🇳🇴";
+  }
+  refreshLanguageButton();
+  if ($("languageButton")) $("languageButton").onclick = e => {
+    e.stopPropagation();
+    const dd = $("languageDropdown");
+    if (!dd) return;
+    dd.classList.toggle("hidden");
+    $("languageButton").setAttribute("aria-expanded", dd.classList.contains("hidden") ? "false" : "true");
+  };
+  document.querySelectorAll("[data-language-choice]").forEach(btn => btn.onclick = () => {
+    currentLanguage = btn.dataset.languageChoice;
     localStorage.setItem(LANG_KEY, currentLanguage);
+    refreshLanguageButton();
+    $("languageDropdown")?.classList.add("hidden");
     translateUi(document);
     if (!portal.classList.contains("hidden")) renderSession();
-  };
+  });
+  document.addEventListener("click", e => {
+    if (!e.target.closest("#languageMenu")) $("languageDropdown")?.classList.add("hidden");
+  });
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
