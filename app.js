@@ -289,7 +289,7 @@
   }
   async function openNotification(item) {
     try { await backend.markNotificationSeen(item.category); if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
-    $("notificationDropdown")?.classList.add("hidden");
+    $("memberProfileDialog")?.close();
     if(item.admin) showAdminModule(item.admin); else navigate(item.route||"dashboard");
     renderNotifications();
   }
@@ -298,8 +298,9 @@
     if(badge){badge.textContent=items.length;badge.classList.toggle("hidden",!items.length);}
     if($("whatsNewCount")) $("whatsNewCount").textContent=items.length;
     if(card) card.classList.toggle("hidden",!items.length);
-    const renderList=(target,compact=false)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
-    renderList($("notificationDropdownList"),true); renderList($("whatsNewList"));
+    const menuBadge=$("profileMenuNotificationBadge"); if(menuBadge){menuBadge.textContent=items.length;menuBadge.classList.toggle("hidden",!items.length);}
+    const renderList=(target)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
+    renderList($("profileNotificationList")); renderList($("whatsNewList"));
   }
   function renderNotificationSettings() {
     const p=notificationPrefs(), set=(id,key)=>{const el=$(id);if(el)el.checked=!!p[key];};
@@ -760,7 +761,13 @@
     showAdminModule(a.dataset.adminRoute);
     closeMenu();
   });
-  $("profileChip").onclick = () => { if (current()) openMemberProfile(current().id); };
+  $("profileChip").onclick = () => {
+    if (!current()) return;
+    renderOwnProfile();
+    if($("profileHubName")) $("profileHubName").textContent=current()?.gameName||"PROFIL";
+    showProfileHubSection("menu");
+    $("memberProfileDialog").showModal();
+  };
   function refreshLanguageButton() {
     const flag = $("languageFlag");
     if (flag) flag.textContent = currentLanguage === "en" ? "🇬🇧" : "🇳🇴";
@@ -784,9 +791,6 @@
   document.addEventListener("click", e => {
     if (!e.target.closest("#languageMenu")) $("languageDropdown")?.classList.add("hidden");
   });
-  if ($("notificationButton")) $("notificationButton").onclick=e=>{e.stopPropagation();$("notificationDropdown")?.classList.toggle("hidden");};
-  if ($("closeNotificationDropdown")) $("closeNotificationDropdown").onclick=()=>$("notificationDropdown")?.classList.add("hidden");
-  document.addEventListener("click",e=>{if(!e.target.closest("#notificationMenu"))$("notificationDropdown")?.classList.add("hidden");});
   if ($("saveNotificationSettings")) $("saveNotificationSettings").onclick=async()=>{
     const payload={
       in_app_announcements:!!$("notifyAnnouncements")?.checked,
@@ -800,6 +804,27 @@
     };
     try{const saved=await backend.saveNotificationPreferences(payload);state.notifications=state.notifications||{};state.notifications.preferences=saved;$("notificationSettingsStatus").textContent=currentLanguage==="en"?"Notification settings saved.":"Varslingsinnstillingene er lagret.";renderNotifications();}catch(e){$("notificationSettingsStatus").textContent=humanError(e);}
   };
+  function showProfileHubSection(section="menu") {
+    ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount"].forEach(id=>$(id)?.classList.add("hidden"));
+    const map={menu:"profileHubMenu",notifications:"profileHubNotifications",settings:"profileHubSettings",profile:"profileHubProfile",account:"profileHubAccount"};
+    $(map[section]||map.menu)?.classList.remove("hidden");
+    if(section==="settings"){
+      const settings=$("notificationSettings"), mount=$("profileHubSettingsMount");
+      if(mount && !$("profileLanguageSetting")){
+        const wrap=document.createElement("div"); wrap.id="profileLanguageSetting"; wrap.className="profile-language-setting";
+        wrap.innerHTML=`<h4>Språk</h4><div class="profile-language-buttons"><button type="button" data-set-lang="no">🇳🇴 Norsk</button><button type="button" data-set-lang="en">🇬🇧 English</button></div>`;
+        mount.appendChild(wrap); wrap.querySelectorAll("[data-set-lang]").forEach(b=>b.onclick=()=>setLanguage(b.dataset.setLang));
+      }
+      if(settings&&mount&&!mount.contains(settings)) mount.appendChild(settings);
+      renderNotificationSettings();
+    }
+    if(section==="account"){if($("accountGameName"))$("accountGameName").textContent=current()?.gameName||"–";if($("accountRole"))$("accountRole").textContent=roleLabel(current()?.role);}
+    if(section==="notifications") renderNotifications();
+  }
+  document.querySelectorAll("[data-profile-section]").forEach(btn=>btn.onclick=()=>showProfileHubSection(btn.dataset.profileSection));
+  document.querySelectorAll(".profile-hub-back").forEach(btn=>btn.onclick=()=>showProfileHubSection("menu"));
+  if($("closeProfileHub")) $("closeProfileHub").onclick=()=>$("memberProfileDialog")?.close();
+  if($("profileHubLogout")) $("profileHubLogout").onclick=async()=>{await backend.logout();location.reload();};
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();

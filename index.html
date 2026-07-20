@@ -83,7 +83,7 @@
     <button type="button" data-language-choice="no" role="menuitem">🇳🇴 <span>Norsk</span></button>
     <button type="button" data-language-choice="en" role="menuitem">🇬🇧 <span>English</span></button>
   </div>
-</div><div class="notification-menu" id="notificationMenu"><button class="notification-button" id="notificationButton" type="button" aria-label="Varsler">🔔<b id="globalNotificationBadge" class="notification-badge hidden">0</b></button><div class="notification-dropdown hidden" id="notificationDropdown"><div class="notification-dropdown-head"><strong>Varsler</strong><button type="button" id="closeNotificationDropdown">×</button></div><div id="notificationDropdownList"></div></div></div><button class="profile-chip" id="profileChip"><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
+</div><button class="profile-chip" id="profileChip"><b id="globalNotificationBadge" class="profile-notification-badge hidden">0</b><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button><button class="icon-button close-portal" id="closePortal" aria-label="Logg ut">↪</button></div>
     </header>
 
     <div class="portal-shell">
@@ -109,7 +109,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.16.0</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.16.1</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -204,6 +204,18 @@
 
   <dialog id="memberProfileDialog" class="profile-dialog">
     <div class="dialog-card profile-dialog-card">
+      <div id="profileHubMenu" class="profile-hub-menu hidden">
+        <div class="card-header"><div><p class="card-kicker">MIN WGANG</p><h2 id="profileHubName">PROFIL</h2></div><button type="button" class="icon-button" id="closeProfileHub" aria-label="Lukk">×</button></div>
+        <button type="button" class="profile-hub-item" data-profile-section="notifications"><span><strong>Varsler</strong><small>Se nye varsler</small></span><b id="profileMenuNotificationBadge" class="profile-menu-badge hidden">0</b></button>
+        <button type="button" class="profile-hub-item" data-profile-section="settings"><span><strong>Innstillinger</strong><small>Varsler, e-post og språk</small></span><span>›</span></button>
+        <button type="button" class="profile-hub-item" data-profile-section="profile"><span><strong>Se / endre profil</strong><small>Din synlige medlemsprofil</small></span><span>›</span></button>
+        <button type="button" class="profile-hub-item" data-profile-section="account"><span><strong>Min konto</strong><small>Spillnavn og rolle</small></span><span>›</span></button>
+        <button type="button" class="profile-hub-item profile-hub-logout" id="profileHubLogout"><span><strong>Logg ut</strong></span></button>
+      </div>
+      <div id="profileHubNotifications" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Varsler</h3><div id="profileNotificationList"></div></div>
+      <div id="profileHubSettings" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Innstillinger</h3><div id="profileHubSettingsMount"></div></div>
+      <div id="profileHubAccount" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Min konto</h3><div class="account-summary"><p><strong>Hay Day-navn</strong><br><span id="accountGameName">–</span></p><p><strong>Rolle</strong><br><span id="accountRole">–</span></p><p class="helper-text">E-postadressen din vises aldri til andre medlemmer.</p></div></div>
+      <div id="profileHubProfile" class="profile-hub-section">
       <div class="card-header">
         <div>
           <p class="card-kicker">PROFIL</p>
@@ -268,6 +280,7 @@
           <p class="form-message" id="profileSaveMessage"></p>
         </form>
       </section>
+      </div>
     </div>
   </dialog>
 
