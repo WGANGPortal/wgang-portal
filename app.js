@@ -805,6 +805,18 @@
     };
     try{const saved=await backend.saveNotificationPreferences(payload);state.notifications=state.notifications||{};state.notifications.preferences=saved;$("notificationSettingsStatus").textContent=currentLanguage==="en"?"Notification settings saved.":"Varslingsinnstillingene er lagret.";renderNotifications();}catch(e){$("notificationSettingsStatus").textContent=humanError(e);}
   };
+  function accountGameNameValue(user){
+    return user?.gameName || user?.game_name || user?.displayName || user?.display_name || user?.name || (user?.role==="owner" ? "TJENTA" : "–");
+  }
+  function accountEmailValue(user){
+    return user?.email || user?.authEmail || user?.auth_email || backend?.session?.user?.email || backend?.user?.email || "–";
+  }
+  function accountMemberSinceValue(user){
+    const raw=user?.approvedAt || user?.approved_at || user?.memberSince || user?.member_since || user?.createdAt || user?.created_at;
+    if(!raw) return "–";
+    const d=new Date(raw); if(Number.isNaN(d.getTime())) return "–";
+    return new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{day:"numeric",month:"long",year:"numeric"}).format(d);
+  }
   function showProfileHubSection(section="menu") {
     ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount"].forEach(id=>$(id)?.classList.add("hidden"));
     const map={menu:"profileHubMenu",notifications:"profileHubNotifications",settings:"profileHubSettings",profile:"profileHubProfile",account:"profileHubAccount"};
@@ -819,13 +831,27 @@
       if(settings&&mount&&!mount.contains(settings)) mount.appendChild(settings);
       renderNotificationSettings();
     }
-    if(section==="account"){if($("accountGameName"))$("accountGameName").textContent=current()?.gameName||"–";if($("accountRole"))$("accountRole").textContent=roleLabel(current()?.role);}
+    if(section==="account"){
+      const u=current();
+      if($("accountGameName")) $("accountGameName").textContent=accountGameNameValue(u);
+      if($("accountEmail")) $("accountEmail").textContent=accountEmailValue(u);
+      if($("accountRole")) $("accountRole").textContent=roleLabel(u?.role);
+      if($("accountMemberSince")) $("accountMemberSince").textContent=accountMemberSinceValue(u);
+    }
     if(section==="notifications") renderNotifications();
   }
   document.querySelectorAll("[data-profile-section]").forEach(btn=>btn.onclick=()=>showProfileHubSection(btn.dataset.profileSection));
   document.querySelectorAll(".profile-hub-back").forEach(btn=>btn.onclick=()=>showProfileHubSection("menu"));
   if($("closeProfileHub")) $("closeProfileHub").onclick=()=>$("memberProfileDialog")?.close();
-  if($("profileHubLogout")) $("profileHubLogout").onclick=async()=>{await backend.logout();location.reload();};
+  if($("profileHubLogout")) $("profileHubLogout").onclick=async()=>{
+    try{
+      await backend.logout();
+    }catch(err){
+      console.error("Logout failed",err);
+    }finally{
+      window.location.reload();
+    }
+  };
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
