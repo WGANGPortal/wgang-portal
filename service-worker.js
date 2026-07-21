@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-portal-v0.10.0";
+const CACHE_NAME = "wgang-portal-v0.18.0";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js", "/demo-data.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",

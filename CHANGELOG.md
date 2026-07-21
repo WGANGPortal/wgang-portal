@@ -92,3 +92,7 @@
 - Removed email from member/admin presentation and browser-readable profile columns.
 - Added safe self-service profile editing through Supabase RPC.
 - Added Norwegian/English language selector foundation.
+
+## v0.18.0
+- Chill Bunny Planner med oppgavebibliotek, manuell dagstavle, popularitet og medlemsstatus.
+- Chill Bunny-popularitet er justert for rask gjenbruk av oppgaver: 0 / 1–2 / 3–4 / 5–6 / 7–8 / 9+ valgte, i stedet for å behandle 5+ som fullt.

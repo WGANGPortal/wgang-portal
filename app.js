@@ -235,7 +235,7 @@
 
   function showAdminModule(name, useHash=true) {
     if (!isLeadership()) { navigate("dashboard"); return; }
-    if (!isAdmin() && name !== "board") { navigate("dashboard"); return; }
+    if (!isAdmin() && !["board","derby"].includes(name)) { navigate("dashboard"); return; }
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === "admin"));
     document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
     const meta = ADMIN_MODULE_META[name] || ["Admin", ""];
@@ -362,8 +362,52 @@
     renderDerbyManagement();
     renderNotifications();
     renderNotificationSettings();
+    loadBunny();
     translateUi(portal);
     queueVisibleTranslations();
+  }
+
+  const BUNNY_DEFAULT_TASKS = [
+    {id:1,category:"Bybyggeoppgave",name:"Gjester i Matbutikk",amount:2,icon:"🏪",description:"Ta imot 2 byggjester i Matbutikk"},
+    {id:2,category:"Produksjon",name:"Kake med røde bær",amount:3,icon:"🎂"},{id:3,category:"Innhøsting",name:"Soyabønner",amount:47,icon:"🫛"},
+    {id:4,category:"Besøkende i byen",name:"Innbygger",amount:1,icon:"🧑‍🌾"},{id:5,category:"Innhøsting",name:"Gulrøtter",amount:53,icon:"🥕"},
+    {id:6,category:"Dyreoppgave",name:"Bacon",amount:11,icon:"🥓"},{id:7,category:"Produksjon",name:"Gulrotkake",amount:3,icon:"🍰"},
+    {id:8,category:"Produksjon",name:"Eplejuice",amount:2,icon:"🧃"},{id:9,category:"Dyreoppgave",name:"Egg",amount:16,icon:"🥚"},
+    {id:10,category:"Produksjon",name:"Frutti di Mare-pizza",amount:5,icon:"🍕"},{id:11,category:"Innhøsting",name:"Gresskar",amount:38,icon:"🎃"},{id:12,category:"Innhøsting",name:"Hvete",amount:77,icon:"🌾"}
+  ];
+  let bunnyData={library:[],board:null,boardTasks:[],statuses:[]};
+  function bunnyHeat(n){
+    if(n===0)return 0;
+    if(n<=2)return 1;
+    if(n<=4)return 2;
+    if(n<=6)return 3;
+    if(n<=8)return 4;
+    return 5;
+  }
+  function bunnyPopularity(n){
+    if(n===0)return "Ingen interesse";
+    if(n<=2)return "Lav interesse";
+    if(n<=4)return "Noe interesse";
+    if(n<=6)return "Populær";
+    if(n<=8)return "Svært populær";
+    return "Høy konkurranse";
+  }
+  function bunnyIsStale(){if(!bunnyData.board?.published_at)return true;const now=new Date(),cut=new Date(now);cut.setHours(10,0,0,0);if(now<cut)cut.setDate(cut.getDate()-1);return new Date(bunnyData.board.published_at)<cut;}
+  async function loadBunny(){try{bunnyData=await backend.getBunnyData();if(!bunnyData.library?.length && backend.mode==="local"){bunnyData.library=BUNNY_DEFAULT_TASKS;bunnyData.board={id:1,published_at:new Date().toISOString(),active:true};bunnyData.boardTasks=BUNNY_DEFAULT_TASKS.map(x=>({task_id:x.id}));localStorage.setItem("wgang_bunny_v018",JSON.stringify(bunnyData));}}catch(e){console.warn("Chill Bunny data unavailable",e);bunnyData={library:[],board:null,boardTasks:[],statuses:[]};}renderBunny();}
+  function renderBunny(){
+    const grid=$("bunnyTaskGrid");if(!grid)return;const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));const uid=current()?.id;
+    const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const ready=mine.filter(x=>x.status==="ready");
+    $("bunnyReadyCount").textContent=`${ready.length} / 5`;$("bunnyPlanCount").textContent=`${ready.length} klare`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
+    const notice=$("bunnyBoardNotice");if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.textContent=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})} og gjelder til neste oppgavebytte kl. 10:00.`;}
+    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length;const my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";return `<article class="bunny-task-card"><div class="bunny-task-main"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-icon">${esc(t.icon||"🐰")}</div><div class="amount">× ${t.amount}</div><h3>${esc(t.name)}</h3></div><div class="bunny-popularity"><div><strong>${n} valgt</strong><small>${bunnyPopularity(n)}</small></div><span class="heat heat-${bunnyHeat(n)}">${n}</span></div><div class="bunny-actions"><button class="bunny-ready ${my==="ready"?"selected":""}" data-bunny-status="ready" data-task-id="${t.id}">✓ Jeg har den klar</button><button class="bunny-prep ${my==="preparing"?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}">○ Jeg klargjør den</button><button class="bunny-skip" data-bunny-status="skip" data-task-id="${t.id}">× Ikke aktuell</button></div></article>`}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board)return;try{await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus);await loadBunny();}catch(e){alert(humanError(e));}});
+    const plan=$("bunnyMyPlan");plan.innerHTML=ready.length?ready.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.icon)} ${esc(t.name)} ×${t.amount}</span>`:""}).join(""):`<span class="helper-text">Ingen oppgaver markert som klare ennå.</span>`;
+    renderBunnyAdmin();
+  }
+  function renderBunnyAdmin(){const box=$("bunnyAdminBoard");if(!box||!isLeadership())return;const active=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));box.innerHTML=`<div class="bunny-admin-actions"><strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong><button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button></div><div class="bunny-admin-library">${(bunnyData.library||[]).map(t=>`<button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}"><span>${esc(t.icon||"🐰")}</span><strong>${esc(t.name)} ×${t.amount}</strong><small>${esc(t.category)}</small></button>`).join("")}</div><div><h3>Legg til nytt oppgavekort</h3><div class="bunny-new-task"><select id="newBunnyCategory"><option>Produksjon</option><option>Innhøsting</option><option>Dyreoppgave</option><option>Bybyggeoppgave</option><option>Besøkende i byen</option><option>Annet</option></select><input id="newBunnyName" placeholder="Oppgavenavn"><input id="newBunnyAmount" type="number" min="1" placeholder="Antall"><input id="newBunnyIcon" maxlength="8" placeholder="🐰"><button class="button button-secondary" id="addBunnyTask">Legg til</button></div></div>`;
+    box.querySelectorAll("[data-bunny-pick]").forEach(b=>b.onclick=()=>{b.classList.toggle("selected");$("bunnyAdminSelected").textContent=box.querySelectorAll("[data-bunny-pick].selected").length;});
+    $("publishBunnyBoard").onclick=async()=>{const ids=[...box.querySelectorAll("[data-bunny-pick].selected")].map(x=>x.dataset.bunnyPick);if(!ids.length)return alert("Velg oppgavene som ligger på tavlen i spillet først.");try{await backend.publishBunnyBoard(ids);await loadBunny();alert("Dagens Chill Bunny-tavle er publisert.");}catch(e){alert(humanError(e));}};
+    $("addBunnyTask").onclick=async()=>{const name=$("newBunnyName").value.trim(),amount=+$('newBunnyAmount').value;if(!name||!amount)return alert("Fyll inn oppgavenavn og antall.");try{await backend.addBunnyTask({category:$("newBunnyCategory").value,name,amount,icon:$("newBunnyIcon").value.trim()||"🐰",active:true});await loadBunny();}catch(e){alert(humanError(e));}};
   }
 
   function renderMetrics() {

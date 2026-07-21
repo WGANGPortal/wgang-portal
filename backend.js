@@ -302,6 +302,36 @@
       });
       if (error) throw error;
     },
+    async getBunnyData() {
+      if (!configured) {
+        const raw=localStorage.getItem("wgang_bunny_v018");
+        return raw?JSON.parse(raw):{library:[],board:null,boardTasks:[],statuses:[]};
+      }
+      const [lib,board]=await Promise.all([
+        client.from("bunny_task_library").select("*").eq("active",true).order("id"),
+        client.from("bunny_board").select("*").eq("active",true).order("published_at",{ascending:false}).limit(1).maybeSingle()
+      ]);
+      if(lib.error) throw lib.error; if(board.error) throw board.error;
+      let boardTasks=[],statuses=[];
+      if(board.data){
+        const [bt,st]=await Promise.all([client.from("bunny_board_tasks").select("task_id").eq("board_id",board.data.id),client.from("bunny_task_status").select("board_id,task_id,user_id,status,updated_at").eq("board_id",board.data.id)]);
+        if(bt.error)throw bt.error;if(st.error)throw st.error;boardTasks=bt.data||[];statuses=st.data||[];
+      }
+      return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
+    },
+    async setBunnyStatus(boardId,taskId,status) {
+      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));if(status!=="skip")d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      if(status==="skip"){const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",(await client.auth.getUser()).data.user.id);if(error)throw error;return;}
+      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
+    },
+    async publishBunnyBoard(taskIds) {
+      if(!configured){const d=await this.getBunnyData();d.board={id:Date.now(),published_at:new Date().toISOString(),active:true};d.boardTasks=taskIds.map(task_id=>({task_id}));d.statuses=[];localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {data:u}=await client.auth.getUser();await client.from("bunny_board").update({active:false}).eq("active",true);const {data:b,error}=await client.from("bunny_board").insert({published_by:u.user.id,active:true}).select().single();if(error)throw error;const {error:e2}=await client.from("bunny_board_tasks").insert(taskIds.map(task_id=>({board_id:b.id,task_id})));if(e2)throw e2;
+    },
+    async addBunnyTask(task) {
+      if(!configured){const d=await this.getBunnyData();d.library.push({id:Date.now(),active:true,...task});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {error}=await client.from("bunny_task_library").insert(task);if(error)throw error;
+    },
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }
       const { error }=await client.from("derby_settings").upsert({id:1,type:derby.type,task_total:derby.taskTotal,max_points:derby.maxPoints,strategy:derby.strategy,updated_at:new Date().toISOString()},{onConflict:"id"}); if(error)throw error;
