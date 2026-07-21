@@ -1584,3 +1584,122 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 else setTimeout(wgangInitBunnyPlanner,100);
 
 
+
+
+/* v0.18.0.14 – robust chat auto-scroll */
+(function(){
+  const chatTargets = {
+    leadership: {
+      route: "leadership",
+      listId: "leadershipMessageList",
+      unreadId: "leadershipUnreadStart"
+    },
+    community: {
+      route: "community",
+      listId: "communityMessageList",
+      unreadId: "communityUnreadStart"
+    }
+  };
+
+  function currentRouteName(){
+    try{
+      if(typeof currentRoute==="function") return currentRoute();
+    }catch(_){}
+    const hash=(location.hash||"").replace(/^#/,"");
+    return hash.split(/[/?]/)[0]||"dashboard";
+  }
+
+  function visible(el){
+    if(!el) return false;
+    const r=el.getBoundingClientRect();
+    return r.width>0 && r.height>0;
+  }
+
+  function getTarget(cfg){
+    const unread=document.getElementById(cfg.unreadId);
+    if(unread && visible(unread)) return unread;
+
+    const list=document.getElementById(cfg.listId);
+    if(!list || !visible(list)) return null;
+
+    const messages=[...list.querySelectorAll("article, .message, .chat-message, .leadership-message")];
+    return messages.length ? messages[messages.length-1] : list.lastElementChild;
+  }
+
+  function scrollPrecisely(el){
+    if(!el) return;
+    const headerOffset = 150; // keeps target below fixed WGANG header
+    const y = window.scrollY + el.getBoundingClientRect().top - headerOffset;
+    window.scrollTo({top: Math.max(0,y), behavior:"auto"});
+  }
+
+  function stabilizeScroll(cfg){
+    const route=currentRouteName();
+    if(route!==cfg.route) return;
+
+    let attempts=0;
+    let lastY=-1;
+    const maxAttempts=12;
+
+    const run=()=>{
+      const target=getTarget(cfg);
+      if(!target) return;
+
+      scrollPrecisely(target);
+
+      requestAnimationFrame(()=>{
+        const nowY=window.scrollY;
+        const moved=Math.abs(nowY-lastY)>2;
+        lastY=nowY;
+        attempts++;
+
+        // Repeat while layout can still move (fonts/images/browser restoration).
+        if(attempts<maxAttempts && (moved || document.readyState!=="complete")){
+          setTimeout(run, attempts<4 ? 120 : 220);
+        }
+      });
+    };
+
+    // Disable browser history restoration for chat routes in this session.
+    try{ if("scrollRestoration" in history) history.scrollRestoration="manual"; }catch(_){}
+
+    run();
+    setTimeout(run, 250);
+    setTimeout(run, 600);
+    setTimeout(run, 1200);
+    setTimeout(run, 2000);
+
+    if(document.fonts?.ready){
+      document.fonts.ready.then(()=>setTimeout(run,50)).catch(()=>{});
+    }
+
+    const imgs=document.querySelectorAll(`#${cfg.listId} img`);
+    imgs.forEach(img=>{
+      if(!img.complete) img.addEventListener("load",()=>setTimeout(run,30),{once:true});
+    });
+  }
+
+  function runForActiveChat(){
+    Object.values(chatTargets).forEach(stabilizeScroll);
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(runForActiveChat,150));
+  window.addEventListener("load",()=>setTimeout(runForActiveChat,100));
+  window.addEventListener("hashchange",()=>setTimeout(runForActiveChat,180));
+
+  // Re-run after navigation clicks because this is a single-page portal.
+  document.addEventListener("click",e=>{
+    const a=e.target.closest?.("[data-route],a[href^='#']");
+    if(a) setTimeout(runForActiveChat,220);
+  });
+
+  // Observe dynamic chat rendering and reposition after the messages actually exist.
+  const observer=new MutationObserver(muts=>{
+    if(muts.some(m=>m.addedNodes?.length)){
+      const route=currentRouteName();
+      const cfg=Object.values(chatTargets).find(x=>x.route===route);
+      if(cfg) setTimeout(()=>stabilizeScroll(cfg),80);
+    }
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+})();
