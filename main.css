@@ -212,3 +212,88 @@ body:not(.admin-mode) .admin-only {
 /* v0.18.0.6 */
 .bunny-library-warning{margin:18px 0;padding:16px;border-radius:16px;background:#fff3d9;border:1px solid #efcf8d;color:#5c4522}
 .bunny-library-warning p{margin:6px 0 0}
+
+
+/* =========================================================
+   WGANG Portal v0.18.0.7 – Chill Bunny visual task library
+   ========================================================= */
+.bunny-library-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.bunny-library-card.bunny-task-visual-card{
+  position:relative;
+  min-height:205px;
+  padding:12px 10px 14px;
+  border:2px solid #e6ded4;
+  border-radius:18px;
+  background:linear-gradient(180deg,#fffdf8 0%,#fffaf1 100%);
+  box-shadow:0 3px 10px rgba(73,48,35,.07);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  text-align:center;
+  overflow:hidden;
+}
+.bunny-task-category{
+  width:100%;
+  font-size:12px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  color:#8d2b63;
+  margin:0 26px 8px 0;
+}
+.bunny-task-main{
+  min-height:88px;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+.bunny-task-illustration{
+  font-size:58px !important;
+  line-height:1;
+  filter:drop-shadow(0 3px 2px rgba(0,0,0,.10));
+}
+.bunny-task-amount{
+  font-size:25px;
+  font-weight:900;
+  color:#3a2a25;
+  white-space:nowrap;
+}
+.bunny-task-name{
+  margin-top:5px;
+  font-size:17px;
+  line-height:1.18;
+  font-weight:850;
+  color:#302522;
+}
+.bunny-library-card .bunny-library-edit{
+  position:absolute;
+  right:9px;
+  top:9px;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#fdeaf2;
+  color:#b32e68;
+  font-size:15px;
+}
+.bunny-library-card.bunny-task-visual-card:hover,
+.bunny-library-card.bunny-task-visual-card:focus{
+  transform:translateY(-1px);
+  border-color:#d8b8c8;
+}
+@media(min-width:700px){
+  .bunny-library-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(min-width:1100px){
+  .bunny-library-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
