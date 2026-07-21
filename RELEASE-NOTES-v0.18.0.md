@@ -14,3 +14,10 @@
 
 ## Viktig før opplasting
 Kjør `MIGRATION-v0.18.0-CHILL-BUNNY.sql` i Supabase SQL Editor først. Deretter kan hele portalpakken lastes opp til GitHub.
+
+
+## v0.18.0.2 – Dagens tavle / bibliotek
+- Dagens 12 registrerte Chill Bunny-oppgaver ligger permanent i oppgavebiblioteket.
+- Eier, Admin og Ass. leder velger nøyaktig 12 kort og publiserer dagens tavle manuelt.
+- Nye oppgavekort lagres i biblioteket og kan gjenbrukes ved senere oppgavebytter.
+- Publisering krever 12 valgte kort for å unngå ufullstendig dagstavle.
