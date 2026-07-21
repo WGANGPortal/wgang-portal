@@ -204,3 +204,7 @@ body:not(.admin-mode) .admin-only {
 
 /* v0.18.0.4 */
 .bunny-new-task{grid-template-columns:1fr 1fr 110px auto auto}.bunny-new-task select{min-height:48px}@media(max-width:900px){.bunny-new-task{grid-template-columns:1fr 1fr}}
+
+/* v0.18.0.5 – robust Supabase-driven task dropdowns */
+.bunny-name-status{margin-top:8px}
+#newBunnyName:disabled{opacity:.7}

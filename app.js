@@ -420,26 +420,175 @@
     const plan=$("bunnyMyPlan");plan.innerHTML=ready.length?ready.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.icon)} ${esc(t.name)} ×${t.amount}</span>`:""}).join(""):`<span class="helper-text">Ingen oppgaver markert som klare ennå.</span>`;
     renderBunnyAdmin();
   }
+  function bunnyNorm(v){
+    return String(v||"").trim().toLocaleLowerCase("nb-NO");
+  }
   function renderBunnyAdmin(){
-    const box=$("bunnyAdminBoard");if(!box||!isLeadership())return;
+    const box=$("bunnyAdminBoard");
+    if(!box||!isLeadership())return;
+
+    const library=(bunnyData.library||[]).filter(t=>t.active!==false);
     const active=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));
-    const categories=["Produksjon","Innhøsting","Dyreoppgave","Bybyggeoppgave","Besøkende i byen","Annet"];
-    box.innerHTML=`<div class="bunny-admin-actions"><strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong><button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button></div>
-      <div class="bunny-admin-library">${(bunnyData.library||[]).map(t=>`<div class="bunny-admin-choice-wrap"><button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}"><span>${esc(t.icon||"🐰")}</span><strong>${esc(t.name)} ×${t.amount}</strong><small>${esc(t.category)}</small></button><button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button></div>`).join("")}</div>
-      <div><h3>Legg til nytt oppgavekort</h3><p class="helper-text">Velg en kjent oppgavemal. Nye oppgavenavn lagres i biblioteket og kan få eget WGANG-bilde/design fortløpende.</p><div class="bunny-new-task">
-      <select id="newBunnyCategory">${categories.map(c=>`<option>${c}</option>`).join("")}</select>
-      <select id="newBunnyName"></select>
-      <input id="newBunnyAmount" type="number" min="1" placeholder="Antall">
-      <button class="button button-secondary" id="addBunnyTask">Legg til</button>
-      <button class="button button-ghost" id="addBunnyTemplate">+ Nytt oppgavenavn</button></div></div>`;
-    box.querySelectorAll("[data-bunny-pick]").forEach(b=>b.onclick=()=>{b.classList.toggle("selected");$("bunnyAdminSelected").textContent=box.querySelectorAll("[data-bunny-pick].selected").length;});
-    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=async(e)=>{e.preventDefault();e.stopPropagation();const t=(bunnyData.library||[]).find(x=>String(x.id)===String(b.dataset.bunnyEdit));if(!t)return;const name=prompt("Oppgavenavn:",t.name);if(name===null)return;const amount=prompt("Antall:",t.amount);if(amount===null)return;if(!name.trim()||!Number(amount))return alert("Kontroller oppgavenavn og antall.");try{await backend.updateBunnyTask(t.id,{name:name.trim(),amount:Number(amount)});await loadBunny();}catch(err){alert(humanError(err));}});
-    const cat=$("newBunnyCategory"),names=$("newBunnyName");
-    const fillNames=()=>{const rows=(bunnyData.library||[]).filter(t=>t.category===cat.value).sort((a,b)=>a.name.localeCompare(b.name,"nb"));names.innerHTML=rows.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");};
-    cat.onchange=fillNames;fillNames();
-    $("publishBunnyBoard").onclick=async()=>{const ids=[...box.querySelectorAll("[data-bunny-pick].selected")].map(x=>x.dataset.bunnyPick);if(ids.length!==12)return alert(`Dagens Chill Bunny-tavle skal ha 12 oppgaver. Du har valgt ${ids.length}.`);try{await backend.publishBunnyBoard(ids);await loadBunny();alert("Dagens Chill Bunny-tavle er publisert.");}catch(e){alert(humanError(e));}};
-    $("addBunnyTask").onclick=async()=>{const template=(bunnyData.library||[]).find(t=>String(t.id)===String(names.value)),amount=+$("newBunnyAmount").value;if(!template||!amount)return alert("Velg oppgavenavn og fyll inn antall.");const duplicate=(bunnyData.library||[]).some(t=>t.category===template.category&&t.name===template.name&&Number(t.amount)===amount);if(duplicate)return alert("Dette oppgavekortet finnes allerede i biblioteket.");try{await backend.addBunnyTask({category:template.category,name:template.name,amount,icon:template.icon||"🐰",description:template.description||template.name,active:true});await loadBunny();}catch(e){alert(humanError(e));}};
-    $("addBunnyTemplate").onclick=async()=>{const category=prompt("Oppgavetype/kategori:",cat.value);if(category===null||!category.trim())return;const name=prompt("Nytt oppgavenavn:");if(name===null||!name.trim())return;const icon=prompt("Midlertidig ikon. Vi kan erstatte det med eget WGANG-bilde/design senere:","🐰");if(icon===null)return;try{await backend.addBunnyTask({category:category.trim(),name:name.trim(),amount:1,icon:icon.trim()||"🐰",description:name.trim(),active:true});await loadBunny();alert("Ny oppgavemal er lagret i biblioteket.");}catch(e){alert(humanError(e));}};
+
+    // Build category choices directly from what is actually stored in Supabase.
+    const categories=[...new Set(library.map(t=>String(t.category||"").trim()).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,"nb"));
+
+    box.innerHTML=`<div class="bunny-admin-actions">
+        <strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong>
+        <button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button>
+      </div>
+
+      <div class="bunny-admin-library">
+        ${library.map(t=>`<div class="bunny-admin-choice-wrap">
+          <button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}">
+            <span>${esc(t.icon||"🐰")}</span>
+            <strong>${esc(t.name)} ×${t.amount}</strong>
+            <small>${esc(t.category)}</small>
+          </button>
+          <button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button>
+        </div>`).join("")}
+      </div>
+
+      <div>
+        <h3>Legg til nytt oppgavekort</h3>
+        <p class="helper-text">Velg en kjent oppgavemal. Oppgavenavnene hentes direkte fra oppgavebiblioteket.</p>
+
+        <div class="bunny-new-task">
+          <select id="newBunnyCategory">
+            ${categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("")}
+          </select>
+
+          <select id="newBunnyName"></select>
+
+          <input id="newBunnyAmount" type="number" min="1" placeholder="Antall">
+
+          <button class="button button-secondary" id="addBunnyTask">Legg til</button>
+          <button class="button button-ghost" id="addBunnyTemplate">+ Nytt oppgavenavn</button>
+        </div>
+
+        <p class="helper-text bunny-name-status" id="bunnyNameStatus"></p>
+      </div>`;
+
+    box.querySelectorAll("[data-bunny-pick]").forEach(b=>{
+      b.onclick=()=>{
+        b.classList.toggle("selected");
+        $("bunnyAdminSelected").textContent=box.querySelectorAll("[data-bunny-pick].selected").length;
+      };
+    });
+
+    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=async(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));
+      if(!t)return;
+      const name=prompt("Oppgavenavn:",t.name);
+      if(name===null)return;
+      const amount=prompt("Antall:",t.amount);
+      if(amount===null)return;
+      if(!name.trim()||!Number(amount))return alert("Kontroller oppgavenavn og antall.");
+      try{
+        await backend.updateBunnyTask(t.id,{name:name.trim(),amount:Number(amount)});
+        await loadBunny();
+      }catch(err){
+        alert(humanError(err));
+      }
+    });
+
+    const cat=$("newBunnyCategory");
+    const names=$("newBunnyName");
+    const status=$("bunnyNameStatus");
+
+    const fillNames=()=>{
+      const selected=bunnyNorm(cat?.value);
+      const rows=library
+        .filter(t=>bunnyNorm(t.category)===selected)
+        .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"nb"));
+
+      if(!rows.length){
+        names.innerHTML='<option value="">Ingen oppgavemaler i denne kategorien</option>';
+        names.disabled=true;
+        if(status)status.textContent="Ingen oppgavemaler funnet for valgt kategori.";
+        return;
+      }
+
+      names.disabled=false;
+      names.innerHTML=rows.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+      if(status)status.textContent=`${rows.length} oppgavemal${rows.length===1?"":"er"} tilgjengelig.`;
+    };
+
+    if(cat){
+      cat.onchange=fillNames;
+      fillNames();
+    }
+
+    $("publishBunnyBoard").onclick=async()=>{
+      const ids=[...box.querySelectorAll("[data-bunny-pick].selected")].map(x=>x.dataset.bunnyPick);
+      if(ids.length!==12)return alert(`Dagens Chill Bunny-tavle skal ha 12 oppgaver. Du har valgt ${ids.length}.`);
+      try{
+        await backend.publishBunnyBoard(ids);
+        await loadBunny();
+        alert("Dagens Chill Bunny-tavle er publisert.");
+      }catch(e){
+        alert(humanError(e));
+      }
+    };
+
+    $("addBunnyTask").onclick=async()=>{
+      const template=library.find(t=>String(t.id)===String(names.value));
+      const amount=Number($("newBunnyAmount").value);
+      if(!template)return alert("Velg et oppgavenavn.");
+      if(!amount||amount<1)return alert("Legg inn antall.");
+
+      const duplicate=library.some(t=>
+        bunnyNorm(t.category)===bunnyNorm(template.category) &&
+        bunnyNorm(t.name)===bunnyNorm(template.name) &&
+        Number(t.amount)===amount
+      );
+      if(duplicate)return alert("Dette oppgavekortet finnes allerede i biblioteket.");
+
+      try{
+        await backend.addBunnyTask({
+          category:String(template.category||"").trim(),
+          name:String(template.name||"").trim(),
+          amount,
+          icon:template.icon||"🐰",
+          description:template.description||template.name,
+          template_key:template.template_key||null,
+          image_key:template.image_key||null,
+          active:true
+        });
+        await loadBunny();
+      }catch(e){
+        alert(humanError(e));
+      }
+    };
+
+    $("addBunnyTemplate").onclick=async()=>{
+      const category=prompt("Oppgavetype/kategori:",cat?.value||"");
+      if(category===null||!category.trim())return;
+
+      const name=prompt("Nytt oppgavenavn:");
+      if(name===null||!name.trim())return;
+
+      const icon=prompt("Midlertidig ikon. Vi kan erstatte det med eget WGANG-bilde/design senere:","🐰");
+      if(icon===null)return;
+
+      try{
+        await backend.addBunnyTask({
+          category:category.trim(),
+          name:name.trim(),
+          amount:1,
+          icon:icon.trim()||"🐰",
+          description:name.trim(),
+          active:true
+        });
+        await loadBunny();
+        alert("Ny oppgavemal er lagret i biblioteket.");
+      }catch(e){
+        alert(humanError(e));
+      }
+    };
   }
 
   function renderMetrics() {
