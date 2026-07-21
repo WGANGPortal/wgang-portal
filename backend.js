@@ -147,12 +147,28 @@
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
+    let rolePermissions = [], permissionAudit = [], chatReadState = [];
+    try {
+      const [rolePermRes, auditRes, chatReadRes] = await Promise.all([
+        client.from("role_permissions").select("role,permission_key,enabled,updated_at").order("permission_key"),
+        client.from("permission_audit_log").select("id,role,permission_key,old_value,new_value,changed_by,changed_at").order("changed_at",{ascending:false}).limit(50),
+        client.from("chat_read_state").select("channel,last_read_at,last_message_id").eq("user_id",session.user.id)
+      ]);
+      if (!rolePermRes.error) rolePermissions = rolePermRes.data || [];
+      if (!auditRes.error) permissionAudit = auditRes.data || [];
+      if (!chatReadRes.error) chatReadState = chatReadRes.data || [];
+    } catch (e) {
+      console.warn("Optional permissions/read-state tables unavailable",e);
+    }
+
     return {
       accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next},
       notifications:{
         preferences: notificationPrefsRes.data || null,
         readState: notificationReadRes.data || null
       },
+      permissions:{rolePermissions, audit:permissionAudit},
+      chatReadState,
       social:{
         likes: likesRes.data || [],
         comments: commentsRes.data || [],
@@ -478,6 +494,31 @@
       if (error) throw error;
       return data;
     },
+    async saveRolePermission(role, permissionKey, enabled) {
+      if (!configured) return;
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const { error } = await client.from("role_permissions").upsert({
+        role, permission_key:permissionKey, enabled:!!enabled,
+        updated_by:user.id, updated_at:new Date().toISOString()
+      },{onConflict:"role,permission_key"});
+      if (error) throw error;
+    },
+    async markChatRead(channel, lastMessageId, lastReadAt) {
+      if (!configured) {
+        localState.chatReadState = localState.chatReadState || [];
+        const row={channel,last_message_id:lastMessageId||null,last_read_at:lastReadAt||new Date().toISOString()};
+        const i=localState.chatReadState.findIndex(x=>x.channel===channel);
+        if(i>=0)localState.chatReadState[i]=row; else localState.chatReadState.push(row);
+        localSave(localState); return row;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const payload={user_id:user.id,channel,last_message_id:lastMessageId||null,last_read_at:lastReadAt||new Date().toISOString(),updated_at:new Date().toISOString()};
+      const {data,error}=await client.from("chat_read_state").upsert(payload,{onConflict:"user_id,channel"}).select().single();
+      if(error)throw error; return data;
+    },
+
     async toggleLike(targetType, targetId, currentlyLiked) {
       if (!configured) return;
       const { data:{user}, error:userError } = await client.auth.getUser();

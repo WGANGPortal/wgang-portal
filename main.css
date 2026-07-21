@@ -336,3 +336,13 @@ body:not(.admin-mode) .admin-only {
 .bunny-advice{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:14px;margin:12px 0;font-size:13px}.bunny-advice-go{background:#eaf6ec;border:1px solid #c6e3ca}
 .bunny-next-attendance{margin-top:14px}.bunny-attendance-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.bunny-attendance-buttons button{border:1px solid #dfd4cc;background:#fff;border-radius:12px;padding:9px 4px;font-weight:750}.bunny-attendance-buttons button.selected{outline:2px solid #c84c86;background:#fff0f6}
 .bunny-done-today{width:100%;margin-top:14px}.bunny-done-today.is-done{background:#e7f4e9;border-color:#a9d0b0}
+
+/* v0.18.0.12 – roles, permissions, notifications and unread chat */
+.permission-table th,.permission-table td{text-align:center;vertical-align:middle}.permission-table th:first-child,.permission-table td:first-child{text-align:left;min-width:240px}
+.permission-group-row th{background:#fff1f6;color:#9f2e65;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.permission-yes{color:#267a42}.permission-no{color:#9a8f88}.permission-lock{color:#267a42;font-weight:900}
+.permission-switch{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:5px 7px;border-radius:999px;background:#f5f1ee;cursor:pointer}.permission-switch input{margin-right:5px}
+.permission-audit{margin-top:18px}.permission-audit-row{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-top:1px solid #eee3dc}.permission-audit-row span{font-size:12px;color:#756a64}
+.chat-unread-divider{display:flex;align-items:center;gap:8px;margin:14px 0;color:#b3326f;font-size:12px;font-weight:900;text-transform:uppercase}.chat-unread-divider:before,.chat-unread-divider:after{content:"";height:1px;flex:1;background:#efb9cf}
+.chat-newer-indicator{position:sticky;bottom:10px;margin:10px auto 0;display:block;border:0;border-radius:999px;background:#b93170;color:#fff;padding:8px 14px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:3}
+@media(max-width:720px){.permission-table{font-size:12px}.permission-table th:first-child,.permission-table td:first-child{min-width:190px}.permission-switch{min-width:38px;padding:4px}}

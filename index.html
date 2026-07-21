@@ -178,13 +178,27 @@
 <div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1 id="adminPageTitle">Admin</h1><p id="adminPageDescription"></p></div></div>
 <div class="admin-module-panel" id="adminModulePanel">
 <article class="portal-card admin-action-card admin-only admin-module" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">🔔 KREVER HANDLING</p><h2>Adminvarsler</h2><p class="helper-text">Nye medlemsforespørsler og tips til godkjenning vises her.</p></div></div><div id="adminActionList" class="admin-action-list"></div></article>
-<article class="portal-card derby-management-card leadership-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ass. leder, Admin og Eier kan velge dagens oppgaver. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
+<article class="portal-card derby-management-card leadership-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
 <article class="portal-card derby-management-card admin-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
 <article class="portal-card admin-summary admin-only admin-module" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div></article>
 <article class="portal-card admin-only admin-module" data-admin-module="applications"><div class="card-header"><div><p class="card-kicker">VENTER PÅ GODKJENNING</p><h2>Medlemssøknader</h2></div></div><div id="pendingMembers" class="approval-list"></div></article>
 <article class="portal-card admin-preference-card admin-module" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Hva passer WGANG best?</h2><p class="helper-text">Bruk preferansene som støtte når du vurderer hvilke oppgaver som bør stå, og hvem som liker hva.</p></div></div><div class="preference-summary-grid" id="adminPreferenceSummary"></div><div class="table-wrap"><table><thead><tr><th>Oppgavetype</th><th>❤️ Liker</th><th>👍 Kan ta</th><th>😐 Helst ikke</th><th>🚫 Kan ikke</th><th>Anbefaling</th></tr></thead><tbody id="adminPreferenceTable"></tbody></table></div><div class="preference-member-detail"><h3>Hvem foretrekker hva?</h3><div id="adminPreferenceMembers"></div></div></article>
 <article class="portal-card admin-only admin-module" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">INNHOLD</p><h2>Tips som venter på gjennomgang</h2></div><button class="button button-primary" id="openAdminTipForm">Publiser tips</button></div><div id="pendingTips" class="approval-list"></div></article>
-<article class="portal-card admin-only admin-module" data-admin-module="roles"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Medlemmer og roller</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article></div></section>
+<article class="portal-card admin-only admin-module" data-admin-module="roles"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Medlemmer og roller</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article><article class="portal-card admin-only admin-module" data-admin-module="roles" id="permissionsMatrixCard">
+  <div class="card-header">
+    <div><p class="card-kicker">TILGANGSKONTROLL</p><h2>Roller og rettigheter</h2>
+      <p class="helper-text">Oversikten viser hvilke tilganger portalen faktisk bruker. Eier kan endre rettigheter for Admin, Ass. leder og Medlem. Eier-rettigheter er låst.</p>
+    </div>
+    <button type="button" class="button button-secondary owner-only" id="togglePermissionEdit">Rediger rettigheter</button>
+  </div>
+  <div class="table-wrap permission-table-wrap">
+    <table class="permission-table">
+      <thead><tr><th>Område / rettighet</th><th>Eier</th><th>Admin</th><th>Ass. leder</th><th>Medlem</th></tr></thead>
+      <tbody id="permissionMatrixBody"></tbody>
+    </table>
+  </div>
+  <div class="permission-audit" id="permissionAudit"></div>
+</article></div></section>
       </main>
     </div>
 
@@ -256,8 +270,7 @@
             <label class="leadership-only"><input type="checkbox" id="notifyLeadershipChat"> Nye innlegg i Lederprat</label>
             <label class="admin-only"><input type="checkbox" id="notifyMembershipRequests"> Nye medlemssøknader</label>
             <label class="admin-only"><input type="checkbox" id="notifyPendingTips"> Tips som venter på behandling</label>
-            <label><input type="checkbox" id="notifyDerbyPublished"> Nytt derby publisert</label>
-            <label><input type="checkbox" id="notifyDerbyDeadline"> Påminnelse før svarfrist</label>
+            <label><input type="checkbox" id="notifyImportantDerby"> Viktige derbyvarsler</label>
           </div>
           <div class="profile-divider"></div>
           <label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>

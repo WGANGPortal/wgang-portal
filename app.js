@@ -184,9 +184,59 @@
   let openProfileUserId = null;
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
-  function isAdmin(user=current()) { return !!user && ["owner","admin"].includes(user.role); }
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
-  function isLeadership(user=current()) { return !!user && ["owner","admin","assistant_leader"].includes(user.role); }
+
+  const PERMISSION_DEFINITIONS = [
+    {group:"Medlemmer",key:"members.view",label:"Se medlemsliste",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Medlemmer",key:"members.approve",label:"Godkjenne medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Medlemmer",key:"members.reject",label:"Avslå medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Medlemmer",key:"members.change_role",label:"Endre rolle på medlem",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Medlemmer",key:"members.remove",label:"Fjerne/deaktivere medlem",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+
+    {group:"Derby",key:"derby.view",label:"Se derby",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+    {group:"Derby",key:"derby.plan",label:"Delta i derbyplanlegging",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+    {group:"Derby",key:"derby.board.update",label:"Oppdatere dagens oppgavetavle",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Derby",key:"derby.board.publish",label:"Publisere oppgavetavle",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Derby",key:"derby.task_library.edit",label:"Legge til/redigere oppgavemaler",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Derby",key:"derby.settings.publish",label:"Publisere neste derby",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+
+    {group:"Chat",key:"chat.community.view",label:"Se vanlig chat/Derbyprat",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+    {group:"Chat",key:"chat.community.post",label:"Skrive i vanlig chat/Derbyprat",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+    {group:"Chat",key:"chat.leadership.view",label:"Se Lederprat",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Chat",key:"chat.leadership.post",label:"Skrive i Lederprat",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Chat",key:"chat.moderate",label:"Slette andres innlegg",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+
+    {group:"Innlegg / godkjenning",key:"content.pending.view",label:"Se innlegg/tips som venter",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Innlegg / godkjenning",key:"content.approve",label:"Godkjenne innlegg/tips",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Innlegg / godkjenning",key:"content.reject",label:"Avvise innlegg/tips",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+
+    {group:"Varslinger",key:"notifications.admin.membership",label:"Motta varsel om medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Varslinger",key:"notifications.admin.pending_content",label:"Motta varsel om innlegg til godkjenning",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Varslinger",key:"notifications.leadership_chat",label:"Motta Lederprat-varsler",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Varslinger",key:"notifications.important_derby",label:"Motta viktige derbyvarsler",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+
+    {group:"Roller og rettigheter",key:"permissions.view",label:"Se rettighetsoppsett",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Roller og rettigheter",key:"permissions.edit",label:"Endre rettigheter",defaults:{owner:1,admin:0,assistant_leader:0,member:0}},
+
+    {group:"Historikk",key:"history.view",label:"Se derby-/medlemshistorikk",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Historikk",key:"history.permission_audit",label:"Se logg over rettighetsendringer",defaults:{owner:1,admin:1,assistant_leader:0,member:0}}
+  ];
+
+  function rolePermissionOverride(role,key){
+    const rows=state.permissions?.rolePermissions||[];
+    const row=rows.find(x=>x.role===role&&x.permission_key===key);
+    return row ? !!row.enabled : null;
+  }
+  function hasPermission(key,user=current()){
+    if(!user)return false;
+    if(user.role==="owner")return true; // systemkritiske Eier-rettigheter er låst
+    const override=rolePermissionOverride(user.role,key);
+    if(override!==null)return override;
+    const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
+    return !!def?.defaults?.[user.role];
+  }
+  function isAdmin(user=current()) { return !!user && (user.role==="owner" || (user.role==="admin" && hasPermission("permissions.view",user))); }
+  function isLeadership(user=current()) { return !!user && hasPermission("chat.leadership.view",user); }
   function approved() { return state.accounts.filter(a => a.approved); }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
@@ -215,7 +265,8 @@
   }
 
   function navigate(route, useHash=true) {
-    if ((route === "admin" || route === "leadership") && !isLeadership()) route = "dashboard";
+    if (route==="leadership" && !hasPermission("chat.leadership.view")) route="dashboard";
+    if (route==="admin" && !hasPermission("permissions.view") && !hasPermission("derby.board.update")) route="dashboard";
     if (route === "admin") { showAdminModule(isAdmin() ? "actions" : "board", useHash); return; }
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
@@ -234,8 +285,8 @@
   };
 
   function showAdminModule(name, useHash=true) {
-    if (!isLeadership()) { navigate("dashboard"); return; }
-    if (!isAdmin() && !["board","derby"].includes(name)) { navigate("dashboard"); return; }
+    const modulePermission={actions:"content.pending.view",applications:"members.approve",roles:"permissions.view",derby:"derby.board.update",board:"derby.board.update"}[name];
+    if(modulePermission && !hasPermission(modulePermission)){navigate("dashboard");return;}
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === "admin"));
     document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
     const meta = ADMIN_MODULE_META[name] || ["Admin", ""];
@@ -302,15 +353,15 @@
     const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
     const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
     const latestPost=posts[0]; if(prefs.in_app_derby_chat && latestPost && newerThan(latestPost.publishedAt||latestPost.createdAt,read.derby_chat_seen_at)) items.push({category:"derby_chat",title:"Nytt innlegg i Derbyprat",text:latestPost.title||latestPost.body||"",route:"discussions",time:latestPost.publishedAt||latestPost.createdAt});
-    const latestMsg=msgs[msgs.length-1]; if(isLeadership() && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
-    if(isAdmin() && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications"}); }
-    if(isAdmin() && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt}); }
+    const latestMsg=msgs[msgs.length-1]; if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
+    if(hasPermission("notifications.admin.membership") && hasPermission("members.approve") && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
+    if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
     const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
     activity.forEach(n=>{
       const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
       items.push({category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at});
     });
-    const next=state.derbyManagement?.next; if(prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)) items.push({category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
+    const next=state.derbyManagement?.next; if(hasPermission("notifications.important_derby") && prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)) items.push({category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
@@ -321,16 +372,19 @@
   }
   function renderNotifications() {
     const items=buildNotifications(), badge=$("globalNotificationBadge"), card=$("whatsNewCard");
-    if(badge){badge.textContent=items.length;badge.classList.toggle("hidden",!items.length);}
-    if($("whatsNewCount")) $("whatsNewCount").textContent=items.length;
+    const notificationCount=items.reduce((sum,x)=>sum+(x.count||1),0);
+    if(badge){badge.textContent=notificationCount;badge.classList.toggle("hidden",!notificationCount);}
+    if($("whatsNewCount")) $("whatsNewCount").textContent=notificationCount;
     if(card) card.classList.toggle("hidden",!items.length);
-    const menuBadge=$("profileMenuNotificationBadge"); if(menuBadge){menuBadge.textContent=items.length;menuBadge.classList.toggle("hidden",!items.length);}
+    const menuBadge=$("profileMenuNotificationBadge"); if(menuBadge){menuBadge.textContent=notificationCount;menuBadge.classList.toggle("hidden",!notificationCount);}
     const renderList=(target)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
     renderList($("profileNotificationList")); renderList($("whatsNewList"));
   }
   function renderNotificationSettings() {
     const p=notificationPrefs(), set=(id,key)=>{const el=$(id);if(el)el.checked=!!p[key];};
-    set("notifyAnnouncements","in_app_announcements");set("notifyDerbyChat","in_app_derby_chat");set("notifyLeadershipChat","in_app_leadership_chat");set("notifyMembershipRequests","in_app_membership_requests");set("notifyPendingTips","in_app_pending_tips");set("notifyDerbyPublished","in_app_derby_published");set("notifyDerbyDeadline","in_app_derby_deadline_reminders");set("emailNotificationsEnabled","email_enabled");
+    set("notifyAnnouncements","in_app_announcements");set("notifyDerbyChat","in_app_derby_chat");set("notifyLeadershipChat","in_app_leadership_chat");set("notifyMembershipRequests","in_app_membership_requests");set("notifyPendingTips","in_app_pending_tips");
+    const derbyImportant=$("notifyImportantDerby"); if(derbyImportant)derbyImportant.checked=!!(p.in_app_derby_published||p.in_app_derby_deadline_reminders);
+    set("emailNotificationsEnabled","email_enabled");
   }
 
   function renderSession() {
@@ -845,13 +899,25 @@
   function renderLeadershipChat() {
     const list = $("leadershipMessageList");
     if (!list) return;
-    if (!isLeadership()) { list.innerHTML = ""; return; }
+    if (!hasPermission("chat.leadership.view")) { list.innerHTML = ""; return; }
     const messages = state.leadershipMessages || [];
-    list.innerHTML = messages.length ? messages.map(m => {
+    const readRow=(state.chatReadState||[]).find(x=>x.channel==="leadership");
+    const lastReadAt=readRow?.last_read_at||"1970-01-01";
+    const firstUnreadIndex=messages.findIndex(m=>m.userId!==current()?.id && newerThan(m.createdAt,lastReadAt));
+    list.innerHTML = messages.length ? messages.map((m,i) => {
       const own = m.userId === current()?.id;
-      const canDelete = own || isOwner();
-      const view=translatedContent("leadership",m); return `<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
+      const canDelete = own || hasPermission("chat.moderate");
+      const view=translatedContent("leadership",m); const unreadMark=i===firstUnreadIndex?`<div class="chat-unread-divider" id="leadershipUnreadStart">Nye innlegg</div>`:""; return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
     }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
+    if(firstUnreadIndex>=0){
+      const newerCount=messages.length-firstUnreadIndex;
+      if(newerCount>1){
+        const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=`↓ ${newerCount-1} nyere innlegg`;jump.onclick=()=>list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"end"});list.appendChild(jump);
+      }
+      setTimeout(()=>document.getElementById("leadershipUnreadStart")?.scrollIntoView({behavior:"smooth",block:"center"}),120);
+      const latest=messages[messages.length-1];
+      setTimeout(async()=>{try{await backend.markChatRead("leadership",latest?.id,latest?.createdAt||new Date().toISOString());state.chatReadState=state.chatReadState||[];const r=state.chatReadState.find(x=>x.channel==="leadership");if(r){r.last_read_at=latest?.createdAt;r.last_message_id=latest?.id;}else state.chatReadState.push({channel:"leadership",last_read_at:latest?.createdAt,last_message_id:latest?.id});renderNotifications();}catch(e){console.warn(e);}},1500);
+    }
     translateUi(list);
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
       if (!confirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
@@ -863,7 +929,7 @@
   }
 
   function renderAdmin() {
-    if (!isAdmin()) return;
+    if (!hasPermission("members.view") && !hasPermission("members.approve") && !hasPermission("permissions.view")) return;
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
     $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
@@ -878,28 +944,74 @@
     $("adminStatusGrid").innerHTML = [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("");
     $("adminResponseBadge").textContent = (all.length - counts.waiting) + " av " + all.length + " svar";
     $$('[data-approve]').forEach(b => b.onclick = async () => {
+      if(!hasPermission("members.approve"))return alert("Du har ikke rettighet til å godkjenne medlemmer.");
       if (busy) return; setBusy(true);
       try { await backend.approve(b.dataset.approve); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
     $$('[data-reject]').forEach(b => b.onclick = async () => {
+      if(!hasPermission("members.reject"))return alert("Du har ikke rettighet til å avslå medlemsforespørsler.");
       if (busy) return; setBusy(true);
       try { await backend.setMemberStatus(b.dataset.reject,"rejected"); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
     $$('[data-remove]').forEach(b => b.onclick = async () => {
+      if(!hasPermission("members.remove"))return alert("Du har ikke rettighet til å fjerne medlemmer.");
       if (!confirm("Fjerne medlemmet fra portalen? Kontoen deaktiveres, men historikk beholdes.")) return;
       if (busy) return; setBusy(true);
       try { await backend.setMemberStatus(b.dataset.remove,"removed"); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
+    renderPermissionMatrix();
     $$('[data-role-id]').forEach(select => select.onchange = async () => {
+      if(!hasPermission("members.change_role"))return alert("Du har ikke rettighet til å endre roller.");
       if (busy) return; setBusy(true);
       try { await backend.setRole(select.dataset.roleId, select.value); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
   }
 
+
+  let permissionEditMode=false;
+  function renderPermissionMatrix(){
+    const body=$("permissionMatrixBody"), audit=$("permissionAudit");
+    if(!body)return;
+    if(!hasPermission("permissions.view")){body.innerHTML="";return;}
+    let currentGroup="";
+    body.innerHTML=PERMISSION_DEFINITIONS.map(p=>{
+      const groupRow=p.group!==currentGroup ? (currentGroup=p.group,`<tr class="permission-group-row"><th colspan="5">${esc(p.group)}</th></tr>`) : "";
+      const cell=(role)=>{
+        const enabled=role==="owner"?true:hasPermission(p.key,{role});
+        if(role==="owner")return `<td><span class="permission-lock">✓ 🔒</span></td>`;
+        if(permissionEditMode&&isOwner()){
+          return `<td><label class="permission-switch"><input type="checkbox" data-permission-role="${role}" data-permission-key="${p.key}" ${enabled?"checked":""}><span>${enabled?"✓":"–"}</span></label></td>`;
+        }
+        return `<td><strong class="${enabled?"permission-yes":"permission-no"}">${enabled?"✓":"–"}</strong></td>`;
+      };
+      return groupRow+`<tr><td>${esc(p.label)}</td>${cell("owner")}${cell("admin")}${cell("assistant_leader")}${cell("member")}</tr>`;
+    }).join("");
+
+    body.querySelectorAll("[data-permission-key]").forEach(input=>input.onchange=async()=>{
+      if(!isOwner())return;
+      try{
+        await backend.saveRolePermission(input.dataset.permissionRole,input.dataset.permissionKey,input.checked);
+        await refreshState();
+        permissionEditMode=true;
+        renderPermissionMatrix();
+      }catch(e){alert(humanError(e));input.checked=!input.checked;}
+    });
+
+    if(audit){
+      const rows=state.permissions?.audit||[];
+      audit.innerHTML=hasPermission("history.permission_audit")&&rows.length
+        ? `<h3>Siste rettighetsendringer</h3>${rows.slice(0,10).map(r=>{
+            const actor=state.accounts.find(a=>String(a.id)===String(r.changed_by));
+            const def=PERMISSION_DEFINITIONS.find(x=>x.key===r.permission_key);
+            return `<div class="permission-audit-row"><strong>${esc(roleLabel(r.role))}: ${esc(def?.label||r.permission_key)}</strong><span>${r.old_value===null?"Standard":(r.old_value?"På":"Av")} → ${r.new_value?"På":"Av"} · ${esc(actor?.name||"Eier")} · ${esc(formatDate(r.changed_at))}</span></div>`;
+          }).join("")}`
+        : "";
+    }
+  }
   function progress() {
     const done = +taskRange.value, total = +taskRange.max, percent = total ? done/total*100 : 0;
     $("tasksDone").textContent = done; $("tasksTotal").textContent = total;
@@ -960,9 +1072,8 @@
   }
 
   function renderAdminActions() {
-    if (!isAdmin()) return;
-    const pendingMembers = state.accounts.filter(a=>a.status==="pending").length;
-    const pendingTips = state.content?.pendingTips?.length || 0;
+    const pendingMembers = hasPermission("members.approve") ? state.accounts.filter(a=>a.status==="pending").length : 0;
+    const pendingTips = hasPermission("content.pending.view") ? (state.content?.pendingTips?.length || 0) : 0;
     const total = pendingMembers + pendingTips;
     const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
     const list = $("adminActionList");
@@ -1123,8 +1234,8 @@
       in_app_leadership_chat:!!$("notifyLeadershipChat")?.checked,
       in_app_membership_requests:!!$("notifyMembershipRequests")?.checked,
       in_app_pending_tips:!!$("notifyPendingTips")?.checked,
-      in_app_derby_published:!!$("notifyDerbyPublished")?.checked,
-      in_app_derby_deadline_reminders:!!$("notifyDerbyDeadline")?.checked,
+      in_app_derby_published:!!$("notifyImportantDerby")?.checked,
+      in_app_derby_deadline_reminders:!!$("notifyImportantDerby")?.checked,
       email_enabled:!!$("emailNotificationsEnabled")?.checked
     };
     try{
@@ -1443,3 +1554,12 @@ function wgangInitBunnyPlanner(){
 document.addEventListener("click",()=>setTimeout(wgangInitBunnyPlanner,50));
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(wgangInitBunnyPlanner,100));
 else setTimeout(wgangInitBunnyPlanner,100);
+
+document.addEventListener("click",e=>{
+  const btn=e.target.closest?.("#togglePermissionEdit");
+  if(!btn)return;
+  if(!isOwner())return;
+  permissionEditMode=!permissionEditMode;
+  btn.textContent=permissionEditMode?"Ferdig":"Rediger rettigheter";
+  renderPermissionMatrix();
+});
