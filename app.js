@@ -1586,120 +1586,114 @@ else setTimeout(wgangInitBunnyPlanner,100);
 
 
 
-/* v0.18.0.14 – robust chat auto-scroll */
-(function(){
-  const chatTargets = {
-    leadership: {
-      route: "leadership",
-      listId: "leadershipMessageList",
-      unreadId: "leadershipUnreadStart"
-    },
-    community: {
-      route: "community",
-      listId: "communityMessageList",
-      unreadId: "communityUnreadStart"
-    }
-  };
 
-  function currentRouteName(){
+
+/* v0.18.0.15 – scroll the chat container itself, not the whole page */
+(function(){
+  const configs = [
+    { route:"leadership", listId:"leadershipMessageList", unreadId:"leadershipUnreadStart" },
+    { route:"community",  listId:"communityMessageList",  unreadId:"communityUnreadStart"  }
+  ];
+
+  function activeRoute(){
     try{
       if(typeof currentRoute==="function") return currentRoute();
     }catch(_){}
-    const hash=(location.hash||"").replace(/^#/,"");
-    return hash.split(/[/?]/)[0]||"dashboard";
+    return (location.hash||"").replace(/^#/,"").split(/[/?]/)[0] || "";
   }
 
-  function visible(el){
-    if(!el) return false;
-    const r=el.getBoundingClientRect();
-    return r.width>0 && r.height>0;
+  function getScrollableAncestor(el){
+    let node = el?.parentElement;
+    while(node && node !== document.body){
+      const style = getComputedStyle(node);
+      const oy = style.overflowY;
+      if((oy==="auto" || oy==="scroll") && node.scrollHeight > node.clientHeight + 2){
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
   }
 
-  function getTarget(cfg){
-    const unread=document.getElementById(cfg.unreadId);
-    if(unread && visible(unread)) return unread;
+  function targetFor(cfg){
+    const list = document.getElementById(cfg.listId);
+    if(!list) return null;
 
-    const list=document.getElementById(cfg.listId);
-    if(!list || !visible(list)) return null;
+    const unread = document.getElementById(cfg.unreadId);
+    if(unread) return unread;
 
-    const messages=[...list.querySelectorAll("article, .message, .chat-message, .leadership-message")];
+    const messages = [...list.querySelectorAll(
+      "article,.leadership-message,.chat-message,.message"
+    )];
+
     return messages.length ? messages[messages.length-1] : list.lastElementChild;
   }
 
-  function scrollPrecisely(el){
-    if(!el) return;
-    const headerOffset = 150; // keeps target below fixed WGANG header
-    const y = window.scrollY + el.getBoundingClientRect().top - headerOffset;
-    window.scrollTo({top: Math.max(0,y), behavior:"auto"});
+  function scrollInsideContainer(cfg){
+    const list = document.getElementById(cfg.listId);
+    const target = targetFor(cfg);
+    if(!list || !target) return false;
+
+    // In Lederprat the list itself is the scrollable element.
+    const container =
+      (list.scrollHeight > list.clientHeight + 2 ? list : null) ||
+      getScrollableAncestor(target);
+
+    if(!container) return false;
+
+    // Position "NYE INNLEGG" / latest message near the upper third of the chat viewport.
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const currentTop = container.scrollTop;
+    const relativeTop = targetRect.top - containerRect.top + currentTop;
+    const desiredTop = Math.max(0, relativeTop - Math.min(90, container.clientHeight * 0.22));
+
+    container.scrollTo({ top: desiredTop, behavior:"auto" });
+    return true;
   }
 
-  function stabilizeScroll(cfg){
-    const route=currentRouteName();
-    if(route!==cfg.route) return;
+  function stabilize(cfg){
+    if(activeRoute() !== cfg.route) return;
 
-    let attempts=0;
-    let lastY=-1;
-    const maxAttempts=12;
-
-    const run=()=>{
-      const target=getTarget(cfg);
-      if(!target) return;
-
-      scrollPrecisely(target);
-
-      requestAnimationFrame(()=>{
-        const nowY=window.scrollY;
-        const moved=Math.abs(nowY-lastY)>2;
-        lastY=nowY;
-        attempts++;
-
-        // Repeat while layout can still move (fonts/images/browser restoration).
-        if(attempts<maxAttempts && (moved || document.readyState!=="complete")){
-          setTimeout(run, attempts<4 ? 120 : 220);
-        }
-      });
+    let runs = 0;
+    const doScroll = ()=>{
+      if(activeRoute() !== cfg.route) return;
+      const ok = scrollInsideContainer(cfg);
+      runs++;
+      if(ok && runs < 8){
+        // Retry only inside the chat container while layout settles.
+        setTimeout(doScroll, runs < 3 ? 100 : 220);
+      }
     };
 
-    // Disable browser history restoration for chat routes in this session.
-    try{ if("scrollRestoration" in history) history.scrollRestoration="manual"; }catch(_){}
-
-    run();
-    setTimeout(run, 250);
-    setTimeout(run, 600);
-    setTimeout(run, 1200);
-    setTimeout(run, 2000);
+    doScroll();
+    setTimeout(doScroll, 250);
+    setTimeout(doScroll, 650);
+    setTimeout(doScroll, 1200);
 
     if(document.fonts?.ready){
-      document.fonts.ready.then(()=>setTimeout(run,50)).catch(()=>{});
+      document.fonts.ready.then(()=>setTimeout(doScroll,50)).catch(()=>{});
     }
-
-    const imgs=document.querySelectorAll(`#${cfg.listId} img`);
-    imgs.forEach(img=>{
-      if(!img.complete) img.addEventListener("load",()=>setTimeout(run,30),{once:true});
-    });
   }
 
-  function runForActiveChat(){
-    Object.values(chatTargets).forEach(stabilizeScroll);
+  function run(){
+    configs.forEach(stabilize);
   }
 
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(runForActiveChat,150));
-  window.addEventListener("load",()=>setTimeout(runForActiveChat,100));
-  window.addEventListener("hashchange",()=>setTimeout(runForActiveChat,180));
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(run,120));
+  window.addEventListener("load",()=>setTimeout(run,100));
+  window.addEventListener("hashchange",()=>setTimeout(run,180));
 
-  // Re-run after navigation clicks because this is a single-page portal.
   document.addEventListener("click",e=>{
-    const a=e.target.closest?.("[data-route],a[href^='#']");
-    if(a) setTimeout(runForActiveChat,220);
+    const nav=e.target.closest?.("[data-route],a[href^='#']");
+    if(nav) setTimeout(run,220);
   });
 
-  // Observe dynamic chat rendering and reposition after the messages actually exist.
-  const observer=new MutationObserver(muts=>{
-    if(muts.some(m=>m.addedNodes?.length)){
-      const route=currentRouteName();
-      const cfg=Object.values(chatTargets).find(x=>x.route===route);
-      if(cfg) setTimeout(()=>stabilizeScroll(cfg),80);
-    }
+  const observer = new MutationObserver(mutations=>{
+    if(!mutations.some(m=>m.addedNodes?.length)) return;
+    const cfg = configs.find(c=>c.route===activeRoute());
+    if(cfg) setTimeout(()=>stabilize(cfg),80);
   });
+
   observer.observe(document.body,{childList:true,subtree:true});
 })();
