@@ -332,6 +332,17 @@
       if(!configured){const d=await this.getBunnyData();d.library.push({id:Date.now(),active:true,...task});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
       const {error}=await client.from("bunny_task_library").insert(task);if(error)throw error;
     },
+    async updateBunnyTask(taskId, patch) {
+      if(!configured){
+        const d=await this.getBunnyData();
+        const t=d.library.find(x=>String(x.id)===String(taskId));
+        if(t) Object.assign(t,patch);
+        localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));
+        return;
+      }
+      const {error}=await client.from("bunny_task_library").update(patch).eq("id",taskId);
+      if(error)throw error;
+    },
     async saveDerby(derby) {
       if (!configured) { localState.derby=clone(derby); localSave(localState); return; }
       const { error }=await client.from("derby_settings").upsert({id:1,type:derby.type,task_total:derby.taskTotal,max_points:derby.maxPoints,strategy:derby.strategy,updated_at:new Date().toISOString()},{onConflict:"id"}); if(error)throw error;
