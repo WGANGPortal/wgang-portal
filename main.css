@@ -297,3 +297,23 @@ body:not(.admin-mode) .admin-only {
 @media(min-width:1100px){
   .bunny-library-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
+
+/* v0.18.0.8 – game-recognition task cards */
+.bunny-game-card{background:linear-gradient(180deg,#fffef9 0%,#fffaf1 100%);border-color:#eadbcf}
+.bunny-game-card .bunny-task-main{display:block;min-height:0;padding:12px 10px 14px;text-align:center}
+.bunny-game-card .bunny-task-type{margin:0 0 7px;font-size:11px;letter-spacing:.015em;color:#5c3b9b}
+.bunny-game-card .bunny-task-visual{min-height:78px;display:flex;align-items:center;justify-content:center;gap:10px}
+.bunny-game-card .bunny-task-icon{font-size:58px;line-height:1;margin:0;filter:drop-shadow(0 3px 2px rgba(75,45,25,.13))}
+.bunny-game-card .amount{font-size:30px;line-height:1;font-weight:950;color:#38271f;white-space:nowrap}
+.bunny-game-card h3{margin:8px 0 3px;font-size:16px;line-height:1.15;color:#2f2420}
+.bunny-task-description{margin:0 auto;max-width:190px;min-height:34px;font-size:12px;line-height:1.3;color:#5f5149}
+.bunny-game-card .bunny-popularity{background:#faf5ec}
+@media(max-width:520px){
+ .bunny-game-card .bunny-task-main{padding:10px 6px 12px}
+ .bunny-game-card .bunny-task-type{font-size:10px}
+ .bunny-game-card .bunny-task-visual{min-height:72px;gap:7px}
+ .bunny-game-card .bunny-task-icon{font-size:50px}
+ .bunny-game-card .amount{font-size:27px}
+ .bunny-game-card h3{font-size:14px}
+ .bunny-task-description{font-size:11px;min-height:30px}
+}
