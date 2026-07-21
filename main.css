@@ -317,3 +317,14 @@ body:not(.admin-mode) .admin-only {
  .bunny-game-card h3{font-size:14px}
  .bunny-task-description{font-size:11px;min-height:30px}
 }
+
+/* v0.18.0.9 — Chill Bunny illustrated task cards */
+.bunny-game-card .bunny-task-main{padding:12px 9px 14px}
+.bunny-game-card .bunny-task-visual{min-height:112px;gap:4px;position:relative}
+.bunny-game-card .bunny-task-image{display:block;width:min(76%,150px);height:100px;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 4px 5px rgba(75,45,25,.12))}
+.bunny-game-card .amount{font-size:30px;flex:0 0 auto}
+@media(max-width:520px){
+ .bunny-game-card .bunny-task-visual{min-height:92px}
+ .bunny-game-card .bunny-task-image{width:min(72%,118px);height:84px}
+ .bunny-game-card .amount{font-size:27px}
+}
