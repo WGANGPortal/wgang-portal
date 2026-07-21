@@ -328,3 +328,11 @@ body:not(.admin-mode) .admin-only {
  .bunny-game-card .bunny-task-image{width:min(72%,118px);height:84px}
  .bunny-game-card .amount{font-size:27px}
 }
+
+/* v0.18.0.11 Chill Bunny Planner */
+.bunny-planner-panel{margin:18px 0;padding:16px;border:1px solid #eadfd7;border-radius:20px;background:#fffaf5;box-shadow:0 4px 14px rgba(74,48,35,.06)}
+.bunny-planner-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.bunny-planner-kicker{font-size:12px;font-weight:900;text-transform:uppercase;color:#a52d68}.bunny-planner-head h3{margin:4px 0 0}.bunny-planner-head>strong{font-size:22px;color:#7e2455}
+.bunny-rounds{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:14px 0}.bunny-round{padding:9px 6px;border-radius:12px;background:#f4eee8;text-align:center;font-size:12px}.bunny-round strong,.bunny-round span{display:block}.bunny-round.done{background:#e7f4e9}
+.bunny-advice{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:14px;margin:12px 0;font-size:13px}.bunny-advice-go{background:#eaf6ec;border:1px solid #c6e3ca}
+.bunny-next-attendance{margin-top:14px}.bunny-attendance-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.bunny-attendance-buttons button{border:1px solid #dfd4cc;background:#fff;border-radius:12px;padding:9px 4px;font-weight:750}.bunny-attendance-buttons button.selected{outline:2px solid #c84c86;background:#fff0f6}
+.bunny-done-today{width:100%;margin-top:14px}.bunny-done-today.is-done{background:#e7f4e9;border-color:#a9d0b0}

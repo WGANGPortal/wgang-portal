@@ -1381,3 +1381,65 @@
     window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(console.error));
   }
 })();
+
+
+/* v0.18.0.11 Chill Bunny planner */
+function wgangInitBunnyPlanner(){
+  if(document.getElementById("wgangBunnyPlanner")) return;
+  const headings=[...document.querySelectorAll("h1,h2,h3,h4")];
+  const mine=headings.find(h=>(h.textContent||"").trim().toLowerCase().includes("mine klargjorte oppgaver"));
+  if(!mine)return;
+
+  const panel=document.createElement("section");
+  panel.id="wgangBunnyPlanner";
+  panel.className="bunny-planner-panel";
+  panel.innerHTML=`
+    <div class="bunny-planner-head">
+      <div><span class="bunny-planner-kicker">🐰 Harepusstatus</span><h3>Chill Bunny</h3></div>
+      <strong>30 / 90</strong>
+    </div>
+    <div class="bunny-rounds">
+      <div class="bunny-round done"><strong>Harepus 1</strong><span>30 / 30 ✓</span></div>
+      <div class="bunny-round"><strong>Harepus 2</strong><span>0 / 30</span></div>
+      <div class="bunny-round"><strong>Harepus 3</strong><span>0 / 30</span></div>
+    </div>
+    <div class="bunny-advice bunny-advice-go">
+      <strong>✓ Første harepus er fanget</strong>
+      <span>Har du daglige oppgaver igjen, kan du gjøre dem når det passer. Du trenger ikke vente på harepustid nå.</span>
+    </div>
+    <div class="bunny-next-attendance">
+      <strong>Kan du delta på neste harepus?</strong>
+      <div class="bunny-attendance-buttons">
+        <button type="button" data-bunny-attendance="yes">🟢 Ja</button>
+        <button type="button" data-bunny-attendance="maybe">🟡 Usikker</button>
+        <button type="button" data-bunny-attendance="no">🔴 Kan ikke</button>
+      </div>
+      <small>Registrer om du kan delta, slik at nabolaget ser om det trengs ekstra innsats.</small>
+    </div>
+    <button type="button" class="button button-secondary bunny-done-today" id="bunnyDoneToday">✓ Jeg er ferdig for i dag</button>`;
+  mine.parentNode.insertBefore(panel,mine);
+
+  // Derby day follows 10:00–09:59 Europe/Oslo.
+  const now=new Date();
+  const oslo=new Date(now.toLocaleString("en-US",{timeZone:"Europe/Oslo"}));
+  if(oslo.getHours()<10) oslo.setDate(oslo.getDate()-1);
+  const day=`${oslo.getFullYear()}-${String(oslo.getMonth()+1).padStart(2,"0")}-${String(oslo.getDate()).padStart(2,"0")}`;
+
+  const doneKey=`wgang-bunny-done-${day}`, doneBtn=document.getElementById("bunnyDoneToday");
+  function paintDone(){
+    const done=localStorage.getItem(doneKey)==="1";
+    doneBtn.classList.toggle("is-done",done);
+    doneBtn.textContent=done?"✓ Ferdig for i dag – trykk for å angre":"✓ Jeg er ferdig for i dag";
+  }
+  doneBtn.onclick=()=>{localStorage.setItem(doneKey,localStorage.getItem(doneKey)==="1"?"0":"1");paintDone();};
+  paintDone();
+
+  const attKey="wgang-bunny-next-attendance";
+  const btns=[...panel.querySelectorAll("[data-bunny-attendance]")];
+  function paintAtt(){const v=localStorage.getItem(attKey)||"";btns.forEach(b=>b.classList.toggle("selected",b.dataset.bunnyAttendance===v));}
+  btns.forEach(b=>b.onclick=()=>{localStorage.setItem(attKey,b.dataset.bunnyAttendance);paintAtt();});
+  paintAtt();
+}
+document.addEventListener("click",()=>setTimeout(wgangInitBunnyPlanner,50));
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(wgangInitBunnyPlanner,100));
+else setTimeout(wgangInitBunnyPlanner,100);
