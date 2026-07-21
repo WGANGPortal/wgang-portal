@@ -1,0 +1,12 @@
+-- WGANG Portal – Legality / Data Minimization v0.18.0.17
+-- 2026-07-22
+--
+-- No destructive database operation is performed.
+-- The public UI no longer collects or displays:
+-- bio, gender, age_group, country_place, languages, other_languages.
+--
+-- Existing historical values are intentionally NOT deleted automatically.
+-- A separate explicit cleanup decision is required before nulling/dropping legacy data.
+--
+-- Current profile UI retains only game-related optional fields:
+-- hay_day_since, favorite_game_aspect.

@@ -685,30 +685,14 @@
     const editable = current() && String(current().id) === String(account.id);
     $("memberProfileName").textContent = String(account.name || "").toUpperCase();
     $("memberProfileRole").textContent = roleLabel(account.role);
-    $("memberProfileBio").textContent = account.bio || "Ingen profilinformasjon er delt ennå.";
     const details = [];
-    if (account.gender) details.push(["Kjønn", account.gender]);
-    if (account.ageGroup) details.push(["Aldersgruppe", account.ageGroup]);
-    if (account.countryPlace) details.push(["Land / sted", account.countryPlace]);
     if (account.hayDaySince) details.push(["Hvor lenge har du spilt Hay Day?", account.hayDaySince]);
     if (account.favoriteGameAspect) details.push(["Hva liker du best i spillet?", account.favoriteGameAspect]);
-    const spokenLanguages=[...(account.languages||[])].map(x=>x==="no"?"Norsk":x==="en"?"Engelsk":x);
-    if(account.otherLanguages) spokenLanguages.push(...String(account.otherLanguages).split(",").map(x=>x.trim()).filter(Boolean));
-    if(spokenLanguages.length) details.push(["Språk", [...new Set(spokenLanguages)].join(", ")]);
-    $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Frivillig å fylle ut.</p>`;
+    $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Ingen spillinformasjon er delt ennå.</p>`;
     $("profileEditSection").classList.toggle("hidden", !editable);
     if (editable) {
-      $("profileBioInput").value = account.bio || "";
-      $("profileGenderInput").value = account.gender || "";
-      $("profileAgeInput").value = account.ageGroup || "";
-      $("profileCountryInput").value = account.countryPlace || "";
       $("profileSinceInput").value = account.hayDaySince || "";
       $("profileFavoriteInput").value = account.favoriteGameAspect || "";
-      if($("profileLanguageNo")) $("profileLanguageNo").checked=(account.languages||[]).includes("no");
-      if($("profileLanguageEn")) $("profileLanguageEn").checked=(account.languages||[]).includes("en");
-      if($("profileLanguageOther")) $("profileLanguageOther").checked=!!account.otherLanguages;
-      if($("profileOtherLanguagesInput")) $("profileOtherLanguagesInput").value=account.otherLanguages||"";
-      $("profileOtherLanguagesWrap")?.classList.toggle("hidden",!account.otherLanguages);
     }
     showDialog(memberProfileDialog);
     translateUi(memberProfileDialog);
@@ -1320,7 +1304,6 @@
     $("memberProfileDialog")?.close();
     await logout();
   };
-  if($("profileLanguageOther")) $("profileLanguageOther").onchange=()=>$("profileOtherLanguagesWrap")?.classList.toggle("hidden",!$("profileLanguageOther").checked);
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
@@ -1329,14 +1312,15 @@
     const me = current();
     const payload = {
       id: me.id,
-      bio: $("profileBioInput").value.trim(),
-      gender: $("profileGenderInput").value,
-      ageGroup: $("profileAgeInput").value,
-      countryPlace: $("profileCountryInput").value.trim(),
+      // Legacy profile fields are preserved but are no longer collected or displayed.
+      bio: me.bio || "",
+      gender: me.gender || "",
+      ageGroup: me.ageGroup || "",
+      countryPlace: me.countryPlace || "",
       hayDaySince: $("profileSinceInput").value.trim(),
       favoriteGameAspect: $("profileFavoriteInput").value.trim(),
-      languages:[$("profileLanguageNo")?.checked?"no":null,$("profileLanguageEn")?.checked?"en":null].filter(Boolean),
-      otherLanguages:$("profileLanguageOther")?.checked ? $("profileOtherLanguagesInput")?.value.trim()||"" : ""
+      languages: me.languages || [],
+      otherLanguages: me.otherLanguages || ""
     };
     try {
       await backend.updatePublicProfile(payload);
