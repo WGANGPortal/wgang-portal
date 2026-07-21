@@ -434,6 +434,15 @@
     const categories=[...new Set(library.map(t=>String(t.category||"").trim()).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,"nb"));
 
+    if(!library.length){
+      box.innerHTML=`<div class="bunny-admin-actions"><strong>0 valgt</strong></div>
+        <div class="bunny-library-warning">
+          <strong>⚠️ Oppgavebiblioteket kan ikke leses</strong>
+          <p>Ingen oppgavemaler ble hentet fra Supabase. Kontroller lesetilgangen (RLS) til bunny_task_library.</p>
+        </div>`;
+      return;
+    }
+
     box.innerHTML=`<div class="bunny-admin-actions">
         <strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong>
         <button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button>

@@ -208,3 +208,7 @@ body:not(.admin-mode) .admin-only {
 /* v0.18.0.5 – robust Supabase-driven task dropdowns */
 .bunny-name-status{margin-top:8px}
 #newBunnyName:disabled{opacity:.7}
+
+/* v0.18.0.6 */
+.bunny-library-warning{margin:18px 0;padding:16px;border-radius:16px;background:#fff3d9;border:1px solid #efcf8d;color:#5c4522}
+.bunny-library-warning p{margin:6px 0 0}
