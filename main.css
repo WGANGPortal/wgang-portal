@@ -346,3 +346,6 @@ body:not(.admin-mode) .admin-only {
 .chat-unread-divider{display:flex;align-items:center;gap:8px;margin:14px 0;color:#b3326f;font-size:12px;font-weight:900;text-transform:uppercase}.chat-unread-divider:before,.chat-unread-divider:after{content:"";height:1px;flex:1;background:#efb9cf}
 .chat-newer-indicator{position:sticky;bottom:10px;margin:10px auto 0;display:block;border:0;border-radius:999px;background:#b93170;color:#fff;padding:8px 14px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:3}
 @media(max-width:720px){.permission-table{font-size:12px}.permission-table th:first-child,.permission-table td:first-child{min-width:190px}.permission-switch{min-width:38px;padding:4px}}
+
+/* v0.18.0.13 – safe permission editing */
+.permission-edit-controls{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin:0 0 1rem;padding:0 1rem}.permission-edit-controls .button{min-width:150px}@media(max-width:700px){#permissionsMatrixCard .card-header #togglePermissionEdit{display:none!important}.permission-edit-controls{justify-content:stretch}.permission-edit-controls .button{flex:1 1 100%;width:100%}}

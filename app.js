@@ -861,7 +861,16 @@
     const derbyPostList = $("derbyPostList");
     const tipsList = $("communityTipsList");
     if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
-    if (derbyPostList) derbyPostList.innerHTML = content.derbyPosts.length ? content.derbyPosts.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
+    if (derbyPostList) {
+      const posts=content.derbyPosts||[];
+      const seenAt=state.notificationReadState?.derby_chat_seen_at||"1970-01-01";
+      const chronological=[...posts].sort((a,b)=>new Date(a.publishedAt||a.createdAt)-new Date(b.publishedAt||b.createdAt));
+      const firstUnread=chronological.findIndex(x=>newerThan(x.publishedAt||x.createdAt,seenAt));
+      derbyPostList.innerHTML=chronological.length?chronological.map((x,i)=>`${i===firstUnread?`<div class="chat-unread-divider" id="derbyChatUnreadStart">Nye innlegg</div>`:""}${postCard(x,{admin:isAdmin()})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
+      const target=document.getElementById("derbyChatUnreadStart");
+      if(target){const jump=()=>target.scrollIntoView({behavior:"auto",block:"center"});requestAnimationFrame(()=>requestAnimationFrame(jump));setTimeout(jump,350);setTimeout(jump,900);}
+      else if(chronological.length){setTimeout(()=>derbyPostList.lastElementChild?.scrollIntoView({behavior:"auto",block:"end"}),350);}
+    }
     if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
 
     const latestNews = document.querySelector('[data-page="dashboard"] .dashboard-grid article:nth-child(2)');
@@ -914,7 +923,10 @@
       if(newerCount>1){
         const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=`↓ ${newerCount-1} nyere innlegg`;jump.onclick=()=>list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"end"});list.appendChild(jump);
       }
-      setTimeout(()=>document.getElementById("leadershipUnreadStart")?.scrollIntoView({behavior:"smooth",block:"center"}),120);
+      const jumpToUnread=()=>document.getElementById("leadershipUnreadStart")?.scrollIntoView({behavior:"auto",block:"center"});
+      requestAnimationFrame(()=>requestAnimationFrame(jumpToUnread));
+      setTimeout(jumpToUnread,350);
+      setTimeout(jumpToUnread,900);
       const latest=messages[messages.length-1];
       setTimeout(async()=>{try{await backend.markChatRead("leadership",latest?.id,latest?.createdAt||new Date().toISOString());state.chatReadState=state.chatReadState||[];const r=state.chatReadState.find(x=>x.channel==="leadership");if(r){r.last_read_at=latest?.createdAt;r.last_message_id=latest?.id;}else state.chatReadState.push({channel:"leadership",last_read_at:latest?.createdAt,last_message_id:latest?.id});renderNotifications();}catch(e){console.warn(e);}},1500);
     }
@@ -973,43 +985,59 @@
 
 
   let permissionEditMode=false;
+  let permissionDraft=null;
+  function permissionValue(role,key){
+    const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
+    const row=(state.permissions?.rows||[]).find(x=>x.role===role&&x.permission_key===key);
+    return row ? !!row.enabled : !!def?.defaults?.[role];
+  }
+  function beginPermissionEdit(){
+    permissionDraft={};
+    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.forEach(p=>permissionDraft[`${role}|${p.key}`]=permissionValue(role,p.key)));
+    permissionEditMode=true; renderPermissionMatrix();
+  }
+  function cancelPermissionEdit(){permissionEditMode=false;permissionDraft=null;renderPermissionMatrix();}
+  async function savePermissionDraft(){
+    if(!isOwner()||!permissionDraft)return;
+    const changes=[];
+    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.forEach(p=>{
+      const before=permissionValue(role,p.key), after=!!permissionDraft[`${role}|${p.key}`];
+      if(before!==after)changes.push({role,key:p.key,label:p.label,before,after});
+    }));
+    if(!changes.length){cancelPermissionEdit();return;}
+    const summary=changes.map(c=>`${roleLabel(c.role)} – ${c.label}: ${c.before?"På":"Av"} → ${c.after?"På":"Av"}`).join("\n");
+    if(!confirm(`Lagre endringer i rettigheter?\n\n${changes.length} rettighet${changes.length===1?"":"er"} endres:\n\n${summary}`))return;
+    try{
+      for(const c of changes)await backend.saveRolePermission(c.role,c.key,c.after);
+      permissionEditMode=false;permissionDraft=null;await refreshState();
+    }catch(e){alert(humanError(e));}
+  }
   function renderPermissionMatrix(){
-    const body=$("permissionMatrixBody"), audit=$("permissionAudit");
+    const body=$("permissionMatrixBody"), audit=$("permissionAudit"), card=$("permissionsMatrixCard");
     if(!body)return;
     if(!hasPermission("permissions.view")){body.innerHTML="";return;}
     let currentGroup="";
     body.innerHTML=PERMISSION_DEFINITIONS.map(p=>{
       const groupRow=p.group!==currentGroup ? (currentGroup=p.group,`<tr class="permission-group-row"><th colspan="5">${esc(p.group)}</th></tr>`) : "";
       const cell=(role)=>{
-        const enabled=role==="owner"?true:hasPermission(p.key,{role});
+        const enabled=role==="owner"?true:(permissionEditMode&&permissionDraft?!!permissionDraft[`${role}|${p.key}`]:permissionValue(role,p.key));
         if(role==="owner")return `<td><span class="permission-lock">✓ 🔒</span></td>`;
-        if(permissionEditMode&&isOwner()){
-          return `<td><label class="permission-switch"><input type="checkbox" data-permission-role="${role}" data-permission-key="${p.key}" ${enabled?"checked":""}><span>${enabled?"✓":"–"}</span></label></td>`;
-        }
+        if(permissionEditMode&&isOwner())return `<td><label class="permission-switch"><input type="checkbox" data-permission-role="${role}" data-permission-key="${p.key}" ${enabled?"checked":""}><span>${enabled?"✓":"–"}</span></label></td>`;
         return `<td><strong class="${enabled?"permission-yes":"permission-no"}">${enabled?"✓":"–"}</strong></td>`;
       };
       return groupRow+`<tr><td>${esc(p.label)}</td>${cell("owner")}${cell("admin")}${cell("assistant_leader")}${cell("member")}</tr>`;
     }).join("");
-
-    body.querySelectorAll("[data-permission-key]").forEach(input=>input.onchange=async()=>{
-      if(!isOwner())return;
-      try{
-        await backend.saveRolePermission(input.dataset.permissionRole,input.dataset.permissionKey,input.checked);
-        await refreshState();
-        permissionEditMode=true;
-        renderPermissionMatrix();
-      }catch(e){alert(humanError(e));input.checked=!input.checked;}
-    });
-
+    body.querySelectorAll("[data-permission-key]").forEach(input=>input.onchange=()=>{if(!permissionDraft)return;permissionDraft[`${input.dataset.permissionRole}|${input.dataset.permissionKey}`]=input.checked;renderPermissionMatrix();});
+    let controls=card?.querySelector(".permission-edit-controls");
+    if(card&&!controls){controls=document.createElement("div");controls.className="permission-edit-controls";card.querySelector(".card-header")?.after(controls);}
+    if(controls)controls.innerHTML=isOwner()?(permissionEditMode?`<button class="button button-secondary" id="cancelPermissionEdit">Avbryt</button><button class="button button-primary" id="savePermissionEdit">Lagre endringer</button>`:`<button class="button button-secondary" id="startPermissionEdit">Rediger rettigheter</button>`):"";
+    card?.querySelector("#startPermissionEdit")?.addEventListener("click",beginPermissionEdit);
+    card?.querySelector("#cancelPermissionEdit")?.addEventListener("click",cancelPermissionEdit);
+    card?.querySelector("#savePermissionEdit")?.addEventListener("click",savePermissionDraft);
+    const old=card?.querySelector("#togglePermissionEdit");if(old)old.style.display="none";
     if(audit){
       const rows=state.permissions?.audit||[];
-      audit.innerHTML=hasPermission("history.permission_audit")&&rows.length
-        ? `<h3>Siste rettighetsendringer</h3>${rows.slice(0,10).map(r=>{
-            const actor=state.accounts.find(a=>String(a.id)===String(r.changed_by));
-            const def=PERMISSION_DEFINITIONS.find(x=>x.key===r.permission_key);
-            return `<div class="permission-audit-row"><strong>${esc(roleLabel(r.role))}: ${esc(def?.label||r.permission_key)}</strong><span>${r.old_value===null?"Standard":(r.old_value?"På":"Av")} → ${r.new_value?"På":"Av"} · ${esc(actor?.name||"Eier")} · ${esc(formatDate(r.changed_at))}</span></div>`;
-          }).join("")}`
-        : "";
+      audit.innerHTML=hasPermission("history.permission_audit")&&rows.length?`<h3>Siste rettighetsendringer</h3>${rows.slice(0,10).map(r=>{const actor=state.accounts.find(a=>String(a.id)===String(r.changed_by));const def=PERMISSION_DEFINITIONS.find(x=>x.key===r.permission_key);return `<div class="permission-audit-row"><strong>${esc(roleLabel(r.role))}: ${esc(def?.label||r.permission_key)}</strong><span>${r.old_value===null?"Standard":(r.old_value?"På":"Av")} → ${r.new_value?"På":"Av"} · ${esc(actor?.name||"Eier")} · ${esc(formatDate(r.changed_at))}</span></div>`;}).join("")}`:"";
     }
   }
   function progress() {
@@ -1555,11 +1583,4 @@ document.addEventListener("click",()=>setTimeout(wgangInitBunnyPlanner,50));
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(wgangInitBunnyPlanner,100));
 else setTimeout(wgangInitBunnyPlanner,100);
 
-document.addEventListener("click",e=>{
-  const btn=e.target.closest?.("#togglePermissionEdit");
-  if(!btn)return;
-  if(!isOwner())return;
-  permissionEditMode=!permissionEditMode;
-  btn.textContent=permissionEditMode?"Ferdig":"Rediger rettigheter";
-  renderPermissionMatrix();
-});
+
