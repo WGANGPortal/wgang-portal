@@ -1238,7 +1238,7 @@
     if (!current()) return;
     openMemberProfile(current().id);
     setTimeout(() => {
-      if (typeof showProfileHubSection === "function") showProfileHubSection("menu");
+      showProfileHubSection("menu");
       if ($("profileHubName")) $("profileHubName").textContent = current()?.gameName || "PROFIL";
     }, 0);
   }
