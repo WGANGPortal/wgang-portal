@@ -366,3 +366,37 @@ body:not(.admin-mode) .admin-only {
   .dashboard-countdown strong{font-size:1.3rem}
   .spotlight-card.bunny-focus .button{width:100%;margin-top:4px}
 }
+
+/* v0.18.0.25 – Harepus live countdown on Overview */
+.spotlight-card.bunny-focus .spotlight-icon{
+  display:grid;place-items:center;width:94px;height:94px;right:28px;top:28px;
+  border-radius:50%;background:rgba(255,249,242,.92);color:#7d284e;
+  font-size:4.25rem;line-height:1;opacity:1;transform:none;
+  box-shadow:0 10px 26px rgba(104,29,61,.17);text-shadow:none
+}
+.bunny-dashboard-panel{margin:22px 0 18px;border-radius:23px;overflow:hidden;background:rgba(255,250,244,.98);color:#3b2530;box-shadow:0 14px 32px rgba(104,29,61,.12)}
+.bunny-dashboard-countdown{display:grid;grid-template-columns:1.25fr .75fr;align-items:center;gap:20px;padding:23px 25px;border-bottom:1px solid #efd6de}
+.bunny-dashboard-countdown>div:first-child{display:grid;gap:5px}
+.bunny-dashboard-countdown span,.bunny-dashboard-rounds span{color:#b73569;font-size:.7rem;font-weight:900;letter-spacing:.12em}
+.bunny-dashboard-countdown>div:first-child>strong{font-size:clamp(2.2rem,5vw,3.55rem);line-height:1;color:#702042;letter-spacing:.03em;font-variant-numeric:tabular-nums}
+.bunny-dashboard-countdown small{color:#6f5e65}
+.bunny-countdown-meta{display:grid;gap:10px;padding-left:20px;border-left:1px solid #efd6de}
+.bunny-countdown-meta strong{color:#b73569;font-size:1.02rem}.bunny-countdown-meta span{color:#3b2530;letter-spacing:0;font-size:.88rem;font-weight:700}
+.bunny-dashboard-rounds{display:grid;grid-template-columns:repeat(3,1fr);padding:15px 20px;border-bottom:1px solid #efd6de}
+.bunny-dashboard-rounds>div{display:grid;gap:3px;padding:0 16px;border-right:1px solid #efd6de}.bunny-dashboard-rounds>div:last-child{border-right:0}
+.bunny-dashboard-rounds strong{font-size:.95rem;color:#3b2530}
+.bunny-dashboard-tip{padding:17px 24px;background:#fff0dd;color:#3b2530;font-size:.82rem;line-height:1.55}.bunny-dashboard-tip strong{color:#3b2530}
+.bunny-round-complete{width:calc(100% - 40px);margin:16px 20px 20px;border:1px solid #bd3d70;background:#fff;color:#a72e5e}
+.bunny-round-complete:hover{background:#fff1f6}.bunny-round-complete:disabled{opacity:.55;cursor:wait}
+.spotlight-card.bunny-focus>#dashboardDerbyIcon{z-index:0}.spotlight-card.bunny-focus>div{position:relative;z-index:1;max-width:860px}
+
+@media(max-width:620px){
+  .spotlight-card.bunny-focus .spotlight-icon{display:grid;right:17px;top:19px;width:66px;height:66px;font-size:2.9rem;opacity:1;background:rgba(255,249,242,.95)}
+  .spotlight-card.bunny-focus h2{max-width:76%}
+  .bunny-dashboard-panel{margin:18px -8px 16px}
+  .bunny-dashboard-countdown{grid-template-columns:1fr;gap:14px;padding:20px}
+  .bunny-dashboard-countdown>div:first-child>strong{font-size:2.4rem}
+  .bunny-countdown-meta{padding:13px 0 0;border-left:0;border-top:1px solid #efd6de;grid-template-columns:1fr;gap:4px}
+  .bunny-dashboard-rounds{padding:13px 7px}.bunny-dashboard-rounds>div{padding:0 9px}.bunny-dashboard-rounds span{font-size:.58rem}.bunny-dashboard-rounds strong{font-size:.82rem}
+  .bunny-dashboard-tip{padding:15px 18px;font-size:.76rem}.bunny-round-complete{width:calc(100% - 28px);margin:14px}
+}

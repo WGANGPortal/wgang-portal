@@ -335,6 +335,42 @@
       }
       return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
     },
+    async getBunnyRoundState(eventId) {
+      if (!eventId) return [];
+      if (!configured) {
+        try { return JSON.parse(localStorage.getItem(`wgang_bunny_rounds_${eventId}`) || "[]"); } catch { return []; }
+      }
+      const { data, error } = await client.from("bunny_round_completions").select("event_id,round_number,completed_at,completed_by").eq("event_id",eventId).order("round_number");
+      if (error) {
+        // Migration may not have been applied yet. Countdown still works without persisted completions.
+        if (error.code === "42P01" || /bunny_round_completions/i.test(error.message || "")) return [];
+        throw error;
+      }
+      return data || [];
+    },
+    async completeBunnyRound(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_rounds_${eventId}`;
+        let rows=[]; try { rows=JSON.parse(localStorage.getItem(key)||"[]"); } catch {}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber));
+        rows.push({event_id:eventId,round_number:Number(roundNumber),completed_at:new Date().toISOString(),completed_by:localState.currentUserId});
+        localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { data:u } = await client.auth.getUser();
+      const { error } = await client.from("bunny_round_completions").upsert({event_id:eventId,round_number:Number(roundNumber),completed_at:new Date().toISOString(),completed_by:u.user.id},{onConflict:"event_id,round_number"});
+      if (error) throw error;
+    },
+    async reopenBunnyRound(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_rounds_${eventId}`;
+        let rows=[]; try { rows=JSON.parse(localStorage.getItem(key)||"[]"); } catch {}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { error } = await client.from("bunny_round_completions").delete().eq("event_id",eventId).eq("round_number",Number(roundNumber));
+      if (error) throw error;
+    },
     async setBunnyStatus(boardId,taskId,status) {
       if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));if(status!=="skip")d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
       if(status==="skip"){const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",(await client.auth.getUser()).data.user.id);if(error)throw error;return;}

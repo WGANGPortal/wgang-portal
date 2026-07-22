@@ -108,3 +108,11 @@
 ## v0.18.0
 - Chill Bunny Planner med oppgavebibliotek, manuell dagstavle, popularitet og medlemsstatus.
 - Chill Bunny-popularitet er justert for rask gjenbruk av oppgaver: 0 / 1–2 / 3–4 / 5–6 / 7–8 / 9+ valgte, i stedet for å behandle 5+ som fullt.
+
+## v0.18.0.25 – Harepus live countdown
+- La til live nedtelling på Oversikt for Harepus Derby.
+- Rundeåpning følger 6 t / 1,5 døgn / 3,5 døgn etter derbystart.
+- Harepust varer 10 min og ny harepust beregnes hvert 1,5 t til runden markeres tatt.
+- Ledelsen kan avslutte aktuell harepusrunde; status lagres felles i Supabase.
+- Harepus-ikonet på rosa kort har fått tydelig kontrast.
+- Oppdaterte tipsteksten for populære oppgaver.
