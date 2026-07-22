@@ -28,8 +28,6 @@
 
   const cfg = window.WGANG_SUPABASE || {};
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
-  const LEGAL_PRIVACY_VERSION = "2026-07-22";
-  const LEGAL_RULES_VERSION = "2026-07-22";
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -102,12 +100,8 @@
   async function loadRemoteState(session) {
     if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
-    let legalAcceptance = null;
-    const legalRes = await client.from("legal_acceptances").select("privacy_version,rules_version,acknowledged_at").eq("user_id", session.user.id).maybeSingle();
-    if (legalRes.error) throw legalRes.error;
-    legalAcceptance = legalRes.data || null;
     if (own.status !== "approved") {
-      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
@@ -169,7 +163,6 @@
 
     return {
       accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next},
-      legalAcceptance,
       notifications:{
         preferences: notificationPrefsRes.data || null,
         readState: notificationReadRes.data || null
@@ -252,25 +245,6 @@
       if (!configured) throw new Error("Supabase er ikke koblet til.");
       const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo:appUrl() });
       if (error) throw error;
-    },
-    legalVersions() {
-      return { privacy: LEGAL_PRIVACY_VERSION, rules: LEGAL_RULES_VERSION };
-    },
-    legalAcceptanceRequired(state) {
-      if (!configured) return false;
-      const a = state?.legalAcceptance;
-      return !a || a.privacy_version !== LEGAL_PRIVACY_VERSION || a.rules_version !== LEGAL_RULES_VERSION;
-    },
-    async acceptLegalDocuments() {
-      if (!configured) return {privacy_version:LEGAL_PRIVACY_VERSION,rules_version:LEGAL_RULES_VERSION,acknowledged_at:new Date().toISOString()};
-      const { data:sessionData, error:sessionError } = await client.auth.getSession();
-      if (sessionError) throw sessionError;
-      const userId=sessionData.session?.user?.id;
-      if (!userId) throw new Error("Du må være logget inn.");
-      const row={user_id:userId,privacy_version:LEGAL_PRIVACY_VERSION,rules_version:LEGAL_RULES_VERSION,acknowledged_at:new Date().toISOString()};
-      const { data,error }=await client.from("legal_acceptances").upsert(row,{onConflict:"user_id"}).select("privacy_version,rules_version,acknowledged_at").single();
-      if(error) throw error;
-      return data;
     },
     async signOut() {
       if (!configured) { localState.currentUserId = null; localSave(localState); return; }
@@ -362,8 +336,7 @@
       return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
     },
     async setBunnyStatus(boardId,taskId,status) {
-      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));if(status!=="skip")d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
-      if(status==="skip"){const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",(await client.auth.getUser()).data.user.id);if(error)throw error;return;}
+      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
       const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
     },
     async publishBunnyBoard(taskIds) {

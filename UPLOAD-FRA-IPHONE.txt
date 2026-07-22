@@ -1,0 +1,10 @@
+WGANG Portal v0.18.0.17
+
+Last opp alle filene i denne ZIP-en direkte i rotmappen i GitHub-repoet.
+Bildefilene skal IKKE ligge i en egen mappe.
+
+SQL-filen skal ikke lastes opp som portalfil for å kjøres automatisk. Åpne Supabase SQL Editor og kjør innholdet i:
+MIGRATION-v0.18.0.17-BUNNY-TASKS.sql
+
+Migrasjonen legger til de 10 nye oppgavetypene i biblioteket. Bacon og Eplejuice finnes allerede.
+Deretter kan dagens 12 oppgaver velges/publiseres fra portalens oppgavestyring.

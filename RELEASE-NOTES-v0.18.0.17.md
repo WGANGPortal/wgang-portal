@@ -1,15 +1,8 @@
-# WGANG Portal v0.18.0.17 – Lovlighet og dataminimering
+# WGANG Portal v0.18.0.17
 
-Dato: 22.07.2026
-
-## Endringer
-- Personverninformasjon lagt til (`privacy.html`, noindex).
-- Bruksregler lagt til (`rules.html`, noindex).
-- `wgangportal@gmail.com` satt som offentlig kontaktpunkt.
-- Behandlingsansvarlig angitt som `T. Selsbakk` i personverninformasjonen.
-- Registreringsskjema lenker til personvern og bruksregler før søknad sendes.
-- Footer har copyright for WGANGs eget originale portalinnhold.
-- Supercell/Hay Day-disclaimer oppdatert med lenke til Fan Content Policy.
-- Profilinnsamling minimert: kjønn, alder, land/sted, språk og fri bio samles ikke lenger inn eller vises.
-- Eksisterende historiske profilverdier slettes ikke automatisk.
-- E-postvarsling forblir frivillig og faktisk e-postutsending er ikke aktivert i denne versjonen.
+- Lagt til dagens 12 Chill Bunny-oppgaver i portalens oppgaveoppsett.
+- 10 nye oppgavetyper legges til i Supabase-biblioteket via migrasjonen. Bacon og Eplejuice gjenbruker eksisterende oppgavetyper.
+- Lagt til 12 nye, ensartede portalillustrasjoner som ligger direkte i rotmappen og kan lastes opp fra iPhone uten undermapper.
+- Alle 12 dagens kort bruker den nye illustrasjonsstilen, inkludert Bacon og Eplejuice.
+- «Ikke aktuell» lagres nå som brukerens valg og vises som valgt på kortet, uten å påvirke popularitet/klargjøring.
+- Ingen rød nivå-sperre fra Hay Day-bildene brukes i portalen.
