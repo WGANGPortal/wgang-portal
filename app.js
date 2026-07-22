@@ -469,7 +469,10 @@
     if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}
     else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}
     else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}`;}
-    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length;const my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const descriptions={"Gjester i Matbutikk":"Ta imot 2 gjester i Matbutikk","Kake med røde bær":"Produser 3 × Kake med røde bær","Soyabønner":"Høst inn fra 47 soyabønneåkrer","Innbygger":"Betjen 1 × Innbygger","Gulrøtter":"Høst inn fra 53 gulrotåkrer","Bacon":"Samle 11 bacon","Gulrotkake":"Produser og samle inn 3 × Gulrotkake","Eplejuice":"Produser og samle inn 2 × Eplejuice","Egg":"Samle 16 egg","Frutti di Mare-pizza":"Produser og samle inn 5 × Frutti di Mare-pizza","Gresskar":"Høst inn fra 38 gresskaråkrer","Hvete":"Høst inn fra hveteåkrer: 77"};const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"06-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"08-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png"};const desc=descriptions[t.name]||t.description||"";const img=images[t.name];return `<article class="bunny-task-card bunny-game-card"><div class="bunny-task-main"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-visual">${img?`<img class="bunny-task-image" src="${img}" alt="${esc(t.name)}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<div class="amount">× ${t.amount}</div></div><h3>${esc(t.name)}</h3>${desc?`<p class="bunny-task-description">${esc(desc)}</p>`:""}</div><div class="bunny-popularity"><div><strong>${n} valgt</strong><small>${bunnyPopularity(n)}</small></div><span class="heat heat-${bunnyHeat(n)}">${n}</span></div><div class="bunny-actions"><button class="bunny-ready ${my==="ready"?"selected":""}" data-bunny-status="ready" data-task-id="${t.id}">✓ Jeg har den klar</button><button class="bunny-prep ${my==="preparing"?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}">○ Jeg klargjør den</button><button class="bunny-skip" data-bunny-status="skip" data-task-id="${t.id}">× Ikke aktuell</button></div></article>`}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length;const my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const descriptions={"Gjester i Matbutikk":"Ta imot 2 gjester i Matbutikk","Kake med røde bær":"Produser 3 × Kake med røde bær","Soyabønner":"Høst inn fra 47 soyabønneåkrer","Innbygger":"Betjen 1 × Innbygger","Gulrøtter":"Høst inn fra 53 gulrotåkrer","Bacon":"Samle 11 bacon","Gulrotkake":"Produser og samle inn 3 × Gulrotkake","Eplejuice":"Produser og samle inn 2 × Eplejuice","Egg":"Samle 16 egg","Frutti di Mare-pizza":"Produser og samle inn 5 × Frutti di Mare-pizza","Gresskar":"Høst inn fra 38 gresskaråkrer","Hvete":"Høst inn fra hveteåkrer: 77"};const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"06-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"08-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png"};const desc=descriptions[t.name]||t.description||"";const img=images[t.name];return `<article class="bunny-task-card bunny-game-card"><div class="bunny-task-main"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-visual">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<div class="amount">× ${t.amount}</div></div><h3>${esc(t.name)}</h3>${desc?`<p class="bunny-task-description">${esc(desc)}</p>`:""}</div><div class="bunny-popularity"><div><strong>${n} valgt</strong><small>${bunnyPopularity(n)}</small></div><span class="heat heat-${bunnyHeat(n)}">${n}</span></div><div class="bunny-actions"><button class="bunny-ready ${my==="ready"?"selected":""}" data-bunny-status="ready" data-task-id="${t.id}">✓ Jeg har den klar</button><button class="bunny-prep ${my==="preparing"?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}">○ Jeg klargjør den</button><button class="bunny-skip" data-bunny-status="skip" data-task-id="${t.id}">× Ikke aktuell</button></div></article>`}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{
+      const fallback=document.createElement("div"); fallback.className="bunny-task-icon"; fallback.textContent=img.dataset.fallbackIcon||"🐰"; img.replaceWith(fallback);
+    },{once:true}));
     grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board)return;try{await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus);await loadBunny();}catch(e){alert(humanError(e));}});
     const plan=$("bunnyMyPlan");plan.innerHTML=ready.length?ready.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.icon)} ${esc(t.name)} ×${t.amount}</span>`:""}).join(""):`<span class="helper-text">Ingen oppgaver markert som klare ennå.</span>`;
     renderBunnyAdmin();
@@ -1064,6 +1067,48 @@
     return (afterTuesdayStart || midDerbyWeek || mondayBeforeEnd) ? "active" : "planning";
   }
 
+  let dashboardCountdownTimer = null;
+
+  function dashboardCountdownTarget(event) {
+    if (event?.start_at) {
+      const start = new Date(event.start_at);
+      if (!Number.isNaN(start.getTime()) && start > new Date()) return start;
+    }
+    // Reserve: neste tirsdag kl. 10:00. Portalen brukes i Norge, og derbytid følger Europe/Oslo.
+    const osloNow = new Date(new Date().toLocaleString("en-US", {timeZone:"Europe/Oslo"}));
+    const target = new Date(osloNow);
+    const day = target.getDay();
+    let days = (2 - day + 7) % 7;
+    if (days === 0 && target.getHours() >= 10) days = 7;
+    target.setDate(target.getDate() + days);
+    target.setHours(10,0,0,0);
+    return new Date(target.getTime() + (new Date().getTime() - osloNow.getTime()));
+  }
+
+  function formatDashboardCountdown(ms) {
+    if (ms <= 0) return "Starter nå";
+    const totalMinutes = Math.floor(ms / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return `${days} d ${hours} t ${minutes} min`;
+    if (hours > 0) return `${hours} t ${minutes} min`;
+    return `${Math.max(1, minutes)} min`;
+  }
+
+  function startDashboardCountdown(event, visible, bunny) {
+    if (dashboardCountdownTimer) clearInterval(dashboardCountdownTimer);
+    dashboardCountdownTimer = null;
+    const wrap = $("dashboardCountdownWrap"), value = $("dashboardCountdown"), label = $("dashboardCountdownLabel");
+    if (!wrap || !value || !label || !visible) { if (wrap) wrap.classList.add("hidden"); return; }
+    const target = dashboardCountdownTarget(event);
+    wrap.classList.remove("hidden");
+    label.textContent = bunny ? "Neste harepus starter om" : "Derbyet starter om";
+    const paint=()=>{ value.textContent = formatDashboardCountdown(target.getTime() - Date.now()); };
+    paint();
+    dashboardCountdownTimer = setInterval(paint, 30000);
+  }
+
   function renderDashboardDerbyFocus(d, event) {
     const phase = derbyDashboardPhase(event);
     const active = phase === "active";
@@ -1072,12 +1117,17 @@
     const bunny = /bunny|harepus/i.test(type);
     const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
 
-    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : "NESTE DERBY");
-    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : `Her er det viktigste i planleggingen mot ${type}.`);
+    const spotlight=$("dashboardDerbySpotlight");
+    if (spotlight) spotlight.classList.toggle("bunny-focus", bunny);
+    setText("dashboardDerbyIcon", bunny ? "🐰" : "◇");
+    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY DERBY" : "NESTE DERBY"));
+    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Gjør deg klar til neste harepus." : `Her er det viktigste i planleggingen mot ${type}.`));
+    if (bunny && !active) setText("dashboardDerbyType", "Planlegg neste harepus");
     setText("dashboardDerbyFocusText", active
-      ? (bunny ? "Harepus-derbyet er i gang. Bruk Harepusplanen for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Planlegg neste harepus: gjør oppgaver klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
-    setText("dashboardDerbyAction", bunny ? "Åpne Harepusplan" : "Åpne derby-senter");
+      ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
+      : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
+    setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
+    startDashboardCountdown(event, !active, bunny);
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
     setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
     setText("dashboardDeadline", active ? "Pågår nå" : "Mandag kl. 23:00");
@@ -1252,6 +1302,10 @@
     navigate(a.dataset.route);
     closeMenu();
   }));
+  const dashboardDerbyAction=$("dashboardDerbyAction");
+  if(dashboardDerbyAction) dashboardDerbyAction.addEventListener("click",()=>{
+    setTimeout(()=>{const board=$("bunnyCenter");if(board&&/oppslagstavla/i.test(dashboardDerbyAction.textContent||""))board.scrollIntoView({behavior:"smooth",block:"start"});},180);
+  });
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   if ($("adminNavToggle")) $("adminNavToggle").onclick = () => {
     const sub = $("adminSubnav");

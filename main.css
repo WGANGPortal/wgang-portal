@@ -349,3 +349,20 @@ body:not(.admin-mode) .admin-only {
 
 /* v0.18.0.13 – safe permission editing */
 .permission-edit-controls{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin:0 0 1rem;padding:0 1rem}.permission-edit-controls .button{min-width:150px}@media(max-width:700px){#permissionsMatrixCard .card-header #togglePermissionEdit{display:none!important}.permission-edit-controls{justify-content:stretch}.permission-edit-controls .button{flex:1 1 100%;width:100%}}
+
+
+/* v0.18.0.23 — tydelig Harepus-fokus på Oversikt */
+.spotlight-card.bunny-focus{position:relative;overflow:hidden;background:linear-gradient(135deg,#ee4c80 0%,#f6658a 62%,#ef4e7e 100%)}
+.spotlight-card.bunny-focus h2{font-size:clamp(2rem,5vw,3.25rem);line-height:1.02;max-width:720px}
+.dashboard-countdown{display:inline-flex;flex-direction:column;gap:2px;margin:14px 0 10px;padding:11px 15px;border:1px solid rgba(255,255,255,.32);border-radius:16px;background:rgba(255,255,255,.12);backdrop-filter:blur(5px)}
+.dashboard-countdown span{font-size:.72rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#ffe5ef}
+.dashboard-countdown strong{font-size:1.45rem;line-height:1.15;color:#fff}
+.spotlight-card.bunny-focus .spotlight-icon{font-size:5.2rem;opacity:.2;transform:rotate(-7deg)}
+@media(max-width:620px){
+  .spotlight-card.bunny-focus{padding:28px 24px 26px}
+  .spotlight-card.bunny-focus h2{font-size:2.25rem;max-width:82%}
+  .spotlight-card.bunny-focus .spotlight-icon{display:block;position:absolute;right:18px;top:20px;font-size:3.6rem;opacity:.18}
+  .dashboard-countdown{margin-top:12px}
+  .dashboard-countdown strong{font-size:1.3rem}
+  .spotlight-card.bunny-focus .button{width:100%;margin-top:4px}
+}

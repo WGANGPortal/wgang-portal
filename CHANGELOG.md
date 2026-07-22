@@ -1,3 +1,8 @@
+## v0.18.0.23
+- Tydelig Harepus-fokus og nedtelling på Oversikt.
+- Direkte snarvei til oppslagstavla.
+- Robust caching/fallback for oppgaveillustrasjoner.
+
 # Changelog
 
 ## v0.18.0.22 – Dynamisk derbyfokus
