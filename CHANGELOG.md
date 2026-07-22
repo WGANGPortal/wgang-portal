@@ -1,3 +1,10 @@
+# Changelog
+
+## v0.18.0.22 – Dynamisk derbyfokus
+- Oversikt skifter automatisk fra planlegging av neste derby til pågående derby ved start.
+- Fokus og tekster tilpasses publisert derbytype, inkludert Harepus/Chill Bunny.
+- Tirsdag kl. 10:00 Europe/Oslo brukes som fallback når eksplisitt starttid mangler.
+
 
 ## v0.15.0 – Complete Language Support
 - Mer komplett norsk/engelsk systemoversettelse.

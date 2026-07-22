@@ -336,7 +336,8 @@
       return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
     },
     async setBunnyStatus(boardId,taskId,status) {
-      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));if(status!=="skip")d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      if(status==="skip"){const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",(await client.auth.getUser()).data.user.id);if(error)throw error;return;}
       const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
     },
     async publishBunnyBoard(taskIds) {

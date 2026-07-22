@@ -349,15 +349,3 @@ body:not(.admin-mode) .admin-only {
 
 /* v0.18.0.13 – safe permission editing */
 .permission-edit-controls{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin:0 0 1rem;padding:0 1rem}.permission-edit-controls .button{min-width:150px}@media(max-width:700px){#permissionsMatrixCard .card-header #togglePermissionEdit{display:none!important}.permission-edit-controls{justify-content:stretch}.permission-edit-controls .button{flex:1 1 100%;width:100%}}
-
-
-/* v0.18.0.18 – profile control must stay tappable above portal content */
-.portal-topbar{z-index:120}
-.portal-actions{position:relative;z-index:122}
-#profileChip.profile-chip{
-  position:relative;
-  z-index:124;
-  pointer-events:auto !important;
-  touch-action:manipulation;
-  -webkit-tap-highlight-color:transparent;
-}
