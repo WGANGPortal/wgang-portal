@@ -350,14 +350,14 @@ body:not(.admin-mode) .admin-only {
 /* v0.18.0.13 – safe permission editing */
 .permission-edit-controls{display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;margin:0 0 1rem;padding:0 1rem}.permission-edit-controls .button{min-width:150px}@media(max-width:700px){#permissionsMatrixCard .card-header #togglePermissionEdit{display:none!important}.permission-edit-controls{justify-content:stretch}.permission-edit-controls .button{flex:1 1 100%;width:100%}}
 
-.site-footer .legal-disclaimer{max-width:780px;margin-top:10px;line-height:1.55}
-.site-footer small+small{margin-top:8px}
-.site-footer small a,.legal-registration-note a{color:var(--pink);text-decoration:underline;text-underline-offset:2px}
-.legal-registration-note{margin:0;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--cream);color:var(--muted);font-size:.82rem;line-height:1.5}
-.legal-page{max-width:820px;margin:0 auto;padding:48px 24px 80px}
-.legal-page h1{font-family:Georgia,serif;font-size:clamp(2.2rem,6vw,4rem);line-height:1.05}
-.legal-page h2{margin-top:34px}
-.legal-page p,.legal-page li{color:var(--muted)}
-.legal-page a{color:var(--pink);text-decoration:underline}
-.legal-page .legal-brand{display:flex;align-items:center;gap:12px;margin-bottom:34px;text-decoration:none;color:var(--ink)}
-.legal-page .legal-brand img{width:48px;height:48px}
+
+/* v0.18.0.18 – profile control must stay tappable above portal content */
+.portal-topbar{z-index:120}
+.portal-actions{position:relative;z-index:122}
+#profileChip.profile-chip{
+  position:relative;
+  z-index:124;
+  pointer-events:auto !important;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}

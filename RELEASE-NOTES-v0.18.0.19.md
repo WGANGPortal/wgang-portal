@@ -1,6 +1,7 @@
-# v0.18.0.19 – Obligatorisk dokumentbekreftelse
-- Nye medlemmer må bekrefte at de har lest og aksepterer personverninformasjonen og bruksreglene.
-- Eksisterende godkjente medlemmer får obligatorisk dialog ved neste innlogging.
-- Bekreftelsen lagres i Supabase med bruker-ID, dokumentversjoner og tidspunkt.
-- Ingen IP-adresse lagres.
-- Versjonsstyring gjør at ny bekreftelse kan kreves ved senere vesentlige dokumentendringer.
+# WGANG Portal v0.18.0.19 – Task image regression fix
+
+- Gjenoppretter oppgavekort-logikken fra fungerende v0.18.0.17.
+- Beholder profilknapp-fiksen fra v0.18.0.18.
+- Beholder main.css fra v0.18.0.18 uendret.
+- Endrer «Ikke aktuell» til «Ikke aktuell for meg».
+- Ingen SQL nødvendig.
