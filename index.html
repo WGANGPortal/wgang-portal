@@ -109,7 +109,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.25</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.26</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -121,6 +121,11 @@
             <div class="bunny-dashboard-rounds"><div><span>RUNDE</span><strong id="bunnyRoundNumber">1 av 3</strong></div><div><span>MÅL</span><strong>3 harepus</strong></div><div><span>HAREPUSER TATT</span><strong id="bunnyRoundsTaken">0 av 3</strong></div></div>
             <div class="bunny-dashboard-tip"><strong>💡 Tips:</strong> Populære oppgaver bør være godt forhåndsklargjort før harepusten starter. Hvis du velger en populær oppgave, vær klar til å starte og fullføre den så raskt som mulig, slik at flere får mulighet til å ta samme oppgave. Fem kan ha oppgaven samtidig, men med rask gjennomføring kan flere rekke den i samme harepust. Ha gjerne én eller to reserveoppgaver klare.</div>
             <button class="button bunny-round-complete leadership-only" id="bunnyRoundCompleteButton" type="button">✓ Harepus tatt – avslutt runde</button>
+            <div class="bunny-manual-schedule leadership-only" id="bunnyManualSchedule">
+              <div><strong>Juster neste harepust</strong><small>Brukes dersom tidspunktet i spillet avviker fra automatikken. Etter valgt tidspunkt fortsetter portalen automatisk med 1,5 times intervall.</small></div>
+              <div class="bunny-manual-controls"><input id="bunnyManualNextAt" type="datetime-local" aria-label="Tidspunkt for neste harepust"><button class="button" id="bunnyManualSave" type="button">Sett tidspunkt</button><button class="button button-ghost hidden" id="bunnyManualClear" type="button">Bruk automatikk</button></div>
+              <small class="bunny-manual-status" id="bunnyManualStatus"></small>
+            </div>
           </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Fremdrift og poengstatistikk kobles på når vi har nok reelle derbydata.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne derby-senter</button></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
           <div class="metric-grid"><article><span>Din status</span><strong id="myStatusMetric">Deltar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>godkjente medlemmer</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">

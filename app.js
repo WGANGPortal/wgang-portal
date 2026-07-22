@@ -1111,6 +1111,7 @@
 
   let bunnyDashboardTimer = null;
   let bunnyRoundRows = [];
+  let bunnyScheduleRows = [];
   let bunnyRoundEventId = null;
 
   function bunnyRoundStarts(event) {
@@ -1136,30 +1137,36 @@
     const taken=completed.size;
     const round=[1,2,3].find(n=>!completed.has(n)) || 4;
     if(round===4) return {done:true,taken,round:3};
-    const spawn=starts[round-1];
-    if(now<spawn.getTime()) return {done:false,taken,round,mode:"round_wait",target:spawn,spawn};
+    const automaticSpawn=starts[round-1];
+    const override=(bunnyScheduleRows||[]).find(x=>Number(x.round_number)===round);
+    const overrideAt=override?.next_bunny_at ? new Date(override.next_bunny_at) : null;
+    const hasOverride=!!(overrideAt && !Number.isNaN(overrideAt.getTime()));
+    const spawn=hasOverride ? overrideAt : automaticSpawn;
+    if(now<spawn.getTime()) return {done:false,taken,round,mode:"round_wait",target:spawn,spawn,hasOverride};
     const elapsed=now-spawn.getTime(), interval=90*60000, active=10*60000;
     const cycle=Math.floor(elapsed/interval);
     const cycleStart=new Date(spawn.getTime()+cycle*interval);
-    if(now<cycleStart.getTime()+active) return {done:false,taken,round,mode:"active",target:new Date(cycleStart.getTime()+active),cycleStart,spawn};
-    return {done:false,taken,round,mode:"bunny_wait",target:new Date(cycleStart.getTime()+interval),spawn};
+    if(now<cycleStart.getTime()+active) return {done:false,taken,round,mode:"active",target:new Date(cycleStart.getTime()+active),cycleStart,spawn,hasOverride};
+    return {done:false,taken,round,mode:"bunny_wait",target:new Date(cycleStart.getTime()+interval),spawn,hasOverride};
   }
 
   function paintBunnyDashboard(event) {
     const panel=$("bunnyDashboardPanel"); if(!panel)return;
-    const m=bunnyRoundModel(event), value=$("bunnyCountdownValue"), kicker=$("bunnyCountdownKicker"), start=$("bunnyCountdownStart"), duration=$("bunnyCountdownDuration"), btn=$("bunnyRoundCompleteButton");
+    const m=bunnyRoundModel(event), value=$("bunnyCountdownValue"), kicker=$("bunnyCountdownKicker"), start=$("bunnyCountdownStart"), duration=$("bunnyCountdownDuration"), btn=$("bunnyRoundCompleteButton"), manualStatus=$("bunnyManualStatus"), manualClear=$("bunnyManualClear");
     if($("bunnyRoundNumber")) $("bunnyRoundNumber").textContent=`${m.round} av 3`;
     if($("bunnyRoundsTaken")) $("bunnyRoundsTaken").textContent=`${m.taken} av 3`;
     if(m.done){
       kicker.textContent="ALLE HAREPUSENE ER TATT"; value.textContent="✓ 3 / 3"; start.textContent="Denne ukens harepusmål er fullført"; duration.textContent="Ingen flere harepusrunder"; if(btn)btn.classList.add("hidden"); return;
     }
     if(btn){btn.classList.remove("hidden");btn.textContent=`✓ Harepus ${m.round} tatt – avslutt runde`;btn.dataset.round=String(m.round);}
+    if(manualClear) manualClear.classList.toggle("hidden",!m.hasOverride);
+    if(manualStatus) manualStatus.textContent=m.hasOverride ? `Manuelt tidspunkt er aktivt for runde ${m.round}. Videre harepust beregnes automatisk hvert 1,5 time fra dette tidspunktet.` : "Automatisk beregning er aktiv.";
     if(m.mode==="active"){
       kicker.textContent="🐰 HAREPUST PÅGÅR"; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Runde ${m.round} er aktiv nå`; duration.textContent="10 minutter harepust";
     } else if(m.mode==="round_wait"){
-      kicker.textContent=`NESTE HAREPUS – RUNDE ${m.round}`; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter ${bunnyTimeLabel(m.target)}`; duration.textContent=m.round===1?"Første harepus åpner 6 t etter derbystart":`Runde ${m.round} åpner automatisk`;
+      kicker.textContent=`NESTE HAREPUS – RUNDE ${m.round}`; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter ${bunnyTimeLabel(m.target)}`; duration.textContent=m.hasOverride?"Tidspunkt justert manuelt av leder":(m.round===1?"Første harepus åpner 6 t etter derbystart":`Estimert rundestart · kan justeres av leder`);
     } else {
-      kicker.textContent="NESTE HAREPUST"; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter kl. ${new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"}).format(m.target)}`; duration.textContent="Varer i 10 min · ny harepust hvert 1,5 t";
+      kicker.textContent="NESTE HAREPUST"; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter kl. ${new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"}).format(m.target)}`; duration.textContent=m.hasOverride?"Manuelt synkronisert · deretter hvert 1,5 t":"Varer i 10 min · ny harepust hvert 1,5 t";
     }
   }
 
@@ -1170,7 +1177,7 @@
     const show=!!(bunny&&active); panel.classList.toggle("hidden",!show); if(note)note.classList.toggle("hidden",show);
     if(!show)return;
     bunnyRoundEventId=event?.id||null;
-    try{bunnyRoundRows=await backend.getBunnyRoundState(bunnyRoundEventId);}catch(e){console.warn("Harepus-rundestatus kunne ikke hentes",e);bunnyRoundRows=[];}
+    try{[bunnyRoundRows,bunnyScheduleRows]=await Promise.all([backend.getBunnyRoundState(bunnyRoundEventId),backend.getBunnyRoundSchedule(bunnyRoundEventId)]);}catch(e){console.warn("Harepusstatus kunne ikke hentes",e);bunnyRoundRows=[];bunnyScheduleRows=[];}
     paintBunnyDashboard(event);
     bunnyDashboardTimer=setInterval(()=>paintBunnyDashboard(event),1000);
     const btn=$("bunnyRoundCompleteButton");
@@ -1180,6 +1187,17 @@
       btn.disabled=true;
       try{await backend.completeBunnyRound(bunnyRoundEventId,round);bunnyRoundRows=await backend.getBunnyRoundState(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre harepusstatus. Kontroller at SQL-oppdateringen er kjørt."));}
       btn.disabled=false;
+    };
+    const save=$("bunnyManualSave"), clear=$("bunnyManualClear"), input=$("bunnyManualNextAt");
+    if(save) save.onclick=async()=>{
+      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
+      const nextAt=new Date(raw); if(Number.isNaN(nextAt.getTime())){alert("Tidspunktet er ikke gyldig.");return;}
+      if(!confirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
+      save.disabled=true; try{await backend.setBunnyRoundSchedule(bunnyRoundEventId,model.round,nextAt.toISOString());bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre manuelt harepusttidspunkt. Kontroller at SQL-oppdateringen er kjørt."));} save.disabled=false;
+    };
+    if(clear) clear.onclick=async()=>{
+      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!confirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
+      clear.disabled=true; try{await backend.clearBunnyRoundSchedule(bunnyRoundEventId,model.round);bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke fjerne tidsjusteringen."));} clear.disabled=false;
     };
   }
 

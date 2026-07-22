@@ -348,6 +348,36 @@
       }
       return data || [];
     },
+    async getBunnyRoundSchedule(eventId) {
+      if (!eventId) return [];
+      if (!configured) {
+        try { return JSON.parse(localStorage.getItem(`wgang_bunny_schedule_${eventId}`) || "[]"); } catch { return []; }
+      }
+      const { data, error } = await client.from("bunny_round_schedule_overrides").select("event_id,round_number,next_bunny_at,updated_at,updated_by").eq("event_id",eventId).order("round_number");
+      if (error) {
+        if (error.code === "42P01" || /bunny_round_schedule_overrides/i.test(error.message || "")) return [];
+        throw error;
+      }
+      return data || [];
+    },
+    async setBunnyRoundSchedule(eventId, roundNumber, nextBunnyAt) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      const parsed=new Date(nextBunnyAt); if(Number.isNaN(parsed.getTime())) throw new Error("Ugyldig tidspunkt.");
+      if (!configured) {
+        const key=`wgang_bunny_schedule_${eventId}`; let rows=[]; try{rows=JSON.parse(localStorage.getItem(key)||"[]");}catch{}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); rows.push({event_id:eventId,round_number:Number(roundNumber),next_bunny_at:parsed.toISOString(),updated_at:new Date().toISOString(),updated_by:localState.currentUserId}); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { data:u } = await client.auth.getUser();
+      const { error } = await client.from("bunny_round_schedule_overrides").upsert({event_id:eventId,round_number:Number(roundNumber),next_bunny_at:parsed.toISOString(),updated_at:new Date().toISOString(),updated_by:u.user.id},{onConflict:"event_id,round_number"});
+      if(error) throw error;
+    },
+    async clearBunnyRoundSchedule(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_schedule_${eventId}`; let rows=[]; try{rows=JSON.parse(localStorage.getItem(key)||"[]");}catch{} rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { error } = await client.from("bunny_round_schedule_overrides").delete().eq("event_id",eventId).eq("round_number",Number(roundNumber)); if(error) throw error;
+    },
     async completeBunnyRound(eventId, roundNumber) {
       if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
       if (!configured) {
