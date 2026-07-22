@@ -1,0 +1,4 @@
+-- WGANG Portal – Profile data balance v0.18.0.18
+-- No database schema change is required.
+-- Voluntary: broad age group, country, languages, short bio, Hay Day experience/preferences.
+-- Gender, exact age/date of birth and city/location are not collected.

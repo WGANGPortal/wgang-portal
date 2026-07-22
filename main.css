@@ -361,3 +361,5 @@ body:not(.admin-mode) .admin-only {
 .legal-page a{color:var(--pink);text-decoration:underline}
 .legal-page .legal-brand{display:flex;align-items:center;gap:12px;margin-bottom:34px;text-decoration:none;color:var(--ink)}
 .legal-page .legal-brand img{width:48px;height:48px}
+
+.legal-document-links{display:grid;gap:10px;margin:18px 0}.legal-document-links .button{text-align:center;text-decoration:none}.check-label span a{color:var(--pink);text-decoration:underline}

@@ -686,13 +686,27 @@
     $("memberProfileName").textContent = String(account.name || "").toUpperCase();
     $("memberProfileRole").textContent = roleLabel(account.role);
     const details = [];
+    if (account.ageGroup) details.push(["Aldersgruppe", account.ageGroup]);
+    if (account.countryPlace) details.push(["Land", account.countryPlace]);
     if (account.hayDaySince) details.push(["Hvor lenge har du spilt Hay Day?", account.hayDaySince]);
     if (account.favoriteGameAspect) details.push(["Hva liker du best i spillet?", account.favoriteGameAspect]);
-    $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Ingen spillinformasjon er delt ennå.</p>`;
+    const spokenLanguages=[...(account.languages||[])].map(x=>x==="no"?"Norsk":x==="en"?"Engelsk":x);
+    if(account.otherLanguages) spokenLanguages.push(...String(account.otherLanguages).split(",").map(x=>x.trim()).filter(Boolean));
+    if(spokenLanguages.length) details.push(["Språk", [...new Set(spokenLanguages)].join(", ")]);
+    if(account.bio) details.push(["Litt om meg", account.bio]);
+    $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Ingen frivillig profilinformasjon er delt ennå.</p>`;
     $("profileEditSection").classList.toggle("hidden", !editable);
     if (editable) {
+      $("profileAgeInput").value = account.ageGroup || "";
+      $("profileCountryInput").value = account.countryPlace || "";
       $("profileSinceInput").value = account.hayDaySince || "";
       $("profileFavoriteInput").value = account.favoriteGameAspect || "";
+      $("profileBioInput").value = account.bio || "";
+      if($("profileLanguageNo")) $("profileLanguageNo").checked=(account.languages||[]).includes("no");
+      if($("profileLanguageEn")) $("profileLanguageEn").checked=(account.languages||[]).includes("en");
+      if($("profileLanguageOther")) $("profileLanguageOther").checked=!!account.otherLanguages;
+      if($("profileOtherLanguagesInput")) $("profileOtherLanguagesInput").value=account.otherLanguages||"";
+      $("profileOtherLanguagesWrap")?.classList.toggle("hidden",!account.otherLanguages);
     }
     showDialog(memberProfileDialog);
     translateUi(memberProfileDialog);
@@ -1093,6 +1107,20 @@
     $$("[data-action-route]").forEach(b=>b.onclick=()=>{ showAdminModule("actions"); });
   }
 
+  function legalAcceptanceRequired() {
+    return typeof backend.legalAcceptanceRequired === "function" && backend.legalAcceptanceRequired(state);
+  }
+  function requireLegalAcceptanceOrOpenPortal() {
+    if (legalAcceptanceRequired()) {
+      closeDialog(auth);
+      showDialog($("legalAcceptanceDialog"));
+      document.body.classList.add("modal-open");
+      return false;
+    }
+    openPortal();
+    return true;
+  }
+
   async function init() {
     setModeHint();
     translateUi(document);
@@ -1106,7 +1134,7 @@
         showDialog(passwordSetup);
         return;
       }
-      if (state.currentUserId && current() && current().approved) openPortal();
+      if (state.currentUserId && current() && current().approved) requireLegalAcceptanceOrOpenPortal();
       else if (state.currentUserId && current() && !current().approved) {
         await backend.signOut();
         state.currentUserId = null;
@@ -1168,8 +1196,25 @@
     setBusy(true);
     try {
       state = await backend.signIn($("loginEmail").value.trim().toLowerCase(), $("loginPassword").value);
-      closeDialog(auth); openPortal();
+      closeDialog(auth); requireLegalAcceptanceOrOpenPortal();
     } catch (error) { msg.textContent = humanError(error, "Kunne ikke logge inn."); }
+    setBusy(false);
+  };
+
+  if ($("legalAcceptanceForm")) $("legalAcceptanceForm").onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    const msg=$("legalAcceptanceMessage"); msg.textContent="";
+    if (!$("legalAcceptanceConfirm")?.checked) { msg.textContent="Du må bekrefte før du kan fortsette."; return; }
+    setBusy(true);
+    try {
+      const accepted=await backend.acceptLegalDocuments();
+      state.legalAcceptance=accepted;
+      closeDialog($("legalAcceptanceDialog"));
+      document.body.classList.remove("modal-open");
+      openPortal();
+    } catch(error) {
+      msg.textContent=humanError(error,"Kunne ikke registrere bekreftelsen.");
+    }
     setBusy(false);
   };
 
@@ -1305,6 +1350,7 @@
     await logout();
   };
   if ($("closeMemberProfile")) $("closeMemberProfile").onclick = () => closeDialog(memberProfileDialog);
+  if($("profileLanguageOther")) $("profileLanguageOther").onchange=()=>$("profileOtherLanguagesWrap")?.classList.toggle("hidden",!$("profileLanguageOther").checked);
   if ($("memberProfileForm")) $("memberProfileForm").onsubmit = async e => {
     e.preventDefault();
     if (busy || !current()) return;
@@ -1312,15 +1358,14 @@
     const me = current();
     const payload = {
       id: me.id,
-      // Legacy profile fields are preserved but are no longer collected or displayed.
-      bio: me.bio || "",
-      gender: me.gender || "",
-      ageGroup: me.ageGroup || "",
-      countryPlace: me.countryPlace || "",
+      bio: $("profileBioInput").value.trim(),
+      gender: "",
+      ageGroup: $("profileAgeInput").value,
+      countryPlace: $("profileCountryInput").value.trim(),
       hayDaySince: $("profileSinceInput").value.trim(),
       favoriteGameAspect: $("profileFavoriteInput").value.trim(),
-      languages: me.languages || [],
-      otherLanguages: me.otherLanguages || ""
+      languages:[$("profileLanguageNo")?.checked?"no":null,$("profileLanguageEn")?.checked?"en":null].filter(Boolean),
+      otherLanguages:$("profileLanguageOther")?.checked ? $("profileOtherLanguagesInput")?.value.trim()||"" : ""
     };
     try {
       await backend.updatePublicProfile(payload);
