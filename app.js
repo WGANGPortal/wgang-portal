@@ -1266,6 +1266,31 @@
       openOwnProfileHub();
     }, {passive:false});
   }
+
+  // v0.18.0.21 – iPhone/PWA profile tap fallback.
+  // If another portal element visually overlaps the profile control, the
+  // document still receives the pointer event. Detect taps by coordinates
+  // inside the visible profile button and open the profile directly.
+  let lastProfileFallbackAt = 0;
+  function profileTapInside(x, y) {
+    const chip = $("profileChip");
+    if (!chip || chip.offsetParent === null) return false;
+    const r = chip.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+  function runProfileFallback(e) {
+    const point = e.changedTouches?.[0] || e.touches?.[0] || e;
+    if (!point || !profileTapInside(point.clientX, point.clientY)) return;
+    const now = Date.now();
+    if (now - lastProfileFallbackAt < 350) return;
+    lastProfileFallbackAt = now;
+    e.preventDefault?.();
+    e.stopPropagation?.();
+    openOwnProfileHub();
+  }
+  document.addEventListener("pointerup", runProfileFallback, {capture:true, passive:false});
+  document.addEventListener("touchend", runProfileFallback, {capture:true, passive:false});
+
   function refreshLanguageButton() {
     const flag = $("languageFlag");
     if (flag) flag.textContent = currentLanguage === "en" ? "🇬🇧" : "🇳🇴";
