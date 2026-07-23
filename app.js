@@ -427,19 +427,34 @@
     {id:4,category:"Besøkende i byen",name:"Innbygger",amount:1,icon:"🧑‍🌾",task_deadline:"21:52:00"},{id:5,category:"Innhøsting",name:"Gulrøtter",amount:53,icon:"🥕",task_deadline:"21:53:00"},
     {id:6,category:"Dyreoppgave",name:"Bacon",amount:11,icon:"🥓",task_deadline:"21:53:00"},{id:7,category:"Produksjon",name:"Gulrotkake",amount:3,icon:"🍰",task_deadline:"21:53:00"},
     {id:8,category:"Produksjon",name:"Eplejuice",amount:2,icon:"🧃",task_deadline:"21:53:00"},{id:9,category:"Dyreoppgave",name:"Egg",amount:16,icon:"🥚",task_deadline:"21:54:00"},
-    {id:10,category:"Produksjon",name:"Frutti di Mare-pizza",amount:5,icon:"🍕",task_deadline:"21:54:00"},{id:11,category:"Innhøsting",name:"Gresskar",amount:38,icon:"🎃",task_deadline:"21:55:00"},{id:12,category:"Innhøsting",name:"Hvete",amount:77,icon:"🌾",task_deadline:"21:54:00"}
+    {id:10,category:"Produksjon",name:"Frutti di Mare-pizza",amount:5,icon:"🍕",task_deadline:"21:54:00"},{id:11,category:"Innhøsting",name:"Gresskar",amount:38,icon:"🎃",task_deadline:"21:55:00"},{id:12,category:"Innhøsting",name:"Hvete",amount:77,icon:"🌾",task_deadline:"21:54:00"},
+    {id:13,category:"Besøkende i byen",name:"Cowboy",amount:1,icon:"🤠",description:"Betjen 1 × Cowboy"},
+    {id:14,category:"Produksjon",name:"Blå ullue",amount:4,icon:"🧢",description:"Produser og samle inn 4 × Blå ullue"},
+    {id:15,category:"Bybyggeoppgave",name:"Kino",amount:2,icon:"🎬",description:"Ta imot 2 byggjester i Kino"},
+    {id:16,category:"Produksjon",name:"Bomullsskjorte",amount:3,icon:"👕",description:"Produser og samle inn 3 × Bomullsskjorte"},
+    {id:17,category:"Produksjon",name:"Sesam-is",amount:2,icon:"🍨",description:"Produser og samle inn 2 × Sesam-is"},
+    {id:18,category:"Fôroppgave",name:"Mat dyr",amount:18,icon:"🐾",description:"Mat 18 dyr"},
+    {id:19,category:"Produksjon",name:"Sesamkrokan",amount:4,icon:"🍯",description:"Produser og samle inn 4 × Sesamkrokan"},
+    {id:20,category:"Produksjon",name:"Sushirull",amount:2,icon:"🍣",description:"Produser og samle inn 2 × Sushirull"},
+    {id:21,category:"Innhøsting",name:"Salat",amount:37,icon:"🥬",description:"Høst inn fra salatåkrer: 37"},
+    {id:22,category:"Produksjon",name:"Tofupølse",amount:2,icon:"🌭",description:"Produser og samle inn 2 × Tofupølse"},
+    {id:23,category:"Innhøsting",name:"Bomull",amount:38,icon:"☁️",description:"Høst inn bomull"},
+    {id:24,category:"Produksjon",name:"Stekte tomater",amount:3,icon:"🍅",description:"Produser og samle inn stekte tomater"},
+    {id:25,category:"Produksjon",name:"Gresskarpai",amount:2,icon:"🥧",description:"Produser og samle inn gresskarpai"},
+    {id:26,category:"Besøkende i byen",name:"Stormester",amount:1,icon:"👴",description:"Betjen Stormester"},
+    {id:27,category:"Produksjon",name:"Bringebærmuffins",amount:4,icon:"🧁",description:"Produser og samle inn bringebærmuffins"}
   ];
   let bunnyData={library:[],board:null,boardTasks:[],statuses:[]};
-  function bunnyHeat(n){
-    if(n===0)return 0;
-    if(n<=2)return 1;
-    if(n<=4)return 2;
-    if(n<=6)return 3;
-    if(n<=8)return 4;
-    return 5;
+  function bunnyPopularity(n){
+    if(n===0)return "Ingen har valgt";
+    if(n<=5)return "Lav interesse";
+    if(n<=10)return "Noe interesse";
+    if(n<=15)return "Populær";
+    if(n<=20)return "Svært populær";
+    if(n<=25)return "Høy interesse";
+    return "Svært høy interesse";
   }
-  function bunnyPopularity(n){if(n===0)return "Ingen interesse";if(n<=5)return "Lav interesse";if(n<=10)return "Noe interesse";if(n<=15)return "Populær";if(n<=20)return "Svært populær";if(n<=25)return "Høy interesse";return "Veldig høy interesse";}
-  function bunnyInterestPct(n){return Math.max(0,Math.min(100,(Math.min(30,n)/30)*100));}
+  function bunnyInterestPct(n){ return Math.max(0,Math.min(100,(Math.min(30,n)/30)*100)); }
   function bunnyOsloParts(){
     const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
     const o={};parts.forEach(p=>{if(p.type!=="literal")o[p.type]=p.value;});
@@ -456,27 +471,138 @@
   function bunnyIsStale(){if(!bunnyData.board?.published_at)return true;const now=new Date(),cut=new Date(now);cut.setHours(10,0,0,0);if(now<cut)cut.setDate(cut.getDate()-1);return new Date(bunnyData.board.published_at)<cut;}
   async function loadBunny(){try{bunnyData=await backend.getBunnyData();if(!bunnyData.library?.length && backend.mode==="local"){bunnyData.library=BUNNY_DEFAULT_TASKS;bunnyData.board={id:1,published_at:new Date().toISOString(),active:true};bunnyData.boardTasks=BUNNY_DEFAULT_TASKS.map(x=>({task_id:x.id}));localStorage.setItem("wgang_bunny_v018",JSON.stringify(bunnyData));}}catch(e){console.warn("Chill Bunny data unavailable",e);bunnyData={library:[],board:null,boardTasks:[],statuses:[]};}renderBunny();}
   function renderBunny(){
-    const grid=$("bunnyTaskGrid");if(!grid)return;const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));const uid=current()?.id;
-    const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const planned=mine.filter(x=>["ready","preparing"].includes(x.status));const event=state.derbyManagement?.next,cycle=bunnyPlannerCycle(event);
-    $("bunnyReadyCount").textContent=`${planned.length} valgt`;$("bunnyPlanCount").textContent=`${planned.length} valgt`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
-    const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}`:""}`;}
-    const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png","Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"};
-    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const img=(t.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||images[t.name];const desc=String(t.description||t.name||"").replace(/\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">× ${t.amount}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
-    grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{const fallback=document.createElement("div");fallback.className="bunny-task-icon";fallback.textContent=img.dataset.fallbackIcon||"🐰";img.replaceWith(fallback);},{once:true}));
-    grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board||!cycle)return;const old=mine.find(x=>String(x.task_id)===String(b.dataset.taskId));try{if(old?.status===b.dataset.bunnyStatus||(b.dataset.bunnyStatus==="preparing"&&old?.status==="ready"))await backend.clearBunnyStatus(bunnyData.board.id,b.dataset.taskId);else await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus,cycle.key,cycle.eventId,cycle.round,cycle.start.toISOString(),cycle.end.toISOString());await loadBunny();}catch(e){alert(humanError(e));}});
-    const plan=$("bunnyMyPlan");plan.innerHTML=planned.length?planned.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca;}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.name)} ×${t.amount}</span>`:"";}).join(""):`<span class="helper-text">Ingen oppgaver valgt til neste harepus ennå.</span>`;renderBunnyAdmin();
+    const grid=$("bunnyTaskGrid");if(!grid)return;
+    const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));
+    const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));
+    const uid=current()?.id;
+    const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));
+    const planned=mine.filter(x=>["ready","preparing"].includes(x.status));
+
+    $("bunnyReadyCount").textContent=`${planned.length} valgt`;
+    $("bunnyPlanCount").textContent=`${planned.length} valgt`;
+    $("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
+
+    const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo(),session=bunnyData.session;
+    const now=Date.now();
+    let hareText="";
+    if(session){
+      const s=new Date(session.starts_at),e=new Date(session.ends_at);
+      if(now<s.getTime()){
+        hareText=`🐰 Neste harepus: <strong>${s.toLocaleString("nb-NO",{weekday:"short",hour:"2-digit",minute:"2-digit"})}</strong>. Valgene nullstilles når harepusen er over.`;
+      }else{
+        hareText=`🐰 <strong>Harepus pågår nå</strong> til ${e.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}.`;
+      }
+    }else{
+      hareText=`🐰 Neste harepus er ikke satt ennå. Planleggingsvalgene er låst til leder har publisert tidspunktet.`;
+    }
+
+    if(!bunnyData.board){
+      notice.className="bunny-board-notice stale";notice.innerHTML=`⚠️ Dagens oppgavetavle er ikke publisert ennå.<br>${hareText}`;
+    }else if(bunnyIsStale()){
+      notice.className="bunny-board-notice stale";notice.innerHTML=`⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.<br>${hareText}`;
+    }else{
+      notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}<br>${hareText}`;
+    }
+
+    const descriptions={
+      "Gjester i Matbutikk":"Ta imot byggjester i Matbutikk",
+      "Kake med røde bær":"Produser og samle inn kake med røde bær",
+      "Soyabønner":"Høst inn soyabønner",
+      "Innbygger":"Betjen Innbygger",
+      "Gulrøtter":"Høst inn gulrøtter",
+      "Bacon":"Samle bacon",
+      "Gulrotkake":"Produser og samle inn gulrotkake",
+      "Eplejuice":"Produser og samle inn eplejuice",
+      "Egg":"Samle egg",
+      "Frutti di Mare-pizza":"Produser og samle inn Frutti di Mare-pizza",
+      "Gresskar":"Høst inn gresskar",
+      "Hvete":"Høst inn hvete",
+      "Cowboy":"Betjen Cowboy",
+      "Blå ullue":"Produser og samle inn blå ullue",
+      "Kino":"Ta imot byggjester i Kino",
+      "Bomullsskjorte":"Produser og samle inn bomullsskjorte",
+      "Sesam-is":"Produser og samle inn sesam-is",
+      "Mat dyr":"Mat dyr",
+      "Sesamkrokan":"Produser og samle inn sesamkrokan",
+      "Sushirull":"Produser og samle inn sushirull",
+      "Salat":"Høst inn salat",
+      "Tofupølse":"Produser og samle inn tofupølse",
+      "Bomull":"Høst inn bomull",
+      "Stekte tomater":"Produser og samle inn stekte tomater",
+      "Gresskarpai":"Produser og samle inn gresskarpai",
+      "Stormester":"Betjen Stormester",
+      "Bringebærmuffins":"Produser og samle inn bringebærmuffins"
+    };
+    const images={
+      "Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png",
+      "Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png",
+      "Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png",
+      "Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png",
+      "Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png",
+      "Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png",
+      "Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png",
+      "Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png",
+      "Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"
+    };
+
+    grid.innerHTML=tasks.length?tasks.map(t=>{
+      const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));
+      const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";
+      const desc=descriptions[t.name]||String(t.description||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();
+      const img=images[t.name],pct=bunnyInterestPct(n);
+      const disabled=!session?"disabled":"";
+      return `<article class="bunny-task-card bunny-game-card">
+        <div class="bunny-task-type">${esc(t.category)}</div>
+        <div class="bunny-task-content">
+          <div class="bunny-task-art">
+            ${img?`<img class="bunny-task-image" src="${img}" alt="${esc(t.name)}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}
+            <span class="bunny-task-amount">× ${t.amount}</span>
+          </div>
+          <div class="bunny-task-copy">
+            <h3>${esc(t.name)}</h3>
+            <p>${esc(desc)}</p>
+          </div>
+        </div>
+        <div class="bunny-interest">
+          <div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div>
+          <div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div>
+          <div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div>
+        </div>
+        <div class="bunny-actions bunny-actions-two">
+          <button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button>
+          <button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button>
+        </div>
+      </article>`;
+    }).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+
+    grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{
+      if(!bunnyData.board||!bunnyData.session)return;
+      const mineRow=mine.find(x=>String(x.task_id)===String(b.dataset.taskId));
+      try{
+        if(mineRow?.status===b.dataset.bunnyStatus || (b.dataset.bunnyStatus==="preparing" && mineRow?.status==="ready")){
+          await backend.clearBunnyStatus(bunnyData.board.id,b.dataset.taskId);
+        }else{
+          await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus,bunnyData.session.id);
+        }
+        await loadBunny();
+      }catch(e){alert(humanError(e));}
+    });
+
+    const plan=$("bunnyMyPlan");
+    plan.innerHTML=planned.length?planned.sort((a,b)=>{
+      const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length;
+      const cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;
+      return cb-ca;
+    }).map(x=>{
+      const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));
+      return t?`<span class="bunny-plan-chip">${esc(t.name)} ×${t.amount}</span>`:"";
+    }).join(""):`<span class="helper-text">Ingen oppgaver valgt til neste harepus ennå.</span>`;
+    renderBunnyAdmin();
   }
 
   function bunnyNorm(v){
     return String(v||"").trim().toLocaleLowerCase("nb-NO");
   }
-  let bunnyEditTask=null;
-  function bunnyTaskImageFile(t){return (t?.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||null;}
-  function openBunnyTaskEditor(t){
-    bunnyEditTask=t;setText("bunnyEditTaskId",t.id);$("bunnyEditTaskId").value=t.id;$("bunnyEditName").value=t.name||"";$("bunnyEditCategory").value=t.category||"";$("bunnyEditDescription").value=String(t.description||t.name||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();$("bunnyEditAmount").value=t.amount||1;const file=bunnyTaskImageFile(t);$("bunnyEditorPreview").innerHTML=file?`<img src="./${file}" alt="${esc(t.name)}"><span>× ${Number(t.amount)||1}</span>`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`;$("bunnyTaskEditorStatus").textContent="";$("bunnyTaskEditorDialog")?.showModal();
-  }
-  function updateBunnyEditorPreview(){if(!bunnyEditTask)return;const s=$("bunnyEditorPreview")?.querySelector("span");if(s)s.textContent=`× ${Number($("bunnyEditAmount").value)||1}`;}
-
   function renderBunnyAdmin(){
     const box=$("bunnyAdminBoard");
     if(!box||!isLeadership())return;
@@ -497,7 +623,14 @@
       return;
     }
 
-    box.innerHTML=`<div class="bunny-admin-actions">
+    const session=bunnyData.session;
+    box.innerHTML=`<div class="bunny-session-admin">
+        <div><strong>Neste harepus</strong><small>${session?`Aktiv plan: ${new Date(session.starts_at).toLocaleString("nb-NO",{weekday:"short",hour:"2-digit",minute:"2-digit"})}`:"Ikke satt"}</small></div>
+        <input type="datetime-local" id="bunnyNextHareAt">
+        <button class="button button-secondary" id="saveBunnyHareTime">Publiser / oppdater tidspunkt</button>
+        <p class="helper-text">Harepust varer 10 minutter. Hvis 30/30 ikke er nådd, opprettes neste harepust automatisk 90 minutter etter forrige start. Leder kan overstyre tidspunktet her.</p>
+      </div>
+      <div class="bunny-admin-actions">
         <strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong>
         <button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button>
       </div>
@@ -505,8 +638,8 @@
       <div class="bunny-admin-library">
         ${library.map(t=>`<div class="bunny-admin-choice-wrap">
           <button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}">
-            <span class="bunny-admin-thumb">${(()=>{const f=(t.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||({"Gjester i Matbutikk":"task-gjester-i-matbutikk.webp","Kake med røde bær":"task-kake-med-rode-baer.webp","Soyabønner":"task-soyabonner.webp","Innbygger":"task-innbygger.webp","Gulrøtter":"task-gulrotter.webp","Bacon":"task-bacon.webp","Gulrotkake":"task-gulrotkake.webp","Eplejuice":"task-eplejuice.webp","Egg":"task-egg.webp","Frutti di Mare-pizza":"task-frutti-di-mare-pizza.webp","Gresskar":"task-gresskar.webp","Hvete":"task-hvete.webp","Cowboy":"task-cowboy.webp","Blå ullue":"task-bla-ullue.webp","Kino":"task-kino.webp","Bomullsskjorte":"task-bomullsskjorte.webp","Sesam-is":"task-sesam-is.webp","Mat dyr":"task-mat-dyr.webp","Sesamkrokan":"task-sesamkrokan.webp","Sushirull":"task-sushirull.webp","Salat":"task-salat.webp","Tofupølse":"task-tofupolse.webp","Bomull":"task-bomull.webp","Stekte tomater":"task-stekte-tomater.webp","Gresskarpai":"task-gresskarpai.webp","Stormester":"task-stormester.webp","Bringebærmuffins":"task-bringebaermuffins.webp"})[t.name];return f?`<img src="./${f}" alt="">`:esc(t.icon||"🐰");})()}</span>
-            <strong>${esc(t.name)} <b>×${t.amount}</b></strong>
+            <span>${esc(t.icon||"🐰")}</span>
+            <strong>${esc(t.name)} ×${t.amount}</strong>
             <small>${esc(t.category)}</small>
           </button>
           <button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button>
@@ -540,8 +673,22 @@
       };
     });
 
-    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=(e)=>{
-      e.preventDefault();e.stopPropagation();const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));if(!t)return;openBunnyTaskEditor(t);
+    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=async(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));
+      if(!t)return;
+      const name=prompt("Oppgavenavn:",t.name);
+      if(name===null)return;
+      const amount=prompt("Antall:",t.amount);
+      if(amount===null)return;
+      if(!name.trim()||!Number(amount))return alert("Kontroller oppgavenavn og antall.");
+      try{
+        await backend.updateBunnyTask(t.id,{name:name.trim(),amount:Number(amount)});
+        await loadBunny();
+      }catch(err){
+        alert(humanError(err));
+      }
     });
 
     const cat=$("newBunnyCategory");
@@ -570,6 +717,21 @@
       cat.onchange=fillNames;
       fillNames();
     }
+
+    const hareInput=$("bunnyNextHareAt");
+    if(hareInput&&bunnyData.session){
+      const d=new Date(bunnyData.session.starts_at);
+      const pad=n=>String(n).padStart(2,"0");
+      hareInput.value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    const saveHare=$("saveBunnyHareTime");
+    if(saveHare)saveHare.onclick=async()=>{
+      if(!hareInput?.value)return alert("Velg dato og klokkeslett for neste harepus.");
+      try{
+        await backend.scheduleBunnyHare(new Date(hareInput.value).toISOString());
+        await loadBunny();
+      }catch(err){alert(humanError(err));}
+    };
 
     $("publishBunnyBoard").onclick=async()=>{
       const ids=[...box.querySelectorAll("[data-bunny-pick].selected")].map(x=>x.dataset.bunnyPick);
@@ -1033,215 +1195,6 @@
     $("derbyProgress").style.width = percent + "%"; $("dashboardProgress").style.width = percent + "%";
   }
 
-  function derbyDashboardPhase(event) {
-    const now = new Date();
-    if (event?.start_at) {
-      const start = new Date(event.start_at);
-      const end = event.end_at ? new Date(event.end_at) : null;
-      if (!Number.isNaN(start.getTime()) && now >= start && (!end || Number.isNaN(end.getTime()) || now < end)) return "active";
-      if (end && !Number.isNaN(end.getTime()) && now >= end) return "planning";
-      if (!Number.isNaN(start.getTime()) && now < start) return "planning";
-    }
-    const p = bunnyOsloParts();
-    const osloDay = new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
-    const afterTuesdayStart = osloDay === 2 && p.h >= 10;
-    const midDerbyWeek = osloDay >= 3 || osloDay === 0;
-    const mondayBeforeEnd = osloDay === 1 && p.h < 10;
-    return (afterTuesdayStart || midDerbyWeek || mondayBeforeEnd) ? "active" : "planning";
-  }
-
-  let dashboardCountdownTimer = null;
-
-  function dashboardCountdownTarget(event) {
-    if (event?.start_at) {
-      const start = new Date(event.start_at);
-      if (!Number.isNaN(start.getTime()) && start > new Date()) return start;
-    }
-    // Reserve: neste tirsdag kl. 10:00. Portalen brukes i Norge, og derbytid følger Europe/Oslo.
-    const osloNow = new Date(new Date().toLocaleString("en-US", {timeZone:"Europe/Oslo"}));
-    const target = new Date(osloNow);
-    const day = target.getDay();
-    let days = (2 - day + 7) % 7;
-    if (days === 0 && target.getHours() >= 10) days = 7;
-    target.setDate(target.getDate() + days);
-    target.setHours(10,0,0,0);
-    return new Date(target.getTime() + (new Date().getTime() - osloNow.getTime()));
-  }
-
-  function formatDashboardCountdown(ms) {
-    if (ms <= 0) return "Starter nå";
-    const totalMinutes = Math.floor(ms / 60000);
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = Math.floor((totalMinutes % 1440) / 60);
-    const minutes = totalMinutes % 60;
-    if (days > 0) return `${days} d ${hours} t ${minutes} min`;
-    if (hours > 0) return `${hours} t ${minutes} min`;
-    return `${Math.max(1, minutes)} min`;
-  }
-
-  function startDashboardCountdown(event, visible, bunny) {
-    if (dashboardCountdownTimer) clearInterval(dashboardCountdownTimer);
-    dashboardCountdownTimer = null;
-    const wrap = $("dashboardCountdownWrap"), value = $("dashboardCountdown"), label = $("dashboardCountdownLabel");
-    if (!wrap || !value || !label || !visible) { if (wrap) wrap.classList.add("hidden"); return; }
-    const target = dashboardCountdownTarget(event);
-    wrap.classList.remove("hidden");
-    label.textContent = bunny ? "Neste harepus starter om" : "Derbyet starter om";
-    const paint=()=>{ value.textContent = formatDashboardCountdown(target.getTime() - Date.now()); };
-    paint();
-    dashboardCountdownTimer = setInterval(paint, 30000);
-  }
-
-  let bunnyDashboardTimer = null;
-  let bunnyRoundRows = [];
-  let bunnyScheduleRows = [];
-  let bunnyRoundEventId = null;
-
-  function bunnyRoundStarts(event) {
-    let derbyStart = event?.start_at ? new Date(event.start_at) : null;
-    if (!derbyStart || Number.isNaN(derbyStart.getTime())) derbyStart = dashboardCountdownTarget(null);
-    return [6, 36, 84].map(hours => new Date(derbyStart.getTime() + hours * 3600000));
-  }
-
-  function bunnyClock(ms) {
-    ms=Math.max(0,ms);
-    const total=Math.floor(ms/1000), days=Math.floor(total/86400), hours=Math.floor((total%86400)/3600), mins=Math.floor((total%3600)/60), secs=total%60;
-    if(days>0) return `${days} d ${String(hours).padStart(2,"0")} : ${String(mins).padStart(2,"0")} : ${String(secs).padStart(2,"0")}`;
-    return `${String(hours).padStart(2,"0")} : ${String(mins).padStart(2,"0")} : ${String(secs).padStart(2,"0")}`;
-  }
-
-  function bunnyTimeLabel(date) {
-    return new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",weekday:"long",hour:"2-digit",minute:"2-digit"}).format(date).replace(/^./,c=>c.toUpperCase());
-  }
-
-  function bunnyRoundModel(event) {
-    const starts=bunnyRoundStarts(event), now=Date.now();
-    const completed=new Set((bunnyRoundRows||[]).map(x=>Number(x.round_number)));
-    const taken=completed.size;
-    const round=[1,2,3].find(n=>!completed.has(n)) || 4;
-    if(round===4) return {done:true,taken,round:3};
-    const automaticSpawn=starts[round-1];
-    const override=(bunnyScheduleRows||[]).find(x=>Number(x.round_number)===round);
-    const overrideAt=override?.next_bunny_at ? new Date(override.next_bunny_at) : null;
-    const hasOverride=!!(overrideAt && !Number.isNaN(overrideAt.getTime()));
-    const spawn=hasOverride ? overrideAt : automaticSpawn;
-    if(now<spawn.getTime()) return {done:false,taken,round,mode:"round_wait",target:spawn,spawn,hasOverride};
-    const elapsed=now-spawn.getTime(), interval=90*60000, active=10*60000;
-    const cycle=Math.floor(elapsed/interval);
-    const cycleStart=new Date(spawn.getTime()+cycle*interval);
-    if(now<cycleStart.getTime()+active) return {done:false,taken,round,mode:"active",target:new Date(cycleStart.getTime()+active),cycleStart,spawn,hasOverride};
-    return {done:false,taken,round,mode:"bunny_wait",target:new Date(cycleStart.getTime()+interval),spawn,hasOverride};
-  }
-
-  let bunnyPlannerCycleKey="";
-  let bunnyPlannerSyncing=false;
-  function bunnyPlannerCycle(event){
-    const m=bunnyRoundModel(event);if(m.done)return null;
-    const start=m.mode==="active"?m.cycleStart:m.target;if(!start)return null;
-    const s=new Date(start),e=new Date(s.getTime()+10*60000);
-    return {eventId:event?.id||null,round:m.round,start:s,end:e,key:`${event?.id||"event"}:${m.round}:${s.toISOString()}`};
-  }
-  async function syncBunnyPlannerCycle(event,force=false){
-    const c=bunnyPlannerCycle(event);if(!c?.eventId||bunnyPlannerSyncing)return;
-    if(!force&&c.key===bunnyPlannerCycleKey)return;
-    bunnyPlannerSyncing=true;
-    try{await backend.syncBunnyPlannerCycle(c.eventId,c.round,c.key,c.start.toISOString(),c.end.toISOString());bunnyPlannerCycleKey=c.key;bunnyData=await backend.getBunnyData();renderBunny();}
-    catch(e){console.warn("Kunne ikke synkronisere harepusplan",e);}finally{bunnyPlannerSyncing=false;}
-  }
-
-  function paintBunnyDashboard(event) {
-    const panel=$("bunnyDashboardPanel"); if(!panel)return;
-    const m=bunnyRoundModel(event), value=$("bunnyCountdownValue"), kicker=$("bunnyCountdownKicker"), start=$("bunnyCountdownStart"), duration=$("bunnyCountdownDuration"), btn=$("bunnyRoundCompleteButton"), manualStatus=$("bunnyManualStatus"), manualClear=$("bunnyManualClear");
-    if($("bunnyRoundNumber")) $("bunnyRoundNumber").textContent=`${m.round} av 3`;
-    if($("bunnyRoundsTaken")) $("bunnyRoundsTaken").textContent=`${m.taken} av 3`;
-    if(m.done){
-      kicker.textContent="ALLE HAREPUSENE ER TATT"; value.textContent="✓ 3 / 3"; start.textContent="Denne ukens harepusmål er fullført"; duration.textContent="Ingen flere harepusrunder"; if(btn)btn.classList.add("hidden"); return;
-    }
-    if(btn){btn.classList.remove("hidden");btn.textContent=`✓ Harepus ${m.round} tatt – avslutt runde`;btn.dataset.round=String(m.round);}
-    if(manualClear) manualClear.classList.toggle("hidden",!m.hasOverride);
-    if(manualStatus) manualStatus.textContent=m.hasOverride ? `Manuelt tidspunkt er aktivt for runde ${m.round}. Videre harepust beregnes automatisk hvert 1,5 time fra dette tidspunktet.` : "Automatisk beregning er aktiv.";
-    if(m.mode==="active"){
-      kicker.textContent="🐰 HAREPUST PÅGÅR"; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Runde ${m.round} er aktiv nå`; duration.textContent="10 minutter harepust";
-    } else if(m.mode==="round_wait"){
-      kicker.textContent=`NESTE HAREPUS – RUNDE ${m.round}`; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter ${bunnyTimeLabel(m.target)}`; duration.textContent=m.hasOverride?"Tidspunkt justert manuelt av leder":(m.round===1?"Første harepus åpner 6 t etter derbystart":`Estimert rundestart · kan justeres av leder`);
-    } else {
-      kicker.textContent="NESTE HAREPUST"; value.textContent=bunnyClock(m.target.getTime()-Date.now()); start.textContent=`Starter kl. ${new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"}).format(m.target)}`; duration.textContent=m.hasOverride?"Manuelt synkronisert · deretter hvert 1,5 t":"Varer i 10 min · ny harepust hvert 1,5 t";
-    }
-  }
-
-  async function renderBunnyDashboard(event, bunny, active) {
-    const panel=$("bunnyDashboardPanel"), note=$("dashboardDevelopmentNote");
-    if(bunnyDashboardTimer){clearInterval(bunnyDashboardTimer);bunnyDashboardTimer=null;}
-    if(!panel)return;
-    const show=!!(bunny&&active); panel.classList.toggle("hidden",!show); if(note)note.classList.toggle("hidden",show);
-    if(!show)return;
-    bunnyRoundEventId=event?.id||null;
-    try{[bunnyRoundRows,bunnyScheduleRows]=await Promise.all([backend.getBunnyRoundState(bunnyRoundEventId),backend.getBunnyRoundSchedule(bunnyRoundEventId)]);}catch(e){console.warn("Harepusstatus kunne ikke hentes",e);bunnyRoundRows=[];bunnyScheduleRows=[];}
-    await syncBunnyPlannerCycle(event,true);
-    paintBunnyDashboard(event);
-    bunnyDashboardTimer=setInterval(()=>{paintBunnyDashboard(event);syncBunnyPlannerCycle(event);},1000);
-    const btn=$("bunnyRoundCompleteButton");
-    if(btn)btn.onclick=async()=>{
-      const round=Number(btn.dataset.round); if(!round||!isLeadership())return; if(!bunnyRoundEventId){alert("Pågående derby mangler Derby-ID. Publiser derbyet i Derbyadministrasjon først.");return;}
-      if(!confirm(`Bekreft at harepus ${round} er tatt. Da avsluttes denne runden for alle medlemmer.`))return;
-      btn.disabled=true;
-      try{await backend.completeBunnyRound(bunnyRoundEventId,round);bunnyRoundRows=await backend.getBunnyRoundState(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre harepusstatus. Kontroller at SQL-oppdateringen er kjørt."));}
-      btn.disabled=false;
-    };
-    const save=$("bunnyManualSave"), clear=$("bunnyManualClear"), input=$("bunnyManualNextAt");
-    if(save) save.onclick=async()=>{
-      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
-      const nextAt=new Date(raw); if(Number.isNaN(nextAt.getTime())){alert("Tidspunktet er ikke gyldig.");return;}
-      if(!confirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
-      save.disabled=true; try{await backend.setBunnyRoundSchedule(bunnyRoundEventId,model.round,nextAt.toISOString());bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre manuelt harepusttidspunkt. Kontroller at SQL-oppdateringen er kjørt."));} save.disabled=false;
-    };
-    if(clear) clear.onclick=async()=>{
-      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!confirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
-      clear.disabled=true; try{await backend.clearBunnyRoundSchedule(bunnyRoundEventId,model.round);bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke fjerne tidsjusteringen."));} clear.disabled=false;
-    };
-  }
-
-  function renderDashboardDerbyFocus(d, event) {
-    const phase = derbyDashboardPhase(event);
-    const active = phase === "active";
-    const type = d.type || "Derby";
-    const shortType = type.replace(/\s*Derby$/i, "");
-    const bunny = /bunny|harepus/i.test(type);
-    const setText=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
-
-    const spotlight=$("dashboardDerbySpotlight");
-    if (spotlight) spotlight.classList.toggle("bunny-focus", bunny);
-    setText("dashboardDerbyIcon", bunny ? "🐰" : "◇");
-    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY DERBY" : "NESTE DERBY"));
-    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Gjør deg klar til neste harepus." : `Her er det viktigste i planleggingen mot ${type}.`));
-    if (bunny && !active) setText("dashboardDerbyType", "Planlegg neste harepus");
-    setText("dashboardDerbyFocusText", active
-      ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
-    setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
-    startDashboardCountdown(event, !active, bunny);
-    renderBunnyDashboard(event, bunny, active);
-    setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
-    setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
-    setText("dashboardDeadline", active ? "Pågår nå" : "Mandag kl. 23:00");
-    setText("dashboardDeadlineHint", active ? type : "svar gjerne innen fristen");
-    setText("dashboardDerbyMetricLabel", active ? "Pågående derby" : "Neste derby");
-    setText("dashboardNextDerbyName", shortType);
-    setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
-  }
-
-  function renderTaskHubContext(){
-    const event=state.derbyManagement?.next;
-    const type=String(event?.name||state.derby?.type||"Standard Derby");
-    const bunny=/bunny|harepus/i.test(type), standard=/standard/i.test(type);
-    $("standardTaskHub")?.classList.toggle("hidden",!standard);
-    $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
-    $("genericTaskHub")?.classList.toggle("hidden",standard||bunny);
-    if(bunny){setText("taskHubEyebrow","HAREPUS DERBY");setText("taskHubTitle","Oppgaver i neste harepus");setText("taskHubIntro","Planlegg oppgavene sammen og se felles interesse før neste harepus.");}
-    else if(standard){setText("taskHubEyebrow","STANDARD DERBY");setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");}
-    else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
-  }
-
   function renderDerbyConfig() {
     const next = state.derbyManagement?.next;
     const d = next ? {
@@ -1257,10 +1210,9 @@
       rules: Array.isArray(next.rules) ? next.rules : []
     } : state.derby;
     $("derbyType").textContent = d.type; $("dashboardDerbyType").textContent = d.type;
-    renderDashboardDerbyFocus(d, next);
-    renderTaskHubContext();
-    const phase = derbyDashboardPhase(next);
-    const startText = $("nextDerbyStart"); if (startText) startText.textContent = phase === "active" ? "Pågår nå" : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00");
+    const metricNext = $("dashboardNextDerbyName"); if (metricNext) metricNext.textContent = d.type.replace(" Derby","");
+    const deadlineText = $("dashboardDeadline"); if (deadlineText) deadlineText.textContent = "Mandag kl. 23:00";
+    const startText = $("nextDerbyStart"); if (startText) startText.textContent = d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00";
     $("derbyTaskTotalLabel").textContent = d.taskTotal || "–"; $("derbyMaxPoints").textContent = d.maxPoints || "–";
     $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(x)}</li>`).join("") || `<li>Strategi publiseres av admin før derbyet starter.</li>`;
     const info = $("nextDerbyInfo");
@@ -1408,10 +1360,6 @@
     navigate(a.dataset.route);
     closeMenu();
   }));
-  const dashboardDerbyAction=$("dashboardDerbyAction");
-  if(dashboardDerbyAction) dashboardDerbyAction.addEventListener("click",()=>{
-    setTimeout(()=>{const board=$("bunnyCenter");if(board&&/oppslagstavla/i.test(dashboardDerbyAction.textContent||""))board.scrollIntoView({behavior:"smooth",block:"start"});},180);
-  });
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   if ($("adminNavToggle")) $("adminNavToggle").onclick = () => {
     const sub = $("adminSubnav");
@@ -1432,6 +1380,7 @@
       if ($("profileHubName")) $("profileHubName").textContent = current()?.gameName || "PROFIL";
     }, 0);
   };
+
   function refreshLanguageButton() {
     const flag = $("languageFlag");
     if (flag) flag.textContent = currentLanguage === "en" ? "🇬🇧" : "🇳🇴";
@@ -1655,11 +1604,6 @@
   };
 
   $$('[data-close-dialog]').forEach(button => button.onclick = () => closeDialog($(button.dataset.closeDialog)));
-  if($("bunnyAmountMinus")) $("bunnyAmountMinus").onclick=()=>{$("bunnyEditAmount").value=Math.max(1,(Number($("bunnyEditAmount").value)||1)-1);updateBunnyEditorPreview();};
-  if($("bunnyAmountPlus")) $("bunnyAmountPlus").onclick=()=>{$("bunnyEditAmount").value=(Number($("bunnyEditAmount").value)||1)+1;updateBunnyEditorPreview();};
-  if($("bunnyEditAmount")) $("bunnyEditAmount").oninput=updateBunnyEditorPreview;
-  if($("bunnyTaskEditorForm")) $("bunnyTaskEditorForm").onsubmit=async e=>{e.preventDefault();const id=$("bunnyEditTaskId").value,name=$("bunnyEditName").value.trim(),category=$("bunnyEditCategory").value.trim(),description=$("bunnyEditDescription").value.trim(),amount=Number($("bunnyEditAmount").value);if(!name||!category||!description||!amount)return;const status=$("bunnyTaskEditorStatus");status.textContent="Lagrer …";try{await backend.updateBunnyTask(id,{name,category,description,amount});$("bunnyTaskEditorDialog").close();await loadBunny();}catch(err){status.textContent=humanError(err);}};
-
   if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
   if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
   if ($("openTipForm")) $("openTipForm").onclick = () => { adminTipMode=false; $("tipForm").reset(); $("tipDialogTitle").textContent="Send inn tips"; $("tipSubmitButton").textContent="Send til godkjenning"; $("tipMessage").textContent=""; showDialog(tipDialog); };
