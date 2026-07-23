@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.30-demo-security-cleanup";
+const CACHE_NAME = "wgang-image-library-current";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
@@ -29,7 +29,34 @@ const APP_SHELL = [
   "/26-stekte-tomater.png",
   "/27-gresskarpai.png",
   "/28-stormester.png",
-  "/29-bringebaermuffins.png"
+  "/29-bringebaermuffins.png",
+  "/task-bacon.webp",
+  "/task-bla-ullue.webp",
+  "/task-bomull.webp",
+  "/task-bomullsskjorte.webp",
+  "/task-bringebaermuffins.webp",
+  "/task-cowboy.webp",
+  "/task-egg.webp",
+  "/task-eplejuice.webp",
+  "/task-frutti-di-mare-pizza.webp",
+  "/task-gjester-i-matbutikk.webp",
+  "/task-gresskar.webp",
+  "/task-gresskarpai.webp",
+  "/task-gulrotkake.webp",
+  "/task-gulrotter.webp",
+  "/task-hvete.webp",
+  "/task-innbygger.webp",
+  "/task-kake-med-rode-baer.webp",
+  "/task-kino.webp",
+  "/task-mat-dyr.webp",
+  "/task-salat.webp",
+  "/task-sesam-is.webp",
+  "/task-sesamkrokan.webp",
+  "/task-soyabonner.webp",
+  "/task-stekte-tomater.webp",
+  "/task-stormester.webp",
+  "/task-sushirull.webp",
+  "/task-tofupolse.webp"
 ];
 self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); self.clients.claim(); });
