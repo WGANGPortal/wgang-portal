@@ -894,6 +894,13 @@
 
   function renderLeadershipChat() {
     const list = $("leadershipMessageList");
+    if(list && !list.dataset.userScrollBound){
+      const markUserScroll=()=>{ list.dataset.userHasScrolled="1"; };
+      list.addEventListener("touchstart",markUserScroll,{passive:true});
+      list.addEventListener("wheel",markUserScroll,{passive:true});
+      list.addEventListener("pointerdown",markUserScroll,{passive:true});
+      list.dataset.userScrollBound="1";
+    }
     if (!list) return;
     if (!hasPermission("chat.leadership.view")) { list.innerHTML = ""; return; }
     const messages = state.leadershipMessages || [];
@@ -910,10 +917,23 @@
       if(newerCount>1){
         const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=`↓ ${newerCount-1} nyere innlegg`;jump.onclick=()=>list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"end"});list.appendChild(jump);
       }
-      const jumpToUnread=()=>document.getElementById("leadershipUnreadStart")?.scrollIntoView({behavior:"auto",block:"center"});
-      requestAnimationFrame(()=>requestAnimationFrame(jumpToUnread));
-      setTimeout(jumpToUnread,350);
-      setTimeout(jumpToUnread,900);
+      // Position the first unread message once. Do not keep forcing the
+      // scroll position after the user starts reading a long message.
+      const unreadMessageId=messages[firstUnreadIndex]?.id;
+      const unreadKey=String(unreadMessageId||"");
+      if(unreadKey && list.dataset.positionedUnreadId!==unreadKey && list.dataset.userHasScrolled!=="1"){
+        const jumpToUnreadOnce=()=>{
+          const target=document.getElementById("leadershipUnreadStart");
+          if(!target) return;
+          const listRect=list.getBoundingClientRect();
+          const targetRect=target.getBoundingClientRect();
+          const relativeTop=targetRect.top-listRect.top+list.scrollTop;
+          const desiredTop=Math.max(0,relativeTop-Math.min(90,list.clientHeight*.22));
+          list.scrollTo({top:desiredTop,behavior:"auto"});
+          list.dataset.positionedUnreadId=unreadKey;
+        };
+        requestAnimationFrame(()=>requestAnimationFrame(jumpToUnreadOnce));
+      }
       const latest=messages[messages.length-1];
       setTimeout(async()=>{try{await backend.markChatRead("leadership",latest?.id,latest?.createdAt||new Date().toISOString());state.chatReadState=state.chatReadState||[];const r=state.chatReadState.find(x=>x.channel==="leadership");if(r){r.last_read_at=latest?.createdAt;r.last_message_id=latest?.id;}else state.chatReadState.push({channel:"leadership",last_read_at:latest?.createdAt,last_message_id:latest?.id});renderNotifications();}catch(e){console.warn(e);}},1500);
     }
@@ -1796,7 +1816,8 @@ else setTimeout(wgangInitBunnyPlanner,100);
 /* v0.18.0.15 – scroll the chat container itself, not the whole page */
 (function(){
   const configs = [
-    { route:"leadership", listId:"leadershipMessageList", unreadId:"leadershipUnreadStart" },
+    // Lederprat handles its own one-time unread positioning in renderLeadershipChat().
+    // Keep the stabilizer only for community chat.
     { route:"community",  listId:"communityMessageList",  unreadId:"communityUnreadStart"  }
   ];
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-image-library-current";
+const CACHE_NAME = "wgang-lederprat-scrollfix-20260723";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
