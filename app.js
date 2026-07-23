@@ -438,14 +438,8 @@
     if(n<=8)return 4;
     return 5;
   }
-  function bunnyPopularity(n){
-    if(n===0)return "Ingen interesse";
-    if(n<=2)return "Lav interesse";
-    if(n<=4)return "Noe interesse";
-    if(n<=6)return "Populær";
-    if(n<=8)return "Svært populær";
-    return "Høy konkurranse";
-  }
+  function bunnyPopularity(n){if(n===0)return "Ingen interesse";if(n<=5)return "Lav interesse";if(n<=10)return "Noe interesse";if(n<=15)return "Populær";if(n<=20)return "Svært populær";if(n<=25)return "Høy interesse";return "Veldig høy interesse";}
+  function bunnyInterestPct(n){return Math.max(0,Math.min(100,(Math.min(30,n)/30)*100));}
   function bunnyOsloParts(){
     const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
     const o={};parts.forEach(p=>{if(p.type!=="literal")o[p.type]=p.value;});
@@ -463,23 +457,26 @@
   async function loadBunny(){try{bunnyData=await backend.getBunnyData();if(!bunnyData.library?.length && backend.mode==="local"){bunnyData.library=BUNNY_DEFAULT_TASKS;bunnyData.board={id:1,published_at:new Date().toISOString(),active:true};bunnyData.boardTasks=BUNNY_DEFAULT_TASKS.map(x=>({task_id:x.id}));localStorage.setItem("wgang_bunny_v018",JSON.stringify(bunnyData));}}catch(e){console.warn("Chill Bunny data unavailable",e);bunnyData={library:[],board:null,boardTasks:[],statuses:[]};}renderBunny();}
   function renderBunny(){
     const grid=$("bunnyTaskGrid");if(!grid)return;const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));const uid=current()?.id;
-    const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const ready=mine.filter(x=>x.status==="ready");
-    $("bunnyReadyCount").textContent=`${ready.length} / 5`;$("bunnyPlanCount").textContent=`${ready.length} klare`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
-    const notice=$("bunnyBoardNotice");const dl=bunnyDeadlineInfo();
-    if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}
-    else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}
-    else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}`;}
-    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length;const my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const descriptions={"Gjester i Matbutikk":"Ta imot 2 gjester i Matbutikk","Kake med røde bær":"Produser 3 × Kake med røde bær","Soyabønner":"Høst inn fra 47 soyabønneåkrer","Innbygger":"Betjen 1 × Innbygger","Gulrøtter":"Høst inn fra 53 gulrotåkrer","Bacon":"Samle 11 bacon","Gulrotkake":"Produser og samle inn 3 × Gulrotkake","Eplejuice":"Produser og samle inn 2 × Eplejuice","Egg":"Samle 16 egg","Frutti di Mare-pizza":"Produser og samle inn 5 × Frutti di Mare-pizza","Gresskar":"Høst inn fra 38 gresskaråkrer","Hvete":"Høst inn fra hveteåkrer: 77","Cowboy":"Betjen 1 × Cowboy","Blå ullue":"Produser og samle inn 4 × Blå ullue","Kino":"Ta imot 2 byggjester i Kino","Bomullsskjorte":"Produser og samle inn 3 × Bomullsskjorte","Sesam-is":"Produser og samle inn 2 × Sesam-is","Mat dyr":"Mat 18 dyr","Sesamkrokan":"Produser og samle inn 4 × Sesamkrokan","Sushirull":"Produser og samle inn 2 × Sushirull","Salat":"Høst inn fra salatåkrer: 37","Tofupølse":"Produser og samle inn 2 × Tofupølse"};const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png"};const desc=descriptions[t.name]||t.description||"";const img=images[t.name];return `<article class="bunny-task-card bunny-game-card"><div class="bunny-task-main"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-visual">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<div class="amount">× ${t.amount}</div></div><h3>${esc(t.name)}</h3>${desc?`<p class="bunny-task-description">${esc(desc)}</p>`:""}</div><div class="bunny-popularity"><div><strong>${n} valgt</strong><small>${bunnyPopularity(n)}</small></div><span class="heat heat-${bunnyHeat(n)}">${n}</span></div><div class="bunny-actions"><button class="bunny-ready ${my==="ready"?"selected":""}" data-bunny-status="ready" data-task-id="${t.id}">✓ Jeg har den klar</button><button class="bunny-prep ${my==="preparing"?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}">○ Jeg klargjør den</button><button class="bunny-skip" data-bunny-status="skip" data-task-id="${t.id}">× Ikke aktuell</button></div></article>`}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
-    grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{
-      const fallback=document.createElement("div"); fallback.className="bunny-task-icon"; fallback.textContent=img.dataset.fallbackIcon||"🐰"; img.replaceWith(fallback);
-    },{once:true}));
-    grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board)return;try{await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus);await loadBunny();}catch(e){alert(humanError(e));}});
-    const plan=$("bunnyMyPlan");plan.innerHTML=ready.length?ready.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.icon)} ${esc(t.name)} ×${t.amount}</span>`:""}).join(""):`<span class="helper-text">Ingen oppgaver markert som klare ennå.</span>`;
-    renderBunnyAdmin();
+    const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const planned=mine.filter(x=>["ready","preparing"].includes(x.status));const event=state.derbyManagement?.next,cycle=bunnyPlannerCycle(event);
+    $("bunnyReadyCount").textContent=`${planned.length} valgt`;$("bunnyPlanCount").textContent=`${planned.length} valgt`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
+    const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}`:""}`;}
+    const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png","Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"};
+    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const img=(t.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||images[t.name];const desc=String(t.description||t.name||"").replace(/\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">× ${t.amount}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{const fallback=document.createElement("div");fallback.className="bunny-task-icon";fallback.textContent=img.dataset.fallbackIcon||"🐰";img.replaceWith(fallback);},{once:true}));
+    grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board||!cycle)return;const old=mine.find(x=>String(x.task_id)===String(b.dataset.taskId));try{if(old?.status===b.dataset.bunnyStatus||(b.dataset.bunnyStatus==="preparing"&&old?.status==="ready"))await backend.clearBunnyStatus(bunnyData.board.id,b.dataset.taskId);else await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus,cycle.key,cycle.eventId,cycle.round,cycle.start.toISOString(),cycle.end.toISOString());await loadBunny();}catch(e){alert(humanError(e));}});
+    const plan=$("bunnyMyPlan");plan.innerHTML=planned.length?planned.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca;}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.name)} ×${t.amount}</span>`:"";}).join(""):`<span class="helper-text">Ingen oppgaver valgt til neste harepus ennå.</span>`;renderBunnyAdmin();
   }
+
   function bunnyNorm(v){
     return String(v||"").trim().toLocaleLowerCase("nb-NO");
   }
+  let bunnyEditTask=null;
+  function bunnyTaskImageFile(t){return (t?.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||null;}
+  function openBunnyTaskEditor(t){
+    bunnyEditTask=t;setText("bunnyEditTaskId",t.id);$("bunnyEditTaskId").value=t.id;$("bunnyEditName").value=t.name||"";$("bunnyEditCategory").value=t.category||"";$("bunnyEditDescription").value=String(t.description||t.name||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();$("bunnyEditAmount").value=t.amount||1;const file=bunnyTaskImageFile(t);$("bunnyEditorPreview").innerHTML=file?`<img src="./${file}" alt="${esc(t.name)}"><span>× ${Number(t.amount)||1}</span>`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`;$("bunnyTaskEditorStatus").textContent="";$("bunnyTaskEditorDialog")?.showModal();
+  }
+  function updateBunnyEditorPreview(){if(!bunnyEditTask)return;const s=$("bunnyEditorPreview")?.querySelector("span");if(s)s.textContent=`× ${Number($("bunnyEditAmount").value)||1}`;}
+
   function renderBunnyAdmin(){
     const box=$("bunnyAdminBoard");
     if(!box||!isLeadership())return;
@@ -508,8 +505,8 @@
       <div class="bunny-admin-library">
         ${library.map(t=>`<div class="bunny-admin-choice-wrap">
           <button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}">
-            <span>${esc(t.icon||"🐰")}</span>
-            <strong>${esc(t.name)} ×${t.amount}</strong>
+            <span class="bunny-admin-thumb">${(()=>{const f=(t.image_key&&`task-${String(t.image_key).replace(/_/g,"-")}.webp`)||({"Gjester i Matbutikk":"task-gjester-i-matbutikk.webp","Kake med røde bær":"task-kake-med-rode-baer.webp","Soyabønner":"task-soyabonner.webp","Innbygger":"task-innbygger.webp","Gulrøtter":"task-gulrotter.webp","Bacon":"task-bacon.webp","Gulrotkake":"task-gulrotkake.webp","Eplejuice":"task-eplejuice.webp","Egg":"task-egg.webp","Frutti di Mare-pizza":"task-frutti-di-mare-pizza.webp","Gresskar":"task-gresskar.webp","Hvete":"task-hvete.webp","Cowboy":"task-cowboy.webp","Blå ullue":"task-bla-ullue.webp","Kino":"task-kino.webp","Bomullsskjorte":"task-bomullsskjorte.webp","Sesam-is":"task-sesam-is.webp","Mat dyr":"task-mat-dyr.webp","Sesamkrokan":"task-sesamkrokan.webp","Sushirull":"task-sushirull.webp","Salat":"task-salat.webp","Tofupølse":"task-tofupolse.webp","Bomull":"task-bomull.webp","Stekte tomater":"task-stekte-tomater.webp","Gresskarpai":"task-gresskarpai.webp","Stormester":"task-stormester.webp","Bringebærmuffins":"task-bringebaermuffins.webp"})[t.name];return f?`<img src="./${f}" alt="">`:esc(t.icon||"🐰");})()}</span>
+            <strong>${esc(t.name)} <b>×${t.amount}</b></strong>
             <small>${esc(t.category)}</small>
           </button>
           <button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button>
@@ -543,22 +540,8 @@
       };
     });
 
-    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=async(e)=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));
-      if(!t)return;
-      const name=prompt("Oppgavenavn:",t.name);
-      if(name===null)return;
-      const amount=prompt("Antall:",t.amount);
-      if(amount===null)return;
-      if(!name.trim()||!Number(amount))return alert("Kontroller oppgavenavn og antall.");
-      try{
-        await backend.updateBunnyTask(t.id,{name:name.trim(),amount:Number(amount)});
-        await loadBunny();
-      }catch(err){
-        alert(humanError(err));
-      }
+    box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=(e)=>{
+      e.preventDefault();e.stopPropagation();const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));if(!t)return;openBunnyTaskEditor(t);
     });
 
     const cat=$("newBunnyCategory");
@@ -1150,6 +1133,22 @@
     return {done:false,taken,round,mode:"bunny_wait",target:new Date(cycleStart.getTime()+interval),spawn,hasOverride};
   }
 
+  let bunnyPlannerCycleKey="";
+  let bunnyPlannerSyncing=false;
+  function bunnyPlannerCycle(event){
+    const m=bunnyRoundModel(event);if(m.done)return null;
+    const start=m.mode==="active"?m.cycleStart:m.target;if(!start)return null;
+    const s=new Date(start),e=new Date(s.getTime()+10*60000);
+    return {eventId:event?.id||null,round:m.round,start:s,end:e,key:`${event?.id||"event"}:${m.round}:${s.toISOString()}`};
+  }
+  async function syncBunnyPlannerCycle(event,force=false){
+    const c=bunnyPlannerCycle(event);if(!c?.eventId||bunnyPlannerSyncing)return;
+    if(!force&&c.key===bunnyPlannerCycleKey)return;
+    bunnyPlannerSyncing=true;
+    try{await backend.syncBunnyPlannerCycle(c.eventId,c.round,c.key,c.start.toISOString(),c.end.toISOString());bunnyPlannerCycleKey=c.key;bunnyData=await backend.getBunnyData();renderBunny();}
+    catch(e){console.warn("Kunne ikke synkronisere harepusplan",e);}finally{bunnyPlannerSyncing=false;}
+  }
+
   function paintBunnyDashboard(event) {
     const panel=$("bunnyDashboardPanel"); if(!panel)return;
     const m=bunnyRoundModel(event), value=$("bunnyCountdownValue"), kicker=$("bunnyCountdownKicker"), start=$("bunnyCountdownStart"), duration=$("bunnyCountdownDuration"), btn=$("bunnyRoundCompleteButton"), manualStatus=$("bunnyManualStatus"), manualClear=$("bunnyManualClear");
@@ -1178,8 +1177,9 @@
     if(!show)return;
     bunnyRoundEventId=event?.id||null;
     try{[bunnyRoundRows,bunnyScheduleRows]=await Promise.all([backend.getBunnyRoundState(bunnyRoundEventId),backend.getBunnyRoundSchedule(bunnyRoundEventId)]);}catch(e){console.warn("Harepusstatus kunne ikke hentes",e);bunnyRoundRows=[];bunnyScheduleRows=[];}
+    await syncBunnyPlannerCycle(event,true);
     paintBunnyDashboard(event);
-    bunnyDashboardTimer=setInterval(()=>paintBunnyDashboard(event),1000);
+    bunnyDashboardTimer=setInterval(()=>{paintBunnyDashboard(event);syncBunnyPlannerCycle(event);},1000);
     const btn=$("bunnyRoundCompleteButton");
     if(btn)btn.onclick=async()=>{
       const round=Number(btn.dataset.round); if(!round||!isLeadership())return; if(!bunnyRoundEventId){alert("Pågående derby mangler Derby-ID. Publiser derbyet i Derbyadministrasjon først.");return;}
@@ -1230,6 +1230,18 @@
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
   }
 
+  function renderTaskHubContext(){
+    const event=state.derbyManagement?.next;
+    const type=String(event?.name||state.derby?.type||"Standard Derby");
+    const bunny=/bunny|harepus/i.test(type), standard=/standard/i.test(type);
+    $("standardTaskHub")?.classList.toggle("hidden",!standard);
+    $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
+    $("genericTaskHub")?.classList.toggle("hidden",standard||bunny);
+    if(bunny){setText("taskHubEyebrow","HAREPUS DERBY");setText("taskHubTitle","Oppgaver i neste harepus");setText("taskHubIntro","Planlegg oppgavene sammen og se felles interesse før neste harepus.");}
+    else if(standard){setText("taskHubEyebrow","STANDARD DERBY");setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");}
+    else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
+  }
+
   function renderDerbyConfig() {
     const next = state.derbyManagement?.next;
     const d = next ? {
@@ -1246,6 +1258,7 @@
     } : state.derby;
     $("derbyType").textContent = d.type; $("dashboardDerbyType").textContent = d.type;
     renderDashboardDerbyFocus(d, next);
+    renderTaskHubContext();
     const phase = derbyDashboardPhase(next);
     const startText = $("nextDerbyStart"); if (startText) startText.textContent = phase === "active" ? "Pågår nå" : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00");
     $("derbyTaskTotalLabel").textContent = d.taskTotal || "–"; $("derbyMaxPoints").textContent = d.maxPoints || "–";
@@ -1642,6 +1655,11 @@
   };
 
   $$('[data-close-dialog]').forEach(button => button.onclick = () => closeDialog($(button.dataset.closeDialog)));
+  if($("bunnyAmountMinus")) $("bunnyAmountMinus").onclick=()=>{$("bunnyEditAmount").value=Math.max(1,(Number($("bunnyEditAmount").value)||1)-1);updateBunnyEditorPreview();};
+  if($("bunnyAmountPlus")) $("bunnyAmountPlus").onclick=()=>{$("bunnyEditAmount").value=(Number($("bunnyEditAmount").value)||1)+1;updateBunnyEditorPreview();};
+  if($("bunnyEditAmount")) $("bunnyEditAmount").oninput=updateBunnyEditorPreview;
+  if($("bunnyTaskEditorForm")) $("bunnyTaskEditorForm").onsubmit=async e=>{e.preventDefault();const id=$("bunnyEditTaskId").value,name=$("bunnyEditName").value.trim(),category=$("bunnyEditCategory").value.trim(),description=$("bunnyEditDescription").value.trim(),amount=Number($("bunnyEditAmount").value);if(!name||!category||!description||!amount)return;const status=$("bunnyTaskEditorStatus");status.textContent="Lagrer …";try{await backend.updateBunnyTask(id,{name,category,description,amount});$("bunnyTaskEditorDialog").close();await loadBunny();}catch(err){status.textContent=humanError(err);}};
+
   if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
   if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
   if ($("openTipForm")) $("openTipForm").onclick = () => { adminTipMode=false; $("tipForm").reset(); $("tipDialogTitle").textContent="Send inn tips"; $("tipSubmitButton").textContent="Send til godkjenning"; $("tipMessage").textContent=""; showDialog(tipDialog); };

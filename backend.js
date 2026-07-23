@@ -330,7 +330,7 @@
       if(lib.error) throw lib.error; if(board.error) throw board.error;
       let boardTasks=[],statuses=[];
       if(board.data){
-        const [bt,st]=await Promise.all([client.from("bunny_board_tasks").select("task_id").eq("board_id",board.data.id),client.from("bunny_task_status").select("board_id,task_id,user_id,status,updated_at").eq("board_id",board.data.id)]);
+        const [bt,st]=await Promise.all([client.from("bunny_board_tasks").select("task_id").eq("board_id",board.data.id),client.from("bunny_task_status").select("board_id,task_id,user_id,status,updated_at,cycle_key,event_id,round_number,cycle_start_at,cycle_ends_at").eq("board_id",board.data.id)]);
         if(bt.error)throw bt.error;if(st.error)throw st.error;boardTasks=bt.data||[];statuses=st.data||[];
       }
       return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
@@ -401,10 +401,17 @@
       const { error } = await client.from("bunny_round_completions").delete().eq("event_id",eventId).eq("round_number",Number(roundNumber));
       if (error) throw error;
     },
-    async setBunnyStatus(boardId,taskId,status) {
-      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));if(status!=="skip")d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
-      if(status==="skip"){const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",(await client.auth.getUser()).data.user.id);if(error)throw error;return;}
-      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
+    async syncBunnyPlannerCycle(eventId,roundNumber,cycleKey,cycleStartAt,cycleEndsAt) {
+      if(!eventId||!cycleKey)return;if(!configured)return;
+      const {error}=await client.rpc("sync_bunny_planner_cycle",{p_event_id:eventId,p_round_number:Number(roundNumber),p_cycle_key:cycleKey,p_cycle_start_at:cycleStartAt,p_cycle_ends_at:cycleEndsAt});if(error)throw error;
+    },
+    async setBunnyStatus(boardId,taskId,status,cycleKey,eventId,roundNumber,cycleStartAt,cycleEndsAt) {
+      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,cycle_key:cycleKey,event_id:eventId,round_number:roundNumber,cycle_start_at:cycleStartAt,cycle_ends_at:cycleEndsAt,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,cycle_key:cycleKey,event_id:eventId,round_number:Number(roundNumber),cycle_start_at:cycleStartAt,cycle_ends_at:cycleEndsAt,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
+    },
+    async clearBunnyStatus(boardId,taskId) {
+      if(!configured){const d=await this.getBunnyData(),uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",u.user.id);if(error)throw error;
     },
     async publishBunnyBoard(taskIds) {
       if(!configured){const d=await this.getBunnyData();d.board={id:Date.now(),published_at:new Date().toISOString(),active:true};d.boardTasks=taskIds.map(task_id=>({task_id}));d.statuses=[];localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
