@@ -13,13 +13,8 @@
       "Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt."
     ]
   };
-  const DEMO = {
-    accounts: [
-      {id:"owner-1",name:"Leder",email:"admin@wgang.no",role:"owner",approved:true,status:"approved",choice:"joined",preferences:{By:"like",Gruve:"can",Båt:"avoid",Produksjon:"like"}},
-      {id:"member-1",name:"Nabo",email:"nabo@wgang.no",role:"member",approved:true,status:"approved",choice:"unsure",preferences:{Melk:"like",Bacon:"like",Hjelpeoppgaver:"can",Båt:"avoid"}},
-      {id:"member-2",name:"Solglimt",email:"sol@wgang.no",role:"member",approved:true,status:"approved",choice:"pause",preferences:{Fisk:"like",Båt:"like",Gruve:"no"}},
-      {id:"pending-1",name:"FarmFryd",email:"farmfryd@example.com",role:"member",approved:false,status:"pending",choice:"waiting",preferences:{}}
-    ],
+  const EMPTY_LOCAL_STATE = {
+    accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
     derbyManagement: { templates: [], events: [], next: null },
@@ -43,8 +38,14 @@
   function localLoad() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : clone(DEMO);
-    } catch (_) { return clone(DEMO); }
+      if (!raw) return clone(EMPTY_LOCAL_STATE);
+      const parsed = JSON.parse(raw);
+      // Fjern tidligere demo/testkontoer fra lokal nettleserlagring.
+      const blocked = new Set(["admin@wgang.no","nabo@wgang.no","sol@wgang.no"]);
+      if (Array.isArray(parsed.accounts)) parsed.accounts = parsed.accounts.filter(a => !blocked.has(String(a.email || "").toLowerCase()));
+      if (parsed.currentUserId && !parsed.accounts?.some(a => a.id === parsed.currentUserId)) parsed.currentUserId = null;
+      return parsed;
+    } catch (_) { return clone(EMPTY_LOCAL_STATE); }
   }
   function localSave(state) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
@@ -199,10 +200,7 @@
     },
     async signIn(email, password) {
       if (!configured) {
-        const user = localState.accounts.find(a => a.email.toLowerCase() === email.toLowerCase() && ((a.email === "admin@wgang.no" || a.email === "nabo@wgang.no" || a.email === "sol@wgang.no") ? password === "WGANG2026" : true));
-        if (!user) throw new Error("Feil e-post eller passord.");
-        if (!user.approved) throw new Error("Søknaden din venter fortsatt på godkjenning.");
-        localState.currentUserId = user.id; localSave(localState); return clone(localState);
+        throw new Error("Innlogging er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
       }
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw new Error("Feil e-post eller passord.");
@@ -218,11 +216,7 @@
     async signUp(name, email, password) {
       name = String(name || "").trim().toUpperCase();
       if (!configured) {
-        if (localState.accounts.some(a => a.email.toLowerCase() === email.toLowerCase())) throw new Error("Denne e-postadressen er allerede registrert.");
-        if (localState.accounts.some(a => a.name.toLowerCase() === name.toLowerCase())) throw new Error("Dette Hay Day-navnet er allerede registrert.");
-        localState.accounts.push({id:"user-"+Date.now(),name,email,role:"member",approved:false,status:"pending",choice:"waiting",preferences:{}});
-        localSave(localState);
-        return { needsEmailConfirmation:false };
+        throw new Error("Medlemssøknad er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
       }
       const { data, error } = await client.auth.signUp({ email, password, options:{ data:{ hay_day_name:name }, emailRedirectTo:appUrl() } });
       if (error) throw error;
@@ -321,60 +315,97 @@
     async getBunnyData() {
       if (!configured) {
         const raw=localStorage.getItem("wgang_bunny_v018");
-        return raw?JSON.parse(raw):{library:[],board:null,boardTasks:[],statuses:[],rounds:[],session:null};
+        return raw?JSON.parse(raw):{library:[],board:null,boardTasks:[],statuses:[]};
       }
-      try { await client.rpc("bunny_rollover_sessions"); } catch(e) { console.warn("Bunny session rollover unavailable",e); }
-      const nowIso=new Date().toISOString();
-      const [lib,board,rounds,sessionRes]=await Promise.all([
+      const [lib,board]=await Promise.all([
         client.from("bunny_task_library").select("*").eq("active",true).order("id"),
-        client.from("bunny_board").select("*").eq("active",true).order("published_at",{ascending:false}).limit(1).maybeSingle(),
-        client.from("bunny_hare_rounds").select("*").order("round_no"),
-        client.from("bunny_hare_sessions").select("*").gt("ends_at",nowIso).in("status",["planned","active"]).order("starts_at").limit(1).maybeSingle()
+        client.from("bunny_board").select("*").eq("active",true).order("published_at",{ascending:false}).limit(1).maybeSingle()
       ]);
       if(lib.error) throw lib.error; if(board.error) throw board.error;
       let boardTasks=[],statuses=[];
-      const session=sessionRes?.error?null:(sessionRes?.data||null);
       if(board.data){
-        let statusQuery=client.from("bunny_task_status").select("board_id,task_id,user_id,status,updated_at,session_id").eq("board_id",board.data.id);
-        if(session?.id) statusQuery=statusQuery.eq("session_id",session.id);
-        else statusQuery=statusQuery.is("session_id",null);
-        const [bt,st]=await Promise.all([
-          client.from("bunny_board_tasks").select("task_id").eq("board_id",board.data.id),
-          statusQuery
-        ]);
+        const [bt,st]=await Promise.all([client.from("bunny_board_tasks").select("task_id").eq("board_id",board.data.id),client.from("bunny_task_status").select("board_id,task_id,user_id,status,updated_at,cycle_key,event_id,round_number,cycle_start_at,cycle_ends_at").eq("board_id",board.data.id)]);
         if(bt.error)throw bt.error;if(st.error)throw st.error;boardTasks=bt.data||[];statuses=st.data||[];
       }
-      return {library:lib.data||[],board:board.data||null,boardTasks,statuses,rounds:rounds?.data||[],session};
+      return {library:lib.data||[],board:board.data||null,boardTasks,statuses};
     },
-    async setBunnyStatus(boardId,taskId,status,sessionId) {
-      if(!configured){
-        const d=await this.getBunnyData(),uid=localState.currentUserId;
-        d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));
-        d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,session_id:sessionId||null,updated_at:new Date().toISOString()});
-        localStorage.setItem("wgang_bunny_v018",JSON.stringify(d)); return;
+    async getBunnyRoundState(eventId) {
+      if (!eventId) return [];
+      if (!configured) {
+        try { return JSON.parse(localStorage.getItem(`wgang_bunny_rounds_${eventId}`) || "[]"); } catch { return []; }
       }
-      if(!sessionId) throw new Error("Neste harepus er ikke satt ennå.");
-      const {data:u}=await client.auth.getUser();
-      const {error}=await client.from("bunny_task_status").upsert(
-        {board_id:boardId,task_id:taskId,user_id:u.user.id,status,session_id:sessionId,updated_at:new Date().toISOString()},
-        {onConflict:"board_id,task_id,user_id"}
-      );
-      if(error)throw error;
+      const { data, error } = await client.from("bunny_round_completions").select("event_id,round_number,completed_at,completed_by").eq("event_id",eventId).order("round_number");
+      if (error) {
+        // Migration may not have been applied yet. Countdown still works without persisted completions.
+        if (error.code === "42P01" || /bunny_round_completions/i.test(error.message || "")) return [];
+        throw error;
+      }
+      return data || [];
+    },
+    async getBunnyRoundSchedule(eventId) {
+      if (!eventId) return [];
+      if (!configured) {
+        try { return JSON.parse(localStorage.getItem(`wgang_bunny_schedule_${eventId}`) || "[]"); } catch { return []; }
+      }
+      const { data, error } = await client.from("bunny_round_schedule_overrides").select("event_id,round_number,next_bunny_at,updated_at,updated_by").eq("event_id",eventId).order("round_number");
+      if (error) {
+        if (error.code === "42P01" || /bunny_round_schedule_overrides/i.test(error.message || "")) return [];
+        throw error;
+      }
+      return data || [];
+    },
+    async setBunnyRoundSchedule(eventId, roundNumber, nextBunnyAt) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      const parsed=new Date(nextBunnyAt); if(Number.isNaN(parsed.getTime())) throw new Error("Ugyldig tidspunkt.");
+      if (!configured) {
+        const key=`wgang_bunny_schedule_${eventId}`; let rows=[]; try{rows=JSON.parse(localStorage.getItem(key)||"[]");}catch{}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); rows.push({event_id:eventId,round_number:Number(roundNumber),next_bunny_at:parsed.toISOString(),updated_at:new Date().toISOString(),updated_by:localState.currentUserId}); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { data:u } = await client.auth.getUser();
+      const { error } = await client.from("bunny_round_schedule_overrides").upsert({event_id:eventId,round_number:Number(roundNumber),next_bunny_at:parsed.toISOString(),updated_at:new Date().toISOString(),updated_by:u.user.id},{onConflict:"event_id,round_number"});
+      if(error) throw error;
+    },
+    async clearBunnyRoundSchedule(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_schedule_${eventId}`; let rows=[]; try{rows=JSON.parse(localStorage.getItem(key)||"[]");}catch{} rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { error } = await client.from("bunny_round_schedule_overrides").delete().eq("event_id",eventId).eq("round_number",Number(roundNumber)); if(error) throw error;
+    },
+    async completeBunnyRound(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_rounds_${eventId}`;
+        let rows=[]; try { rows=JSON.parse(localStorage.getItem(key)||"[]"); } catch {}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber));
+        rows.push({event_id:eventId,round_number:Number(roundNumber),completed_at:new Date().toISOString(),completed_by:localState.currentUserId});
+        localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { data:u } = await client.auth.getUser();
+      const { error } = await client.from("bunny_round_completions").upsert({event_id:eventId,round_number:Number(roundNumber),completed_at:new Date().toISOString(),completed_by:u.user.id},{onConflict:"event_id,round_number"});
+      if (error) throw error;
+    },
+    async reopenBunnyRound(eventId, roundNumber) {
+      if (!eventId || ![1,2,3].includes(Number(roundNumber))) throw new Error("Ugyldig harepusrunde.");
+      if (!configured) {
+        const key=`wgang_bunny_rounds_${eventId}`;
+        let rows=[]; try { rows=JSON.parse(localStorage.getItem(key)||"[]"); } catch {}
+        rows=rows.filter(x=>Number(x.round_number)!==Number(roundNumber)); localStorage.setItem(key,JSON.stringify(rows)); return;
+      }
+      const { error } = await client.from("bunny_round_completions").delete().eq("event_id",eventId).eq("round_number",Number(roundNumber));
+      if (error) throw error;
+    },
+    async syncBunnyPlannerCycle(eventId,roundNumber,cycleKey,cycleStartAt,cycleEndsAt) {
+      if(!eventId||!cycleKey)return;if(!configured)return;
+      const {error}=await client.rpc("sync_bunny_planner_cycle",{p_event_id:eventId,p_round_number:Number(roundNumber),p_cycle_key:cycleKey,p_cycle_start_at:cycleStartAt,p_cycle_ends_at:cycleEndsAt});if(error)throw error;
+    },
+    async setBunnyStatus(boardId,taskId,status,cycleKey,eventId,roundNumber,cycleStartAt,cycleEndsAt) {
+      if(!configured){const d=await this.getBunnyData();const uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));d.statuses.push({board_id:boardId,task_id:taskId,user_id:uid,status,cycle_key:cycleKey,event_id:eventId,round_number:roundNumber,cycle_start_at:cycleStartAt,cycle_ends_at:cycleEndsAt,updated_at:new Date().toISOString()});localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").upsert({board_id:boardId,task_id:taskId,user_id:u.user.id,status,cycle_key:cycleKey,event_id:eventId,round_number:Number(roundNumber),cycle_start_at:cycleStartAt,cycle_ends_at:cycleEndsAt,updated_at:new Date().toISOString()},{onConflict:"board_id,task_id,user_id"});if(error)throw error;
     },
     async clearBunnyStatus(boardId,taskId) {
-      if(!configured){
-        const d=await this.getBunnyData(),uid=localState.currentUserId;
-        d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));
-        localStorage.setItem("wgang_bunny_v018",JSON.stringify(d)); return;
-      }
-      const {data:u}=await client.auth.getUser();
-      const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",u.user.id);
-      if(error)throw error;
-    },
-    async scheduleBunnyHare(startsAt) {
-      if(!configured) return;
-      const {error}=await client.rpc("schedule_bunny_hare",{p_starts_at:startsAt});
-      if(error)throw error;
+      if(!configured){const d=await this.getBunnyData(),uid=localState.currentUserId;d.statuses=d.statuses.filter(x=>!(String(x.task_id)===String(taskId)&&String(x.user_id)===String(uid)));localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
+      const {data:u}=await client.auth.getUser();const {error}=await client.from("bunny_task_status").delete().eq("board_id",boardId).eq("task_id",taskId).eq("user_id",u.user.id);if(error)throw error;
     },
     async publishBunnyBoard(taskIds) {
       if(!configured){const d=await this.getBunnyData();d.board={id:Date.now(),published_at:new Date().toISOString(),active:true};d.boardTasks=taskIds.map(task_id=>({task_id}));d.statuses=[];localStorage.setItem("wgang_bunny_v018",JSON.stringify(d));return;}
