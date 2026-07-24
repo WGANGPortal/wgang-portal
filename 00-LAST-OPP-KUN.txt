@@ -1,0 +1,5 @@
+WGANG v0.18.0.31
+
+Last opp HELE innholdet i denne mappen til GitHub-roten.
+Innhold: 10 nye oppgavebilder + service-worker.js.
+Kjør deretter Supabase-SQL angitt i RELEASE-NOTES-v0.18.0.31.md.
