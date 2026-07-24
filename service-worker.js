@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.33-oppslagstavle-til-oppgaver";
+const CACHE_NAME = "wgang-v0.18.0.34-oppslagstavle-preferences";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",

@@ -1240,7 +1240,7 @@
       : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
     setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
-    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "tasks" : "derby";
+    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
