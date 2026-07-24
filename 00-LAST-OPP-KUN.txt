@@ -1,5 +1,8 @@
-WGANG v0.18.0.31
+WGANG Portal v0.18.0.32 – Sukkerrør
 
-Last opp HELE innholdet i denne mappen til GitHub-roten.
-Innhold: 10 nye oppgavebilder + service-worker.js.
-Kjør deretter Supabase-SQL angitt i RELEASE-NOTES-v0.18.0.31.md.
+Last opp disse filene til roten av GitHub:
+- task-sukkerror.webp
+- service-worker.js
+
+Kjør deretter SQL-filen MIGRATION-v0.18.0.32-SUKKERROR-OPPGAVE.sql i Supabase.
+Ingen app.js-endring er nødvendig; oppgavekortene bruker image_key dynamisk.
