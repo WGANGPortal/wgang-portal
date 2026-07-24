@@ -1239,6 +1239,8 @@
       ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
       : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
     setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
+    const dashboardDerbyActionEl=$("dashboardDerbyAction");
+    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "tasks" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
@@ -1429,9 +1431,8 @@
     closeMenu();
   }));
   const dashboardDerbyAction=$("dashboardDerbyAction");
-  if(dashboardDerbyAction) dashboardDerbyAction.addEventListener("click",()=>{
-    setTimeout(()=>{const board=$("bunnyCenter");if(board&&/oppslagstavla/i.test(dashboardDerbyAction.textContent||""))board.scrollIntoView({behavior:"smooth",block:"start"});},180);
-  });
+  // Route is set dynamically in renderDashboard(): Harepus -> Oppgaver, otherwise -> Derby.
+
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
   if ($("adminNavToggle")) $("adminNavToggle").onclick = () => {
     const sub = $("adminSubnav");
