@@ -436,7 +436,9 @@
   async function openNotification(item) {
     try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
+    if(item.focusEntryId||item.focusCommentId) pendingNotificationFocus={entryId:item.focusEntryId||null,commentId:item.focusCommentId||null};
     if(item.admin) showAdminModule(item.admin); else navigate(item.route||"dashboard");
+    if(item.focusEntryId||item.focusCommentId) setTimeout(focusNotificationTargetOnce,120);
     renderNotifications();
   }
   function renderNotifications() {

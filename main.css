@@ -455,3 +455,7 @@ body:not(.admin-mode) .admin-only {
 .notification-group-heading small{font-size:11px;color:var(--muted)}
 .notification-setting-group .notification-setting-list{margin:0}
 .notification-setting-group .notification-setting-list label{background:rgba(255,255,255,.55)}
+
+/* v0.18.0.38 – kort målmarkering ved åpning fra varsel */
+.notification-focus-target{outline:2px solid rgba(177,88,123,.42);outline-offset:4px;border-radius:14px;animation:wgangNotificationFocus 2.2s ease-out}
+@keyframes wgangNotificationFocus{0%{box-shadow:0 0 0 7px rgba(177,88,123,.16)}100%{box-shadow:0 0 0 0 rgba(177,88,123,0)}}
