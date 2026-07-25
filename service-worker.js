@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.38-notification-deeplink";
+const CACHE_NAME = "wgang-v0.18.0.39-push-foundation";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
@@ -74,4 +74,58 @@ self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) return;
   event.respondWith(fetch(event.request).then(response => { const copy=response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)); return response; }).catch(() => caches.match(event.request).then(hit => hit || caches.match("/index.html"))));
+});
+
+
+// v0.18.0.39 – Web Push / PWA foundation (iOS + Android)
+self.addEventListener("push", event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch(e) {
+    data = { body: event.data ? event.data.text() : "Nytt varsel fra WGANG Portal" };
+  }
+
+  const title = data.title || "WGANG Portal";
+  const options = {
+    body: data.body || "Du har et nytt varsel.",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    tag: data.tag || "wgang-notification",
+    renotify: true,
+    data: {
+      url: data.url || "/",
+      route: data.route || null,
+      entryId: data.entryId || null,
+      commentId: data.commentId || null
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const d = event.notification.data || {};
+  const url = new URL(d.url || "/", self.location.origin);
+  if (d.route) url.hash = d.route;
+  if (d.entryId) url.searchParams.set("focusEntry", d.entryId);
+  if (d.commentId) url.searchParams.set("focusComment", d.commentId);
+
+  event.waitUntil((async()=>{
+    const all = await clients.matchAll({type:"window", includeUncontrolled:true});
+    for (const client of all) {
+      if ("focus" in client) {
+        await client.focus();
+        client.postMessage({
+          type:"WGANG_NOTIFICATION_FOCUS",
+          route:d.route,
+          entryId:d.entryId,
+          commentId:d.commentId
+        });
+        return;
+      }
+    }
+    if (clients.openWindow) await clients.openWindow(url.toString());
+  })());
 });

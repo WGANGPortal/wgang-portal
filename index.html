@@ -309,7 +309,19 @@
             </div>
           </div>
           <div class="profile-divider"></div>
-          <label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>
+          
+          <div class="notification-setting-group" id="pushNotificationSettings">
+            <div class="notification-group-heading">
+              <strong>Push-varsler på telefonen</strong>
+              <small>Støtter PWA-varsler på iPhone/iOS og Android når enheten støtter Web Push.</small>
+            </div>
+            <div class="push-notification-controls">
+              <p id="pushNotificationStatus" class="settings-helper">Kontrollerer støtte og tillatelse …</p>
+              <button type="button" class="secondary-btn" id="enablePushNotifications">Aktiver push-varsler</button>
+              <button type="button" class="text-btn hidden" id="disablePushNotifications">Deaktiver på denne enheten</button>
+            </div>
+          </div>
+<label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>
           <p class="helper-text">E-postutsending er ikke aktivert ennå. Valget lagres slik at funksjonen er klar når vi kobler på utsending.</p>
           <button type="button" class="button button-secondary" id="saveNotificationSettings">Lagre varslingsinnstillinger</button>
           <p class="form-message" id="notificationSettingsStatus"></p>

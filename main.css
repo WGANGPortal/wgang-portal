@@ -459,3 +459,7 @@ body:not(.admin-mode) .admin-only {
 /* v0.18.0.38 – kort målmarkering ved åpning fra varsel */
 .notification-focus-target{outline:2px solid rgba(177,88,123,.42);outline-offset:4px;border-radius:14px;animation:wgangNotificationFocus 2.2s ease-out}
 @keyframes wgangNotificationFocus{0%{box-shadow:0 0 0 7px rgba(177,88,123,.16)}100%{box-shadow:0 0 0 0 rgba(177,88,123,0)}}
+
+/* v0.18.0.39 – Push-varsler */
+.push-notification-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.push-notification-controls .settings-helper{width:100%;margin:0 0 2px}

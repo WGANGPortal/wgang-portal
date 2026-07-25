@@ -451,7 +451,112 @@
     const renderList=(target)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
     renderList($("profileNotificationList")); renderList($("whatsNewList"));
   }
+
+  // v0.18.0.39 – Web Push foundation.
+  // Offentlig VAPID-nøkkel fylles inn når sikker sender/Edge Function opprettes.
+  const WGANG_VAPID_PUBLIC_KEY = "";
+
+  function isStandalonePWA(){
+    return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+  }
+
+  function pushPlatform(){
+    const ua=navigator.userAgent||"";
+    if(/iPhone|iPad|iPod/i.test(ua)) return "ios";
+    if(/Android/i.test(ua)) return "android";
+    return "web";
+  }
+
+  function urlBase64ToUint8Array(base64String){
+    const padding="=".repeat((4-base64String.length%4)%4);
+    const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+    const raw=atob(base64);
+    return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0)));
+  }
+
+  async function currentPushSubscription(){
+    if(!("serviceWorker" in navigator)) return null;
+    const reg=await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+
+  async function renderPushNotificationSettings(){
+    const status=$("pushNotificationStatus");
+    const enable=$("enablePushNotifications");
+    const disable=$("disablePushNotifications");
+    if(!status||!enable||!disable) return;
+
+    const supported=("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window);
+    if(!supported){
+      status.textContent="Denne nettleseren støtter ikke Web Push.";
+      enable.disabled=true;
+      disable.classList.add("hidden");
+      return;
+    }
+
+    const platform=pushPlatform();
+    if(platform==="ios"&&!isStandalonePWA()){
+      status.textContent="På iPhone må WGANG Portal først legges til på Hjem-skjermen og åpnes derfra.";
+      enable.disabled=true;
+      disable.classList.add("hidden");
+      return;
+    }
+
+    const sub=await currentPushSubscription();
+    if(sub){
+      status.textContent="Push-varsler er aktivert på denne enheten.";
+      enable.classList.add("hidden");
+      disable.classList.remove("hidden");
+    }else{
+      status.textContent=Notification.permission==="denied"
+        ?"Varsler er blokkert i enhetens/nettleserens innstillinger."
+        :"Push-varsler er ikke aktivert på denne enheten.";
+      enable.classList.remove("hidden");
+      disable.classList.add("hidden");
+      enable.disabled=Notification.permission==="denied";
+    }
+  }
+
+  async function enablePushNotifications(){
+    try{
+      if(!WGANG_VAPID_PUBLIC_KEY){
+        alert("Push-fundamentet er installert. Offentlig VAPID-nøkkel må legges inn før abonnement kan aktiveres.");
+        return;
+      }
+      const permission=await Notification.requestPermission();
+      if(permission!=="granted"){
+        await renderPushNotificationSettings();
+        return;
+      }
+      const reg=await navigator.serviceWorker.ready;
+      const sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(WGANG_VAPID_PUBLIC_KEY)
+      });
+      await backend.savePushSubscription(sub,pushPlatform());
+      await renderPushNotificationSettings();
+    }catch(e){
+      console.error(e);
+      alert("Kunne ikke aktivere push-varsler.");
+    }
+  }
+
+  async function disablePushNotifications(){
+    try{
+      const sub=await currentPushSubscription();
+      if(sub){
+        await backend.removePushSubscription(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      await renderPushNotificationSettings();
+    }catch(e){
+      console.error(e);
+      alert("Kunne ikke deaktivere push-varsler.");
+    }
+  }
+
   function renderNotificationSettings() {
+    setTimeout(()=>renderPushNotificationSettings().catch(console.warn),0);
     const p=notificationPrefs(), set=(id,key)=>{const el=$(id);if(el)el.checked=!!p[key];};
     set("notifyAnnouncements","in_app_announcements");
     set("notifyDerbyChat","in_app_derby_chat");
@@ -2001,3 +2106,9 @@ else setTimeout(wgangInitBunnyPlanner,100);
 
   observer.observe(document.body,{childList:true,subtree:true});
 })();
+
+// v0.18.0.39 – push setting controls
+document.addEventListener("click",e=>{
+  if(e.target?.id==="enablePushNotifications") enablePushNotifications();
+  if(e.target?.id==="disablePushNotifications") disablePushNotifications();
+});

@@ -57,7 +57,42 @@
     const prefMap = {};
     (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
     const part = (participation || []).find(p => p.user_id === row.id);
-    return {
+    
+  async function savePushSubscription(subscription, platform) {
+    const user = await getAuthUser();
+    if (!user?.id) throw new Error("Du må være innlogget.");
+    const json = subscription.toJSON ? subscription.toJSON() : subscription;
+    const endpoint = json.endpoint;
+    const p256dh = json.keys?.p256dh;
+    const authKey = json.keys?.auth;
+    if (!endpoint || !p256dh || !authKey) throw new Error("Ugyldig push-abonnement.");
+    const { error } = await supabase.from("push_subscriptions").upsert({
+      user_id: user.id,
+      endpoint,
+      p256dh,
+      auth: authKey,
+      user_agent: navigator.userAgent || null,
+      platform: platform || null,
+      enabled: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "endpoint" });
+    if (error) throw error;
+    return true;
+  }
+
+  async function removePushSubscription(endpoint) {
+    const user = await getAuthUser();
+    if (!user?.id || !endpoint) return false;
+    const { error } = await supabase.from("push_subscriptions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("endpoint", endpoint);
+    if (error) throw error;
+    return true;
+  }
+
+return {
+    savePushSubscription, removePushSubscription,
       id: row.id,
       name: String(row.hay_day_name || "").toUpperCase(),
       role: row.role || "member",
