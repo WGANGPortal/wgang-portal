@@ -344,7 +344,7 @@
   const NOTIFICATION_DEFAULTS = {
     in_app_announcements:true,in_app_derby_chat:true,in_app_leadership_chat:true,
     in_app_membership_requests:true,in_app_pending_tips:true,in_app_derby_published:true,
-    in_app_derby_deadline_reminders:true,email_enabled:false
+    in_app_derby_deadline_reminders:true,in_app_social_activity:true,email_enabled:false
   };
   function notificationPrefs() { return Object.assign({}, NOTIFICATION_DEFAULTS, state.notifications?.preferences || {}); }
   function notificationRead() { return state.notifications?.readState || {}; }
@@ -352,17 +352,50 @@
   function buildNotifications() {
     const prefs=notificationPrefs(), read=notificationRead(), items=[];
     const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
-    const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
-    const latestPost=posts[0]; if(prefs.in_app_derby_chat && latestPost && newerThan(latestPost.publishedAt||latestPost.createdAt,read.derby_chat_seen_at)) items.push({category:"derby_chat",title:"Nytt innlegg i Derbyprat",text:latestPost.title||latestPost.body||"",route:"discussions",time:latestPost.publishedAt||latestPost.createdAt});
-    const latestMsg=msgs[msgs.length-1]; if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
-    if(hasPermission("notifications.admin.membership") && hasPermission("members.approve") && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
-    if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
-    const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
-    activity.forEach(n=>{
-      const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
-      items.push({category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at});
-    });
-    const next=state.derbyManagement?.next; if(hasPermission("notifications.important_derby") && prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)) items.push({category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
+    const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({group:"common",category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
+    const latestPost=posts[0]; if(prefs.in_app_derby_chat && latestPost && newerThan(latestPost.publishedAt||latestPost.createdAt,read.derby_chat_seen_at)) items.push({group:"common",category:"derby_chat",title:"Nytt innlegg i Derbyprat",text:latestPost.title||latestPost.body||"",route:"discussions",time:latestPost.publishedAt||latestPost.createdAt});
+    const latestMsg=msgs[msgs.length-1]; if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({group:"leadership",category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
+    if(hasPermission("notifications.admin.membership") && hasPermission("members.approve") && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({group:"leadership",category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
+    if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({group:"leadership",category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
+    if(prefs.in_app_social_activity){
+      const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
+      activity.forEach(n=>{
+        const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
+        items.push({group:"personal",category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at});
+      });
+    }
+
+    const next=state.derbyManagement?.next;
+    if(hasPermission("notifications.important_derby") && prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)){
+      items.push({group:"common",category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
+    }
+
+    // Personlig påminnelse: varsle bare medlemmet som selv mangler svar,
+    // fra 24 timer før påmeldingsfristen og frem til fristen.
+    if(prefs.in_app_derby_deadline_reminders && next?.signup_deadline){
+      const deadline=new Date(next.signup_deadline);
+      const reminderAt=new Date(deadline.getTime()-24*60*60*1000);
+      const now=Date.now();
+      const choice=String(current()?.choice||"waiting");
+      const missingChoice=!["joined","pause","unsure"].includes(choice);
+      if(
+        missingChoice &&
+        now>=reminderAt.getTime() &&
+        now<deadline.getTime() &&
+        newerThan(reminderAt.toISOString(),read.derby_deadline_seen_at)
+      ){
+        const deadlineText=new Intl.DateTimeFormat("nb-NO",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(deadline);
+        items.push({
+          group:"personal",
+          category:"derby_deadline",
+          title:"Du mangler derby-svar",
+          text:`Bekreft deltakelse eller pause før ${deadlineText}.`,
+          route:"derby",
+          time:reminderAt.toISOString()
+        });
+      }
+    }
+
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
@@ -383,8 +416,14 @@
   }
   function renderNotificationSettings() {
     const p=notificationPrefs(), set=(id,key)=>{const el=$(id);if(el)el.checked=!!p[key];};
-    set("notifyAnnouncements","in_app_announcements");set("notifyDerbyChat","in_app_derby_chat");set("notifyLeadershipChat","in_app_leadership_chat");set("notifyMembershipRequests","in_app_membership_requests");set("notifyPendingTips","in_app_pending_tips");
-    const derbyImportant=$("notifyImportantDerby"); if(derbyImportant)derbyImportant.checked=!!(p.in_app_derby_published||p.in_app_derby_deadline_reminders);
+    set("notifyAnnouncements","in_app_announcements");
+    set("notifyDerbyChat","in_app_derby_chat");
+    set("notifyLeadershipChat","in_app_leadership_chat");
+    set("notifyMembershipRequests","in_app_membership_requests");
+    set("notifyPendingTips","in_app_pending_tips");
+    set("notifyImportantDerby","in_app_derby_published");
+    set("notifyPersonalDerbyReminder","in_app_derby_deadline_reminders");
+    set("notifySocialActivity","in_app_social_activity");
     set("emailNotificationsEnabled","email_enabled");
   }
 
@@ -1484,7 +1523,8 @@
       in_app_membership_requests:!!$("notifyMembershipRequests")?.checked,
       in_app_pending_tips:!!$("notifyPendingTips")?.checked,
       in_app_derby_published:!!$("notifyImportantDerby")?.checked,
-      in_app_derby_deadline_reminders:!!$("notifyImportantDerby")?.checked,
+      in_app_derby_deadline_reminders:!!$("notifyPersonalDerbyReminder")?.checked,
+      in_app_social_activity:!!$("notifySocialActivity")?.checked,
       email_enabled:!!$("emailNotificationsEnabled")?.checked
     };
     try{

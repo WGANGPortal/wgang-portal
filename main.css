@@ -446,3 +446,12 @@ body:not(.admin-mode) .admin-only {
 @media (prefers-reduced-motion:reduce){
   .bunny-designer-card,.bunny-task-image,.bunny-interest-marker,.bunny-actions-two button,.bunny-edit-card{transition:none!important}
 }
+
+/* v0.18.0.36 – varslinger: felles / leder / personlig */
+.notification-setting-groups{display:grid;gap:16px;margin:14px 0}
+.notification-setting-group{padding:14px;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.45)}
+.notification-group-heading{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.notification-group-heading strong{font-size:14px;color:var(--text)}
+.notification-group-heading small{font-size:11px;color:var(--muted)}
+.notification-setting-group .notification-setting-list{margin:0}
+.notification-setting-group .notification-setting-list label{background:rgba(255,255,255,.55)}

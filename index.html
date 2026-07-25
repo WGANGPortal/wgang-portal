@@ -280,14 +280,33 @@
         <div class="profile-divider"></div>
         <section class="notification-settings" id="notificationSettings">
           <h3>Varslingsinnstillinger</h3>
-          <p class="helper-text">Velg hvilke varsler du ønsker. E-postvarsling er frivillig og selve e-postutsendingen kobles på i et senere steg.</p>
-          <div class="notification-setting-list">
-            <label><input type="checkbox" id="notifyAnnouncements"> Nye kunngjøringer</label>
-            <label><input type="checkbox" id="notifyDerbyChat"> Nye innlegg i Derbyprat</label>
-            <label class="leadership-only"><input type="checkbox" id="notifyLeadershipChat"> Nye innlegg i Lederprat</label>
-            <label class="admin-only"><input type="checkbox" id="notifyMembershipRequests"> Nye medlemssøknader</label>
-            <label class="admin-only"><input type="checkbox" id="notifyPendingTips"> Tips som venter på behandling</label>
-            <label><input type="checkbox" id="notifyImportantDerby"> Viktige derbyvarsler</label>
+          <p class="helper-text">Velg hvilke tillatte varsler du ønsker. Rolle og rettigheter bestemmer alltid hvilke saker du kan varsles om.</p>
+          <div class="notification-setting-groups">
+            <div class="notification-setting-group">
+              <div class="notification-group-heading"><strong>Fellesvarsler</strong><small>Informasjon som er relevant for hele nabolaget.</small></div>
+              <div class="notification-setting-list">
+                <label><input type="checkbox" id="notifyAnnouncements"> Nye kunngjøringer</label>
+                <label><input type="checkbox" id="notifyDerbyChat"> Nye innlegg i Derbyprat</label>
+                <label><input type="checkbox" id="notifyImportantDerby"> Viktige derbyvarsler</label>
+              </div>
+            </div>
+
+            <div class="notification-setting-group leadership-only">
+              <div class="notification-group-heading"><strong>Ledervarsler</strong><small>Vises bare når rollen din har tilgang til saken.</small></div>
+              <div class="notification-setting-list">
+                <label><input type="checkbox" id="notifyLeadershipChat"> Nye innlegg i Lederprat</label>
+                <label class="admin-only"><input type="checkbox" id="notifyMembershipRequests"> Nye medlemssøknader</label>
+                <label class="admin-only"><input type="checkbox" id="notifyPendingTips"> Tips/innlegg som venter på behandling</label>
+              </div>
+            </div>
+
+            <div class="notification-setting-group">
+              <div class="notification-group-heading"><strong>Personlige varsler</strong><small>Varsler som gjelder deg eller din egen aktivitet.</small></div>
+              <div class="notification-setting-list">
+                <label><input type="checkbox" id="notifySocialActivity"> Kommentarer og likerklikk på mine innlegg</label>
+                <label><input type="checkbox" id="notifyPersonalDerbyReminder"> Påminn meg hvis jeg mangler derby-svar nær fristen</label>
+              </div>
+            </div>
           </div>
           <div class="profile-divider"></div>
           <label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>
