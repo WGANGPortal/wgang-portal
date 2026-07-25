@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.36-notification-foundation";
+const CACHE_NAME = "wgang-v0.18.0.37-chat-activity";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",

@@ -353,8 +353,43 @@
     const prefs=notificationPrefs(), read=notificationRead(), items=[];
     const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
     const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({group:"common",category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
-    const latestPost=posts[0]; if(prefs.in_app_derby_chat && latestPost && newerThan(latestPost.publishedAt||latestPost.createdAt,read.derby_chat_seen_at)) items.push({group:"common",category:"derby_chat",title:"Nytt innlegg i Derbyprat",text:latestPost.title||latestPost.body||"",route:"discussions",time:latestPost.publishedAt||latestPost.createdAt});
-    const latestMsg=msgs[msgs.length-1]; if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg && newerThan(latestMsg.createdAt,read.leadership_chat_seen_at) && latestMsg.userId!==current()?.id) items.push({group:"leadership",category:"leadership_chat",title:"Nytt i Lederprat",text:`Fra ${latestMsg.authorName}`,route:"leadership",time:latestMsg.createdAt});
+    // Varsle på nyeste uleste aktivitet fra andre – innlegg ELLER kommentar.
+    // Dette påvirker kun varslingsdeteksjon; eksisterende engangs-fokus/scrollfix beholdes urørt.
+    const activityTime=x=>x?.createdAt||x?.created_at||x?.publishedAt||x?.published_at;
+    const activityUser=x=>x?.userId||x?.user_id||x?.authorId||x?.author_id;
+    const activityText=x=>x?.text||x?.body||x?.comment||x?.title||"";
+    const commentsOf=x=>x?.comments||x?.replies||[];
+
+    const newestUnreadActivity=(entries,seenAt)=>{
+      const found=[];
+      (entries||[]).forEach(entry=>{
+        const et=activityTime(entry);
+        if(et && String(activityUser(entry)||"")!==String(current()?.id||"") && newerThan(et,seenAt))
+          found.push({kind:"post",time:et,text:activityText(entry),entryId:entry.id});
+        commentsOf(entry).forEach(comment=>{
+          const ct=activityTime(comment);
+          if(ct && String(activityUser(comment)||"")!==String(current()?.id||"") && newerThan(ct,seenAt))
+            found.push({kind:"comment",time:ct,text:activityText(comment),entryId:entry.id,commentId:comment.id});
+        });
+      });
+      return found.sort((a,b)=>new Date(b.time)-new Date(a.time))[0]||null;
+    };
+
+    const latestPost=newestUnreadActivity(posts,read.derby_chat_seen_at);
+    if(prefs.in_app_derby_chat && latestPost) items.push({
+      group:"common",category:"derby_chat",
+      title:latestPost.kind==="comment"?"Ny kommentar i Derbyprat":"Nytt innlegg i Derbyprat",
+      text:latestPost.text||"",route:"discussions",time:latestPost.time,
+      focusEntryId:latestPost.entryId,focusCommentId:latestPost.commentId||null
+    });
+
+    const latestMsg=newestUnreadActivity(msgs,read.leadership_chat_seen_at);
+    if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg) items.push({
+      group:"leadership",category:"leadership_chat",
+      title:latestMsg.kind==="comment"?"Ny kommentar i Lederprat":"Nytt i Lederprat",
+      text:latestMsg.text||"",route:"leadership",time:latestMsg.time,
+      focusEntryId:latestMsg.entryId,focusCommentId:latestMsg.commentId||null
+    });
     if(hasPermission("notifications.admin.membership") && hasPermission("members.approve") && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({group:"leadership",category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
     if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({group:"leadership",category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
     if(prefs.in_app_social_activity){
