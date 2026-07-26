@@ -102,7 +102,7 @@
     "Prat om ukens derby":"Talk about this week's Derby","Del strategi, spørsmål og koordinering med nabolaget.":"Share strategy, questions and coordination with the Neighborhood.",
     "Et lukket rom for lederne.":"A private space for the leadership team.","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to the WGANG leadership team.",
     "Vokser med WGANG":"Growing with WGANG","320 poeng – og en tavle som holdes i bevegelse":"320 points – and a task board that keeps moving",
-    "I Standard Derby er hovedregelen enkel: Vi tar oppgaver med 320 poeng. Admin rydder bort oppgaver som få eller ingen ønsker, slik at nye og bedre oppgaver får plass på tavla. Oppgavepreferansene hjelper admin å se hvilke 320-oppgaver som passer nabolaget best.":"In Standard Derby, the main rule is simple: we take 320-point tasks. Admins remove tasks that few or no one wants, making room for new and better tasks on the board. Members' task preferences help admins see which 320-point tasks suit the Neighborhood best.",
+    "I Normal Derby er hovedregelen enkel: Vi tar oppgaver med 320 poeng. Admin rydder bort oppgaver som få eller ingen ønsker, slik at nye og bedre oppgaver får plass på tavla. Oppgavepreferansene hjelper admin å se hvilke 320-oppgaver som passer nabolaget best.":"In Normal Derby, the main rule is simple: we take 320-point tasks. Admins remove tasks that few or no one wants, making room for new and better tasks on the board. Members' task preferences help admins see which 320-point tasks suit the Neighborhood best.",
     "HØSTING":"HARVESTING","Forbered før du tar oppgaven":"Prepare before taking the task","Plant avlinger med lang veksttid på forhånd når du forventer en høsteoppgave. Da kan mye være klart til innhøsting idet du tar oppgaven.":"Plant long-growing crops in advance when you expect a harvesting task. That way, much of the crop can be ready to harvest as soon as you take the task.",
     "PRODUKSJON":"PRODUCTION","La varene vente ferdige":"Leave finished products ready","Produser aktuelle varer før du tar oppgaven, og la dem ligge ferdige i maskinene når det er mulig. Ta oppgaven først når du er klar til å samle inn.":"Produce the relevant items before taking the task, and leave them finished in the machines whenever possible. Take the task only when you are ready to collect them.",
     "BYEN":"TOWN","Bruk Town Hall strategisk":"Use the Town Hall strategically","La ferdig betjente besøkende stå klare uten å samle dem inn. Når du har nok besøkende klare, tar du derbyoppgaven og samler dem inn for å få en rask start – eller fullføre oppgaven raskt.":"Leave fully served visitors ready without collecting them. Once you have enough visitors prepared, take the Derby task and collect them for a fast start – or to complete the task quickly.",
@@ -115,7 +115,7 @@
     "BYGGES SAMMEN":"BUILT TOGETHER","Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips & triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.":"More tips, strategies and experiences will be added over time. WGANG Tips & Tricks will grow from the Neighborhood's own feedback and what members find works best in practice."
   };
   const DYNAMIC_EN = {
-    "Standard Derby":"Standard Derby","Bingo Derby":"Bingo Derby","Styrke Derby":"Power Derby","Blomsterderby":"Blossom Derby","Harepusderby":"Bunny Derby","Chill Derby":"Chill Derby","Chill Harepus Derby":"Chill Bunny Derby","Mystery Derby":"Mystery Derby",
+    "Standard Derby":"Normal Derby","Normal Derby":"Normal Derby","Bingo Derby":"Bingo Derby","Styrke Derby":"Power Derby","Blomsterderby":"Blossom Derby","Harepusderby":"Bunny Derby","Chill Derby":"Chill Derby","Chill Harepus Derby":"Chill Bunny Derby","Mystery Derby":"Mystery Derby",
     "WGANG har som mål å ta oppgaver med 320 poeng.":"WGANG aims to take 320-point tasks.",
     "Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at oppgavetavla holdes i bevegelse.":"Admins remove tasks the Neighborhood rarely wants so the task board keeps moving.",
     "Medlemmenes oppgavepreferanser brukes for å vurdere hvilke oppgaver som bør få stå.":"Members' task preferences are used to decide which tasks should remain on the board.",
@@ -163,7 +163,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Standard Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -1320,15 +1320,20 @@
       const start = new Date(event.start_at);
       const end = event.end_at ? new Date(event.end_at) : null;
       if (!Number.isNaN(start.getTime()) && now >= start && (!end || Number.isNaN(end.getTime()) || now < end)) return "active";
-      if (end && !Number.isNaN(end.getTime()) && now >= end) return "planning";
       if (!Number.isNaN(start.getTime()) && now < start) return "planning";
+      // Etter et avsluttet publisert derby bruker vi ukerytmen under for neste derby.
     }
     const p = bunnyOsloParts();
     const osloDay = new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
-    const afterTuesdayStart = osloDay === 2 && p.h >= 10;
-    const midDerbyWeek = osloDay >= 3 || osloDay === 0;
-    const mondayBeforeEnd = osloDay === 1 && p.h < 10;
-    return (afterTuesdayStart || midDerbyWeek || mondayBeforeEnd) ? "active" : "planning";
+    const mins = p.h * 60 + (p.mi || 0);
+    // Fast WGANG-rytme:
+    // Søndag 18:00 -> tirsdag 10:00: planlegging/påmelding til neste derby.
+    // Tirsdag 10:00 -> søndag 18:00: pågående derby.
+    const planning =
+      (osloDay === 0 && mins >= 18*60) ||
+      osloDay === 1 ||
+      (osloDay === 2 && mins < 10*60);
+    return planning ? "planning" : "active";
   }
 
   let dashboardCountdownTimer = null;
@@ -1485,7 +1490,8 @@
   function renderDashboardDerbyFocus(d, event) {
     const phase = derbyDashboardPhase(event);
     const active = phase === "active";
-    const type = d.type || "Derby";
+    const rawType = d.type || "Derby";
+    const type = /^Standard Derby$/i.test(rawType) ? "Normal Derby" : rawType;
     const shortType = type.replace(/\s*Derby$/i, "");
     const bunny = /bunny|harepus/i.test(type);
 
@@ -1497,7 +1503,7 @@
     if (bunny && !active) setText("dashboardDerbyType", "Planlegg neste harepus");
     setText("dashboardDerbyFocusText", active
       ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Planlegg deltakelse og strategi før derbyet starter."));
+      : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
     setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "preferences" : "derby";
@@ -1514,13 +1520,13 @@
 
   function renderTaskHubContext(){
     const event=state.derbyManagement?.next;
-    const type=String(event?.name||state.derby?.type||"Standard Derby");
-    const bunny=/bunny|harepus/i.test(type), standard=/standard/i.test(type);
+    const type=String(event?.name||state.derby?.type||"Normal Derby");
+    const bunny=/bunny|harepus/i.test(type), standard=/standard|normal/i.test(type);
     $("standardTaskHub")?.classList.toggle("hidden",!standard);
     $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
     $("genericTaskHub")?.classList.toggle("hidden",standard||bunny);
     if(bunny){setText("taskHubEyebrow","HAREPUS DERBY");setText("taskHubTitle","Oppgaver i neste harepus");setText("taskHubIntro","Planlegg oppgavene sammen og se felles interesse før neste harepus.");}
-    else if(standard){setText("taskHubEyebrow","STANDARD DERBY");setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");}
+    else if(standard){setText("taskHubEyebrow","NORMAL DERBY");setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");}
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
 
@@ -1538,7 +1544,7 @@
       description: next.description,
       rules: Array.isArray(next.rules) ? next.rules : []
     } : state.derby;
-    $("derbyType").textContent = d.type; $("dashboardDerbyType").textContent = d.type;
+    $("derbyType").textContent = /^Standard Derby$/i.test(d.type) ? "Normal Derby" : d.type; $("dashboardDerbyType").textContent = /^Standard Derby$/i.test(d.type) ? "Normal Derby" : d.type;
     renderDashboardDerbyFocus(d, next);
     renderTaskHubContext();
     const phase = derbyDashboardPhase(next);
