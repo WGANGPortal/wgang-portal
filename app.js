@@ -349,6 +349,72 @@
   function notificationPrefs() { return Object.assign({}, NOTIFICATION_DEFAULTS, state.notifications?.preferences || {}); }
   function notificationRead() { return state.notifications?.readState || {}; }
   function newerThan(value, seen) { return value && new Date(value).getTime() > new Date(seen || "1970-01-01").getTime(); }
+  let pendingNotificationFocus=null;
+
+  function focusNotificationTargetOnce(){
+    const target=pendingNotificationFocus;
+    if(!target) return false;
+
+    const escId=value=>{
+      const raw=String(value);
+      return window.CSS?.escape ? CSS.escape(raw) : raw.replace(/["\\]/g,"\\$&");
+    };
+
+    const selectors=[];
+    if(target.commentId){
+      selectors.push(`[data-comment-id="${escId(target.commentId)}"]`);
+    }
+    if(target.entryId){
+      selectors.push(
+        `[data-post-id="${escId(target.entryId)}"]`,
+        `[data-message-id="${escId(target.entryId)}"]`
+      );
+    }
+
+    let el=null;
+    for(const selector of selectors){
+      try{ el=document.querySelector(selector); }catch(_){}
+      if(el) break;
+    }
+    if(!el) return false;
+
+    pendingNotificationFocus=null;
+
+    // If the target is a comment, open its comment area before positioning.
+    const comments=el.closest("[data-comments-for]");
+    if(comments) comments.classList.remove("hidden");
+
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+    el.classList.add("notification-focus-target");
+    setTimeout(()=>el.classList.remove("notification-focus-target"),2200);
+    return true;
+  }
+
+  function openNotificationTarget(route,entryId,commentId){
+    pendingNotificationFocus={entryId:entryId||null,commentId:commentId||null};
+    navigate(route||"dashboard");
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(!focusNotificationTargetOnce()){
+        // One fallback after rendering only. No repeating auto-scroll.
+        setTimeout(()=>focusNotificationTargetOnce(),220);
+      }
+    }));
+  }
+
+  function consumeNotificationFocusFromUrl(){
+    try{
+      const q=new URLSearchParams(location.search);
+      const entryId=q.get("focusEntry");
+      const commentId=q.get("focusComment");
+      if(!entryId&&!commentId) return;
+      const route=(location.hash||"#dashboard").replace(/^#/,"").split(/[/?]/)[0]||"dashboard";
+      openNotificationTarget(route,entryId,commentId);
+      q.delete("focusEntry"); q.delete("focusComment");
+      const clean=location.pathname+(q.toString()?`?${q.toString()}`:"")+location.hash;
+      history.replaceState(null,"",clean);
+    }catch(e){console.warn(e);}
+  }
+
   function buildNotifications() {
     const prefs=notificationPrefs(), read=notificationRead(), items=[];
     const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
@@ -396,7 +462,10 @@
       const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
       activity.forEach(n=>{
         const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
-        items.push({group:"personal",category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at});
+        const matchingComment=n.activity_type==="comment"
+          ? (socialData().comments||[]).filter(c=>String(c.target_type)===String(n.target_type)&&String(c.target_id)===String(n.target_id)&&String(c.user_id)===String(n.actor_id)).sort((x,y)=>Math.abs(new Date(x.created_at)-new Date(n.created_at))-Math.abs(new Date(y.created_at)-new Date(n.created_at)))[0]
+          : null;
+        items.push({group:"personal",category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at,focusEntryId:n.target_id||null,focusCommentId:matchingComment?.id||null});
       });
     }
 
@@ -436,9 +505,9 @@
   async function openNotification(item) {
     try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
-    if(item.focusEntryId||item.focusCommentId) pendingNotificationFocus={entryId:item.focusEntryId||null,commentId:item.focusCommentId||null};
-    if(item.admin) showAdminModule(item.admin); else navigate(item.route||"dashboard");
-    if(item.focusEntryId||item.focusCommentId) setTimeout(focusNotificationTargetOnce,120);
+    if(item.admin) showAdminModule(item.admin);
+    else if(item.focusEntryId||item.focusCommentId) openNotificationTarget(item.route||"dashboard",item.focusEntryId,item.focusCommentId);
+    else navigate(item.route||"dashboard");
     renderNotifications();
   }
   function renderNotifications() {
@@ -601,6 +670,7 @@
     loadBunny();
     translateUi(portal);
     queueVisibleTranslations();
+    setTimeout(consumeNotificationFocusFromUrl,120);
   }
 
   const BUNNY_DEFAULT_TASKS = [
@@ -637,13 +707,22 @@
   }
   function bunnyIsStale(){if(!bunnyData.board?.published_at)return true;const now=new Date(),cut=new Date(now);cut.setHours(10,0,0,0);if(now<cut)cut.setDate(cut.getDate()-1);return new Date(bunnyData.board.published_at)<cut;}
   async function loadBunny(){try{bunnyData=await backend.getBunnyData();if(!bunnyData.library?.length && backend.mode==="local"){bunnyData.library=BUNNY_DEFAULT_TASKS;bunnyData.board={id:1,published_at:new Date().toISOString(),active:true};bunnyData.boardTasks=BUNNY_DEFAULT_TASKS.map(x=>({task_id:x.id}));localStorage.setItem("wgang_bunny_v018",JSON.stringify(bunnyData));}}catch(e){console.warn("Chill Bunny data unavailable",e);bunnyData={library:[],board:null,boardTasks:[],statuses:[]};}renderBunny();}
+  const BUNNY_PNG_IMAGE_KEYS=new Set(["rustikk-bukett", "dame", "danser", "ris", "popkorn-med-smor", "genser", "bygjester-kafe", "bjornebaer-muffins", "olivenolje", "sukkerror"]);
+  function bunnyTaskImageUrl(task){
+    if(!task?.image_key) return "";
+    const key=String(task.image_key).replace(/_/g,"-");
+    if(BUNNY_PNG_IMAGE_KEYS.has(key)){
+      return `task-${key}.png${key==="sukkerror"?"?v=2":""}`;
+    }
+    return `task-${key}.webp`;
+  }
   function renderBunny(){
     const grid=$("bunnyTaskGrid");if(!grid)return;const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));const uid=current()?.id;
     const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const planned=mine.filter(x=>["ready","preparing"].includes(x.status));const event=state.derbyManagement?.next,cycle=bunnyPlannerCycle(event);
     $("bunnyReadyCount").textContent=`${planned.length} valgt`;$("bunnyPlanCount").textContent=`${planned.length} valgt`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
     const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}`:""}`;}
     const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png","Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"};
-    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const img=(t.image_key&&(String(t.image_key).replace(/_/g,"-")==="sukkerror"?"task-sukkerror.png?v=2":`task-${String(t.image_key).replace(/_/g,"-")}.webp`))||images[t.name];const desc=String(t.description||t.name||"").replace(/\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">× ${t.amount}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const img=bunnyTaskImageUrl(t)||images[t.name];const desc=String(t.description||t.name||"").replace(/\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">× ${t.amount}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
     grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{const fallback=document.createElement("div");fallback.className="bunny-task-icon";fallback.textContent=img.dataset.fallbackIcon||"🐰";img.replaceWith(fallback);},{once:true}));
     grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board||!cycle)return;const old=mine.find(x=>String(x.task_id)===String(b.dataset.taskId));try{if(old?.status===b.dataset.bunnyStatus||(b.dataset.bunnyStatus==="preparing"&&old?.status==="ready"))await backend.clearBunnyStatus(bunnyData.board.id,b.dataset.taskId);else await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus,cycle.key,cycle.eventId,cycle.round,cycle.start.toISOString(),cycle.end.toISOString());await loadBunny();}catch(e){alert(humanError(e));}});
     const plan=$("bunnyMyPlan");plan.innerHTML=planned.length?planned.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca;}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.name)} ×${t.amount}</span>`:"";}).join(""):`<span class="helper-text">Ingen oppgaver valgt til neste harepus ennå.</span>`;renderBunnyAdmin();
@@ -982,7 +1061,7 @@
       const author=state.accounts.find(a=>String(a.id)===String(cm.user_id));
       const tr=currentLanguage==="en"?translationFor("comment",cm.id):null;
       const canDelete=String(cm.user_id)===String(current()?.id) || (type==="community"&&isAdmin()) || (type==="leadership"&&isOwner());
-      return `<div class="social-comment"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p>${canDelete?`<button class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>`;
+      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p>${canDelete?`<button class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>`;
     }).join("");
     return `<div class="social-bar"><button class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-id="${item.id}" data-liked="${liked}">👍🏼 <span>${likes.length}</span></button><button class="social-comment-toggle" data-comment-toggle="${type}:${item.id}">💬 <span>${comments.length}</span></button></div><div class="social-comments hidden" data-comments-for="${type}:${item.id}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div><form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form></div>`;
   }
@@ -1020,7 +1099,7 @@
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
     const actions = options.admin ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
-    return `<article class="content-post"><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item)}</article>`;
+    return `<article class="content-post" data-post-id="${item.id}"><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item)}</article>`;
   }
 
   function renderContent() {
@@ -1091,7 +1170,7 @@
     list.innerHTML = messages.length ? messages.map((m,i) => {
       const own = m.userId === current()?.id;
       const canDelete = own || hasPermission("chat.moderate");
-      const view=translatedContent("leadership",m); const unreadMark=i===firstUnreadIndex?`<div class="chat-unread-divider" id="leadershipUnreadStart">Nye innlegg</div>`:""; return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
+      const view=translatedContent("leadership",m); const unreadMark=i===firstUnreadIndex?`<div class="chat-unread-divider" id="leadershipUnreadStart">Nye innlegg</div>`:""; return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
     }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
     if(firstUnreadIndex>=0){
       const newerCount=messages.length-firstUnreadIndex;
@@ -1926,6 +2005,11 @@
   };
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(console.error));
+    navigator.serviceWorker.addEventListener("message",event=>{
+      const d=event.data||{};
+      if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
+      openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
+    });
   }
 })();
 

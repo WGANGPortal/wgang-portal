@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.39-push-foundation";
+const CACHE_NAME = "wgang-v0.18.0.42-consolidated";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
@@ -71,7 +71,12 @@ const APP_SHELL = [
   "/task-rustikk-bukett.png",
   "/task-dame.png",
   "/task-danser.png",
-  "/task-ris.png"
+  "/task-ris.png",
+  "/task-popkorn-med-smor.png",
+  "/task-genser.png",
+  "/task-bygjester-kafe.png",
+  "/task-bjornebaer-muffins.png",
+  "/task-olivenolje.png"
 ];
 self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); self.clients.claim(); });
