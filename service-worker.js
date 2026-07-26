@@ -67,7 +67,11 @@ const APP_SHELL = [
   "/task-malm.webp",
   "/task-chilipepper.webp",
   "/task-fisk-med-sluk.webp",
-  "/task-sukkerror.png"
+  "/task-sukkerror.png",
+  "/task-rustikk-bukett.png",
+  "/task-dame.png",
+  "/task-danser.png",
+  "/task-ris.png"
 ];
 self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); self.clients.claim(); });
