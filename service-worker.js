@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.44-normal-derby-signup";
+const CACHE_NAME = "wgang-v0.18.0.45-weekly-derby-transition";
 const APP_SHELL = [
   "/", "/index.html", "/main.css", "/app.js", "/backend.js", "/config.js",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",

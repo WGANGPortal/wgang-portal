@@ -1315,26 +1315,53 @@
   }
 
   function derbyDashboardPhase(event) {
-    const now = new Date();
-    if (event?.start_at) {
-      const start = new Date(event.start_at);
-      const end = event.end_at ? new Date(event.end_at) : null;
-      if (!Number.isNaN(start.getTime()) && now >= start && (!end || Number.isNaN(end.getTime()) || now < end)) return "active";
-      if (!Number.isNaN(start.getTime()) && now < start) return "planning";
-      // Etter et avsluttet publisert derby bruker vi ukerytmen under for neste derby.
-    }
     const p = bunnyOsloParts();
     const osloDay = new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
     const mins = p.h * 60 + (p.mi || 0);
-    // Fast WGANG-rytme:
-    // Søndag 18:00 -> tirsdag 10:00: planlegging/påmelding til neste derby.
-    // Tirsdag 10:00 -> søndag 18:00: pågående derby.
+
+    // Fast WGANG-fokus:
+    // Søndag 18:00 -> tirsdag 10:00 = neste derby/påmelding.
+    // Denne regelen har prioritet selv om forrige derby fortsatt teknisk pågår.
     const planning =
       (osloDay === 0 && mins >= 18*60) ||
       osloDay === 1 ||
       (osloDay === 2 && mins < 10*60);
-    return planning ? "planning" : "active";
+
+    if (planning) return "planning";
+
+    const now = new Date();
+    if (event?.start_at) {
+      const start = new Date(event.start_at);
+      const end = event.end_at ? new Date(event.end_at) : null;
+      if (!Number.isNaN(start.getTime()) && now >= start &&
+          (!end || Number.isNaN(end.getTime()) || now < end)) return "active";
+      if (!Number.isNaN(start.getTime()) && now < start) return "planning";
+    }
+    return "active";
   }
+
+  let derbyPhaseWatcherKey = "";
+  function currentDerbyPhaseWatcherKey(){
+    const p=bunnyOsloParts();
+    const day=new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
+    const mins=p.h*60+(p.mi||0);
+    const planning=(day===0&&mins>=18*60)||day===1||(day===2&&mins<10*60);
+    return `${p.y}-${p.mo}-${p.d}:${planning?"planning":"active"}`;
+  }
+  async function checkDerbyPhaseBoundary(){
+    const key=currentDerbyPhaseWatcherKey();
+    if(!derbyPhaseWatcherKey){derbyPhaseWatcherKey=key;return;}
+    if(key===derbyPhaseWatcherKey)return;
+    derbyPhaseWatcherKey=key;
+    try{await refreshState();}catch(e){console.warn("Kunne ikke oppdatere derbyfase:",e);}
+  }
+  setInterval(checkDerbyPhaseBoundary,30000);
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible"){
+      checkDerbyPhaseBoundary();
+      refreshState().catch(e=>console.warn("Kunne ikke oppdatere derby ved gjenåpning:",e));
+    }
+  });
 
   let dashboardCountdownTimer = null;
 

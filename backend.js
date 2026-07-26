@@ -139,6 +139,17 @@ return {
     if (own.status !== "approved") {
       return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
     }
+    // Søndag 18:00 -> tirsdag 10:00: sørg for at neste derby finnes.
+    // Funksjonen er idempotent og oppretter bare en Normal-standard dersom ledelsen
+    // ikke allerede har opprettet et derby for neste tirsdag.
+    try {
+      const { error: weeklyDerbyError } = await client.rpc("ensure_weekly_derby_transition");
+      if (weeklyDerbyError && weeklyDerbyError.code !== "PGRST202") {
+        console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
+      }
+    } catch (weeklyDerbyError) {
+      console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
+    }
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
