@@ -50,7 +50,7 @@
     "Ingen data":"No data","Ingen preferanser registrert ennå.":"No task preferences registered yet.",
     "Ingen medlemmer matcher søket.":"No members match the search.",
     "Profil":"Profile","Rediger profil":"Edit profile","Lagre profil":"Save profile","Om meg":"About me",
-    "Kjønn":"Gender","Aldersgruppe":"Age group","Land / sted":"Country / place",
+    "Aldersgruppe":"Age group","Land":"Country","Personvern":"Privacy","Bruksregler":"Rules","Personvern og data":"Privacy and data",
     "Hvor lenge har du spilt Hay Day?":"How long have you played Hay Day?","Hva liker du best i spillet?":"What do you like most about the game?",
     "Frivillig å fylle ut.":"Optional to fill in.","Ingen profilinformasjon er delt ennå.":"No profile information has been shared yet.",
     "Norsk":"Norwegian","Engelsk":"English",
@@ -163,7 +163,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -174,6 +174,7 @@
   }
   const portalMain = $("portalMain");
   const auth = $("authDialog");
+  const legalAcceptanceDialog = $("legalAcceptanceDialog");
   const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
   const taskRange = $("taskRange");
@@ -300,9 +301,20 @@
     translateUi(document);
   }
 
+  function legalAcceptanceRequired() {
+    return typeof backend.legalAcceptanceRequired === "function" && backend.legalAcceptanceRequired(state);
+  }
+
+  function showLegalAcceptanceDialog() {
+    closeDialog(auth);
+    if (legalAcceptanceDialog && !legalAcceptanceDialog.open) showDialog(legalAcceptanceDialog);
+    document.body.classList.add("modal-open");
+  }
+
   function openPortal() {
     const user = current();
     if (!user || !user.approved) { openAuth("login"); return; }
+    if (legalAcceptanceRequired()) { showLegalAcceptanceDialog(); return; }
     landing.classList.add("hidden");
     portal.classList.remove("hidden");
     portal.setAttribute("aria-hidden", "false");
@@ -326,6 +338,8 @@
     document.body.classList.remove("admin-mode");
     document.body.classList.remove("leadership-mode");
     document.body.classList.remove("owner-mode");
+    closeDialog(legalAcceptanceDialog);
+    document.body.classList.remove("modal-open");
     sidebar.classList.remove("open");
     location.hash = "landing";
     window.scrollTo(0, 0);
@@ -934,9 +948,9 @@
     $("memberProfileRole").textContent = roleLabel(account.role);
     $("memberProfileBio").textContent = account.bio || "Ingen profilinformasjon er delt ennå.";
     const details = [];
-    if (account.gender) details.push(["Kjønn", account.gender]);
-    if (account.ageGroup) details.push(["Aldersgruppe", account.ageGroup]);
-    if (account.countryPlace) details.push(["Land / sted", account.countryPlace]);
+    const allowedAgeGroups = new Set(["Under 18","18–29","30–44","45–59","60+"]);
+    if (allowedAgeGroups.has(account.ageGroup)) details.push(["Aldersgruppe", account.ageGroup]);
+    if (account.countryPlace) details.push(["Land", account.countryPlace]);
     if (account.hayDaySince) details.push(["Hvor lenge har du spilt Hay Day?", account.hayDaySince]);
     if (account.favoriteGameAspect) details.push(["Hva liker du best i spillet?", account.favoriteGameAspect]);
     const spokenLanguages=[...(account.languages||[])].map(x=>x==="no"?"Norsk":x==="en"?"Engelsk":x);
@@ -946,8 +960,7 @@
     $("profileEditSection").classList.toggle("hidden", !editable);
     if (editable) {
       $("profileBioInput").value = account.bio || "";
-      $("profileGenderInput").value = account.gender || "";
-      $("profileAgeInput").value = account.ageGroup || "";
+      $("profileAgeInput").value = allowedAgeGroups.has(account.ageGroup) ? account.ageGroup : "";
       $("profileCountryInput").value = account.countryPlace || "";
       $("profileSinceInput").value = account.hayDaySince || "";
       $("profileFavoriteInput").value = account.favoriteGameAspect || "";
@@ -1717,9 +1730,37 @@
     setBusy(false);
   };
 
+  if (legalAcceptanceDialog) {
+    legalAcceptanceDialog.addEventListener("cancel", event => event.preventDefault());
+  }
+  if ($("legalAcceptanceForm")) $("legalAcceptanceForm").onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    const msg=$("legalAcceptanceMessage"); msg.textContent="";
+    if (!$("legalAcceptanceConfirm")?.checked) {
+      msg.textContent="Du må bekrefte før du kan fortsette.";
+      return;
+    }
+    setBusy(true);
+    try {
+      const accepted=await backend.acceptLegalDocuments();
+      state.legalAcceptance=accepted;
+      closeDialog(legalAcceptanceDialog);
+      document.body.classList.remove("modal-open");
+      $("legalAcceptanceForm").reset();
+      openPortal();
+    } catch(error) {
+      msg.textContent=humanError(error,"Kunne ikke registrere bekreftelsen.");
+    }
+    setBusy(false);
+  };
+
   $("registerForm").onsubmit = async e => {
     e.preventDefault(); if (busy) return;
     const msg = $("registerMessage"); msg.classList.remove("success"); msg.textContent = "";
+    if (!$("legalConfirm")?.checked) {
+      msg.textContent = "Du må lese personverninformasjonen og godta bruksreglene før søknaden sendes.";
+      return;
+    }
     setBusy(true);
     try {
       const result = await backend.signUp($("registerName").value.trim().toUpperCase(), $("registerEmail").value.trim().toLowerCase(), $("registerPassword").value);
@@ -1824,11 +1865,11 @@
     return new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{day:"numeric",month:"long",year:"numeric"}).format(d);
   }
   function showProfileHubSection(section="menu") {
-    ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount"].forEach(id=>{
+    ["profileHubMenu","profileHubNotifications","profileHubSettings","profileHubProfile","profileHubAccount","profileHubPrivacy"].forEach(id=>{
       const el=$(id);
       if(el){ el.classList.add("hidden"); el.setAttribute("aria-hidden","true"); }
     });
-    const map={menu:"profileHubMenu",notifications:"profileHubNotifications",settings:"profileHubSettings",profile:"profileHubProfile",account:"profileHubAccount"};
+    const map={menu:"profileHubMenu",notifications:"profileHubNotifications",settings:"profileHubSettings",profile:"profileHubProfile",account:"profileHubAccount",privacy:"profileHubPrivacy"};
     const active=$(map[section]||map.menu);
     if(active){ active.classList.remove("hidden"); active.setAttribute("aria-hidden","false"); }
     if(section==="settings"){
@@ -1842,6 +1883,19 @@
       if($("accountEmail")) $("accountEmail").textContent=accountEmailValue(u);
       if($("accountRole")) $("accountRole").textContent=roleLabel(u?.role);
       if($("accountMemberSince")) $("accountMemberSince").textContent=accountMemberSinceValue(u);
+    }
+    if(section==="privacy"){
+      const versions=typeof backend.legalVersions==="function" ? backend.legalVersions() : {privacy:"2026-07-29",rules:"2026-07-29"};
+      if($("legalDocumentVersion")) $("legalDocumentVersion").textContent=versions.privacy===versions.rules ? versions.privacy : `${versions.privacy} / ${versions.rules}`;
+      const accepted=state.legalAcceptance;
+      if($("legalAcceptanceStatus")){
+        if(accepted?.acknowledged_at){
+          const date=new Date(accepted.acknowledged_at);
+          $("legalAcceptanceStatus").textContent=Number.isNaN(date.getTime()) ? "Bekreftet" : `Bekreftet ${date.toLocaleString("nb-NO",{dateStyle:"medium",timeStyle:"short"})}`;
+        }else{
+          $("legalAcceptanceStatus").textContent="Ikke registrert";
+        }
+      }
     }
     if(section==="notifications") renderNotifications();
   }
@@ -1862,7 +1916,6 @@
     const payload = {
       id: me.id,
       bio: $("profileBioInput").value.trim(),
-      gender: $("profileGenderInput").value,
       ageGroup: $("profileAgeInput").value,
       countryPlace: $("profileCountryInput").value.trim(),
       hayDaySince: $("profileSinceInput").value.trim(),

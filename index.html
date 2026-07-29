@@ -68,8 +68,16 @@
     <footer class="site-footer" id="contact">
       <img src="wgang-icon-pink.webp" alt="WGANG-logo">
       <strong>WGANG</strong><span>Sammen står vi sterkere</span>
-      <nav><a href="#about">Om oss</a><a href="#derby-info">Derby</a><a href="#join">Medlemskap</a></nav>
-      <small>Uavhengig fellesskapsportal. Ikke tilknyttet eller godkjent av Supercell.</small>
+      <nav>
+        <a href="#about">Om oss</a>
+        <a href="#derby-info">Derby</a>
+        <a href="#join">Medlemskap</a>
+        <a href="privacy.html" rel="nofollow">Personvern</a>
+        <a href="rules.html" rel="nofollow">Bruksregler</a>
+      </nav>
+      <small>© 2026 WGANG Portal. Eget originalinnhold og design tilhører Selsbakk.</small>
+      <small class="legal-disclaimer">This material is unofficial and is not endorsed by Supercell. For more information see Supercell's Fan Content Policy: <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noopener noreferrer">www.supercell.com/fan-content-policy</a>.</small>
+      <small>Kontakt: <a href="mailto:wgangportal@gmail.com">wgangportal@gmail.com</a></small>
     </footer>
   </section>
 
@@ -109,7 +117,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.26</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.47</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -221,7 +229,52 @@
   </section>
 
 
-  <dialog id="authDialog" class="auth-dialog"><div class="auth-card"><button class="icon-button auth-close" id="closeAuth" aria-label="Lukk">×</button><img src="wgang-icon-pink.webp" alt="" class="auth-logo"><p class="eyebrow">WGANG PORTAL</p><h2 id="authTitle">Logg inn</h2><p class="auth-intro" id="authIntro">Bruk e-postadressen din for å åpne portalen.</p><div class="auth-tabs"><button class="active" data-auth-tab="login">Logg inn</button><button data-auth-tab="register">Søk medlemskap</button></div><form id="loginForm" class="auth-form"><label>E-post<input id="loginEmail" type="email" autocomplete="email" required></label><label>Passord<input id="loginPassword" type="password" autocomplete="current-password" required></label><button class="button button-primary button-full" type="submit">Logg inn</button><button class="text-button" id="forgotPassword" type="button">Glemt passord?</button><p class="form-message" id="loginMessage"></p><p class="auth-hint"><strong>Velkommen til WGANG Portal</strong><br>Logg inn for å få tilgang til nabolagets medlemsportal.</p></form><form id="registerForm" class="auth-form hidden"><label>Hay Day-spillnavn<input id="registerName" required maxlength="30" placeholder="Navnet ditt i Hay Day"></label><label>E-post<input id="registerEmail" type="email" autocomplete="email" required></label><label>Passord<input id="registerPassword" type="password" minlength="6" required></label><label class="check-label"><input id="memberConfirm" type="checkbox" required><span>Jeg bekrefter at jeg er medlem av WGANG-nabolaget.</span></label><button class="button button-primary button-full" type="submit">Send søknad</button><p class="form-message" id="registerMessage"></p></form></div></dialog>
+  <dialog id="authDialog" class="auth-dialog">
+    <div class="auth-card">
+      <button class="icon-button auth-close" id="closeAuth" aria-label="Lukk">×</button>
+      <img src="wgang-icon-pink.webp" alt="" class="auth-logo">
+      <p class="eyebrow">WGANG PORTAL</p>
+      <h2 id="authTitle">Logg inn</h2>
+      <p class="auth-intro" id="authIntro">Bruk e-postadressen din for å åpne portalen.</p>
+      <div class="auth-tabs"><button class="active" data-auth-tab="login">Logg inn</button><button data-auth-tab="register">Søk medlemskap</button></div>
+      <form id="loginForm" class="auth-form">
+        <label>E-post<input id="loginEmail" type="email" autocomplete="email" required></label>
+        <label>Passord<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <button class="button button-primary button-full" type="submit">Logg inn</button>
+        <button class="text-button" id="forgotPassword" type="button">Glemt passord?</button>
+        <p class="form-message" id="loginMessage"></p>
+        <p class="auth-hint"><strong>Velkommen til WGANG Portal</strong><br>Logg inn for å få tilgang til nabolagets medlemsportal.</p>
+      </form>
+      <form id="registerForm" class="auth-form hidden">
+        <label>Hay Day-spillnavn<input id="registerName" required maxlength="30" placeholder="Navnet ditt i Hay Day"></label>
+        <label>E-post<input id="registerEmail" type="email" autocomplete="email" required></label>
+        <label>Passord<input id="registerPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+        <label class="check-label"><input id="memberConfirm" type="checkbox" required><span>Jeg bekrefter at jeg er medlem av WGANG-nabolaget.</span></label>
+        <p class="legal-registration-note">E-postadressen brukes til brukerkonto, innlogging og administrasjon av medlemskapet. Les dokumentene før du sender søknaden.</p>
+        <label class="check-label"><input id="legalConfirm" type="checkbox" required><span>Jeg bekrefter at jeg har lest <a href="privacy.html" target="_blank" rel="noopener">personverninformasjonen</a> og godtar <a href="rules.html" target="_blank" rel="noopener">bruksreglene</a>.</span></label>
+        <button class="button button-primary button-full" type="submit">Send søknad</button>
+        <p class="form-message" id="registerMessage"></p>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="legalAcceptanceDialog" class="auth-dialog legal-acceptance-dialog">
+    <div class="auth-card">
+      <img src="wgang-icon-pink.webp" alt="" class="auth-logo">
+      <p class="eyebrow">WGANG PORTAL</p>
+      <h2>Før du fortsetter</h2>
+      <p class="auth-intro">Les den oppdaterte personverninformasjonen og bruksreglene. Bekreftelsen kreves én gang per dokumentversjon.</p>
+      <div class="legal-document-links">
+        <a class="button" href="privacy.html" target="_blank" rel="noopener">Les personverninformasjonen</a>
+        <a class="button" href="rules.html" target="_blank" rel="noopener">Les bruksreglene</a>
+      </div>
+      <form id="legalAcceptanceForm" class="auth-form">
+        <label class="check-label"><input id="legalAcceptanceConfirm" type="checkbox" required><span>Jeg bekrefter at jeg har lest personverninformasjonen og godtar bruksreglene.</span></label>
+        <button class="button button-primary button-full" type="submit">Fortsett til WGANG Portal</button>
+        <p class="form-message" id="legalAcceptanceMessage"></p>
+      </form>
+    </div>
+  </dialog>
 
   <dialog id="passwordSetupDialog" class="auth-dialog"><div class="auth-card"><img src="wgang-icon-pink.webp" alt="" class="auth-logo"><p class="eyebrow">WGANG PORTAL</p><h2 id="passwordSetupTitle">Opprett passord</h2><p class="auth-intro" id="passwordSetupIntro">Velg passordet du vil bruke når du logger inn på WGANG Portal.</p><form id="passwordSetupForm" class="auth-form"><label>Nytt passord<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label><label>Gjenta passord<input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label><button class="button button-primary button-full" type="submit">Lagre passord</button><p class="form-message" id="passwordSetupMessage"></p></form></div></dialog>
   <dialog id="derbyEditor"><form method="dialog" class="dialog-card derby-editor-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Publiser neste derby</h2></div><button class="icon-button" id="closeDerbyEditor" value="cancel">×</button></div>
@@ -252,6 +305,7 @@
         <button type="button" class="profile-hub-item" data-profile-section="settings"><span><strong>Innstillinger</strong><small>Varsler og e-post</small></span><span>›</span></button>
         <button type="button" class="profile-hub-item" data-profile-section="profile"><span><strong>Se / endre profil</strong><small>Din synlige medlemsprofil</small></span><span>›</span></button>
         <button type="button" class="profile-hub-item" data-profile-section="account"><span><strong>Min konto</strong><small>Spillnavn og rolle</small></span><span>›</span></button>
+        <button type="button" class="profile-hub-item" data-profile-section="privacy"><span><strong>Personvern og data</strong><small>Dokumenter, innsyn og sletting</small></span><span>›</span></button>
         <button type="button" class="profile-hub-item profile-hub-logout" id="profileHubLogout"><span><strong>Logg ut</strong><small>Logg ut av WGANG Portal</small></span></button>
         
       </div>
@@ -262,6 +316,20 @@
 <p><strong>Rolle</strong><br><span id="accountRole">–</span></p>
 <p><strong>Medlem siden</strong><br><span id="accountMemberSince">–</span></p>
 <p class="helper-text">E-postadressen vises bare her på din egen konto og kan ikke endres her.</p></div></div>
+      <div id="profileHubPrivacy" class="profile-hub-section hidden">
+        <button type="button" class="profile-hub-back">← Tilbake</button>
+        <h3>Personvern og data</h3>
+        <div class="privacy-summary-card">
+          <p><strong>Gjeldende dokumentversjon</strong><br><span id="legalDocumentVersion">2026-07-29</span></p>
+          <p><strong>Din bekreftelse</strong><br><span id="legalAcceptanceStatus">Kontrollerer …</span></p>
+        </div>
+        <div class="privacy-action-list">
+          <a class="button" href="privacy.html" target="_blank" rel="noopener">Les personverninformasjonen</a>
+          <a class="button" href="rules.html" target="_blank" rel="noopener">Les bruksreglene</a>
+          <a class="button button-secondary" href="mailto:wgangportal@gmail.com?subject=Personvernforesp%C3%B8rsel%20%E2%80%93%20WGANG%20Portal">Be om innsyn, retting eller sletting</a>
+        </div>
+        <p class="helper-text">Send forespørselen fra e-postadressen som er knyttet til WGANG-kontoen din. Kontakt: <a href="mailto:wgangportal@gmail.com">wgangportal@gmail.com</a>.</p>
+      </div>
       <div id="profileHubProfile" class="profile-hub-section">
       <div class="card-header">
         <div>
@@ -328,29 +396,19 @@
         </section>
         <div class="profile-divider"></div>
         <h3>Rediger profil</h3>
-        <p class="helper-text">Alt er frivillig. Du kan dele mye, litt eller ingenting. E-postadressen din vises aldri til andre medlemmer.</p>
+        <p class="helper-text">Alle profilopplysninger er frivillige og vises bare til godkjente WGANG-medlemmer. Du kan dele mye, litt eller ingenting.</p>
         <form id="memberProfileForm" class="auth-form">
-          <label>Om meg<textarea id="profileBioInput" rows="4" maxlength="1200" placeholder="Fortell litt om deg selv hvis du ønsker"></textarea></label>
-          <label>Kjønn
-            <select id="profileGenderInput">
-              <option value="">Vil ikke oppgi</option>
-              <option value="Kvinne">Kvinne</option>
-              <option value="Mann">Mann</option>
-              <option value="Annet">Annet</option>
-            </select>
-          </label>
           <label>Aldersgruppe
             <select id="profileAgeInput">
-              <option value="">Vil ikke oppgi</option>
-              <option value="0–13 år">0–13 år</option>
-              <option value="14–20 år">14–20 år</option>
-              <option value="21–30 år">21–30 år</option>
-              <option value="31–40 år">31–40 år</option>
-              <option value="41–50 år">41–50 år</option>
-              <option value="Over 50 år">Over 50 år</option>
+              <option value="">Ikke oppgitt</option>
+              <option value="Under 18">Under 18</option>
+              <option value="18–29">18–29</option>
+              <option value="30–44">30–44</option>
+              <option value="45–59">45–59</option>
+              <option value="60+">60+</option>
             </select>
           </label>
-          <label>Land / sted<input id="profileCountryInput" maxlength="100" placeholder="Valgfritt"></label>
+          <label>Land<input id="profileCountryInput" maxlength="80" placeholder="F.eks. Norge"></label>
           <fieldset class="profile-language-fieldset">
             <legend>Språk</legend>
             <p class="helper-text">Velg ett eller flere språk du snakker. Dette vises på medlemsprofilen din.</p>
@@ -361,6 +419,8 @@
           </fieldset>
           <label>Hvor lenge har du spilt Hay Day?<input id="profileSinceInput" maxlength="120" placeholder="Valgfritt"></label>
           <label>Hva liker du best i spillet?<input id="profileFavoriteInput" maxlength="200" placeholder="Valgfritt"></label>
+          <label>Litt om meg<textarea id="profileBioInput" rows="4" maxlength="500" placeholder="Fortell gjerne litt om deg selv"></textarea></label>
+          <p class="profile-privacy-warning"><strong>Ikke del identifiserende opplysninger.</strong> Unngå fullt navn, konkret alder, by/sted, adresse, telefonnummer, e-postadresse, skole eller opplysninger om andre.</p>
           <button class="button button-primary button-full" type="submit">Lagre profil</button>
           <p class="form-message" id="profileSaveMessage"></p>
         </form>

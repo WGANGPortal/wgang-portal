@@ -18,11 +18,14 @@
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
     derbyManagement: { templates: [], events: [], next: null },
+    legalAcceptance: null,
     currentUserId: null
   };
 
   const cfg = window.WGANG_SUPABASE || {};
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
+  const LEGAL_PRIVACY_VERSION = "2026-07-29";
+  const LEGAL_RULES_VERSION = "2026-07-29";
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -53,11 +56,13 @@
 
   let localState = localLoad();
 
-  function mapProfile(row, participation, preferences) {
-    const prefMap = {};
-    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
-    const part = (participation || []).find(p => p.user_id === row.id);
-    
+  async function getAuthUser() {
+    if (!configured) return null;
+    const { data, error } = await client.auth.getUser();
+    if (error) throw error;
+    return data.user || null;
+  }
+
   async function savePushSubscription(subscription, platform) {
     const user = await getAuthUser();
     if (!user?.id) throw new Error("Du må være innlogget.");
@@ -66,7 +71,7 @@
     const p256dh = json.keys?.p256dh;
     const authKey = json.keys?.auth;
     if (!endpoint || !p256dh || !authKey) throw new Error("Ugyldig push-abonnement.");
-    const { error } = await supabase.from("push_subscriptions").upsert({
+    const { error } = await client.from("push_subscriptions").upsert({
       user_id: user.id,
       endpoint,
       p256dh,
@@ -83,7 +88,7 @@
   async function removePushSubscription(endpoint) {
     const user = await getAuthUser();
     if (!user?.id || !endpoint) return false;
-    const { error } = await supabase.from("push_subscriptions")
+    const { error } = await client.from("push_subscriptions")
       .delete()
       .eq("user_id", user.id)
       .eq("endpoint", endpoint);
@@ -91,13 +96,15 @@
     return true;
   }
 
-return {
-    savePushSubscription, removePushSubscription,
+  function mapProfile(row, participation, preferences) {
+    const prefMap = {};
+    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
+    const part = (participation || []).find(p => p.user_id === row.id);
+    return {
       id: row.id,
       name: String(row.hay_day_name || "").toUpperCase(),
       role: row.role || "member",
       bio: row.bio || "",
-      gender: row.gender || "",
       ageGroup: row.age_group || "",
       countryPlace: row.country_place || "",
       hayDaySince: row.hay_day_since || "",
@@ -107,7 +114,9 @@ return {
       status: row.status || "pending",
       approved: row.status === "approved",
       choice: part ? part.choice : "waiting",
-      preferences: prefMap
+      preferences: prefMap,
+      createdAt: row.created_at || null,
+      updatedAt: row.updated_at || null
     };
   }
 
@@ -128,16 +137,54 @@ return {
   }
 
   async function getOwnProfile(userId) {
-    const { data, error } = await client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages").eq("id", userId).single();
+    const { data, error } = await client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").eq("id", userId).single();
     if (error) throw error;
     return data;
   }
 
+  async function loadLegalAcceptance(session) {
+    const userId = session?.user?.id;
+    if (!userId) return null;
+    const { data, error } = await client.from("legal_acceptances")
+      .select("privacy_version,rules_version,acknowledged_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205" || /legal_acceptances/i.test(error.message || "")) {
+        throw new Error("Personvernoppdateringen er ikke ferdigstilt i databasen. Kjør SQL for v0.18.0.47 før portalen publiseres.");
+      }
+      throw error;
+    }
+    if (data) return data;
+
+    const meta = session.user.user_metadata || {};
+    if (meta.legal_privacy_version === LEGAL_PRIVACY_VERSION &&
+        meta.legal_rules_version === LEGAL_RULES_VERSION &&
+        meta.legal_acknowledged_at) {
+      const row = {
+        user_id: userId,
+        privacy_version: LEGAL_PRIVACY_VERSION,
+        rules_version: LEGAL_RULES_VERSION,
+        acknowledged_at: meta.legal_acknowledged_at
+      };
+      const { data: restored, error: restoreError } = await client.from("legal_acceptances")
+        .upsert(row, { onConflict:"user_id" })
+        .select("privacy_version,rules_version,acknowledged_at")
+        .single();
+      if (restoreError) throw restoreError;
+      return restored;
+    }
+    return null;
+  }
+
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
+    const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
-      return { accounts: [mapProfile(own, [], [])], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, currentUserId: own.id };
+      const ownAccount = mapProfile(own, [], []);
+      ownAccount.email = session.user.email || "";
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance, currentUserId: own.id };
     }
     // Søndag 18:00 -> tirsdag 10:00: sørg for at neste derby finnes.
     // Funksjonen er idempotent og oppretter bare en Normal-standard dersom ledelsen
@@ -151,7 +198,7 @@ return {
       console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
     }
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
-      client.from("profiles").select("id,hay_day_name,role,status,bio,gender,age_group,country_place,hay_day_since,favorite_game_aspect").order("hay_day_name"),
+      client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
@@ -178,6 +225,8 @@ return {
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const accounts = (profilesRes.data || []).map(row => mapProfile(row, participationForView, preferencesRes.data));
+    const ownAccount = accounts.find(account => String(account.id) === String(session.user.id));
+    if (ownAccount) ownAccount.email = session.user.email || "";
     const contentRows = mapContent(contentRes.data, accounts);
     const content = {
       announcements: contentRows.filter(x => x.kind === "announcement" && x.status === "published"),
@@ -210,6 +259,7 @@ return {
 
     return {
       accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next},
+      legalAcceptance,
       notifications:{
         preferences: notificationPrefsRes.data || null,
         readState: notificationReadRes.data || null
@@ -238,6 +288,8 @@ return {
   const api = {
     mode: configured ? "supabase" : "local",
     taskTypes: TASK_TYPES,
+    savePushSubscription,
+    removePushSubscription,
     async bootstrap() {
       if (!configured) return clone(localState);
       const { data, error } = await client.auth.getSession();
@@ -264,7 +316,20 @@ return {
       if (!configured) {
         throw new Error("Medlemssøknad er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
       }
-      const { data, error } = await client.auth.signUp({ email, password, options:{ data:{ hay_day_name:name }, emailRedirectTo:appUrl() } });
+      const acknowledgedAt = new Date().toISOString();
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options:{
+          data:{
+            hay_day_name:name,
+            legal_privacy_version:LEGAL_PRIVACY_VERSION,
+            legal_rules_version:LEGAL_RULES_VERSION,
+            legal_acknowledged_at:acknowledgedAt
+          },
+          emailRedirectTo:appUrl()
+        }
+      });
       if (error) throw error;
       return { needsEmailConfirmation: !data.session };
     },
@@ -285,6 +350,39 @@ return {
       if (!configured) throw new Error("Supabase er ikke koblet til.");
       const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo:appUrl() });
       if (error) throw error;
+    },
+    legalVersions() {
+      return { privacy:LEGAL_PRIVACY_VERSION, rules:LEGAL_RULES_VERSION };
+    },
+    legalAcceptanceRequired(state) {
+      if (!configured) return false;
+      const acceptance = state?.legalAcceptance;
+      return !acceptance ||
+        acceptance.privacy_version !== LEGAL_PRIVACY_VERSION ||
+        acceptance.rules_version !== LEGAL_RULES_VERSION;
+    },
+    async acceptLegalDocuments() {
+      if (!configured) {
+        return {
+          privacy_version:LEGAL_PRIVACY_VERSION,
+          rules_version:LEGAL_RULES_VERSION,
+          acknowledged_at:new Date().toISOString()
+        };
+      }
+      const user = await getAuthUser();
+      if (!user?.id) throw new Error("Du må være logget inn.");
+      const row = {
+        user_id:user.id,
+        privacy_version:LEGAL_PRIVACY_VERSION,
+        rules_version:LEGAL_RULES_VERSION,
+        acknowledged_at:new Date().toISOString()
+      };
+      const { data, error } = await client.from("legal_acceptances")
+        .upsert(row, { onConflict:"user_id" })
+        .select("privacy_version,rules_version,acknowledged_at")
+        .single();
+      if (error) throw error;
+      return data;
     },
     async signOut() {
       if (!configured) { localState.currentUserId = null; localSave(localState); return; }
@@ -336,7 +434,6 @@ return {
         const a=localState.accounts.find(x=>x.id===profile.id);
         if(a){
           a.bio=profile.bio||"";
-          a.gender=profile.gender||"";
           a.ageGroup=profile.ageGroup||"";
           a.countryPlace=profile.countryPlace||"";
           a.hayDaySince=profile.hayDaySince||"";
@@ -348,7 +445,7 @@ return {
       }
       const { error } = await client.rpc("update_my_public_profile", {
         p_bio: profile.bio || null,
-        p_gender: profile.gender || null,
+        p_gender: null,
         p_age_group: profile.ageGroup || null,
         p_country_place: profile.countryPlace || null,
         p_hay_day_since: profile.hayDaySince || null,
