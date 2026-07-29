@@ -982,10 +982,21 @@
     });
   }
 
+  function isNormalDerbyPreferenceScope() {
+    const name=String(state.derbyManagement?.next?.name||state.derby?.type||"");
+    // Legacy-navnet Standard behandles som Normal. Andre derbytyper beholder dagens logikk.
+    return /normal|standard/i.test(name);
+  }
+
+  function adminPreferenceAccounts() {
+    const members=approved();
+    return isNormalDerbyPreferenceScope() ? members.filter(a=>a.choice==="joined") : members;
+  }
+
   function preferenceStats() {
     const stats = {};
     TASK_TYPES.forEach(t => stats[t] = {like:0,can:0,avoid:0,no:0});
-    approved().forEach(a => Object.entries(a.preferences || {}).forEach(([task,value]) => {
+    adminPreferenceAccounts().forEach(a => Object.entries(a.preferences || {}).forEach(([task,value]) => {
       if (stats[task] && stats[task][value] != null) stats[task][value]++;
     }));
     return stats;
@@ -1002,20 +1013,26 @@
 
   function renderAdminPreferences() {
     if (!isAdmin()) return;
+    const scopedMembers=adminPreferenceAccounts();
+    const normalScope=isNormalDerbyPreferenceScope();
     const stats = preferenceStats();
     const rows = TASK_TYPES.map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
+    const scopeText=$("adminPreferenceScope");
+    if(scopeText) scopeText.textContent=normalScope
+      ? `Viser kun de ${scopedMembers.length} medlem${scopedMembers.length===1?"met":"mene"} som har svart «Jeg deltar» i dette Normal derbyet.`
+      : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.";
     $("adminPreferenceTable").innerHTML = rows.map(x => `<tr><td><strong>${esc(x.t)}</strong></td><td>${x.s.like}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td>${x.s.no}</td><td><span class="recommendation ${x.r.cls}">${x.r.label}</span></td></tr>`).join("");
     const most = rows.slice().sort((a,b) => (b.s.like*2+b.s.can)-(a.s.like*2+a.s.can)).slice(0,3);
     const clear = rows.slice().sort((a,b) => (b.s.no*2+b.s.avoid)-(a.s.no*2+a.s.avoid)).filter(x => x.s.no+x.s.avoid>0).slice(0,3);
-    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Basert på medlemmenes valg</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
+    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>${normalScope?`Basert på ${scopedMembers.length} påmeldte derbydeltakere`:"Basert på medlemmenes valg"}</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
     const memberBox = $("adminPreferenceMembers");
     if (memberBox) {
       memberBox.className = "preference-member-grid";
-      memberBox.innerHTML = approved().map(a => {
+      memberBox.innerHTML = scopedMembers.map(a => {
         const likes = TASK_TYPES.filter(t => a.preferences?.[t] === "like");
         const can = TASK_TYPES.filter(t => a.preferences?.[t] === "can");
         return `<article class="preference-member-card"><h4>${esc(a.name)}</h4><p><strong>❤️ Liker:</strong> ${likes.map(esc).join(", ") || "Ikke registrert"}</p><p><strong>👍 Kan ta:</strong> ${can.map(esc).join(", ") || "Ikke registrert"}</p></article>`;
-      }).join("") || `<p class="empty-state">Ingen preferanser registrert ennå.</p>`;
+      }).join("") || `<p class="empty-state">${normalScope?"Ingen medlemmer har svart «Jeg deltar» i dette Normal derbyet ennå.":"Ingen preferanser registrert ennå."}</p>`;
     }
   }
 
