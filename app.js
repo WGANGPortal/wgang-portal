@@ -1578,9 +1578,28 @@
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
   }
 
+  function currentActiveDerbyEvent() {
+    const events=Array.isArray(state.derbyManagement?.events)?state.derbyManagement.events:[];
+    const now=Date.now();
+    const activeByStatus=events
+      .filter(event=>event?.status==="active")
+      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
+    if(activeByStatus) return activeByStatus;
+    const currentByTime=events
+      .filter(event=>{
+        const start=event?.start_at?new Date(event.start_at).getTime():NaN;
+        const end=event?.end_at?new Date(event.end_at).getTime():NaN;
+        return Number.isFinite(start) && now>=start && (!Number.isFinite(end)||now<end);
+      })
+      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
+    if(currentByTime) return currentByTime;
+    const fallback=state.derbyManagement?.next;
+    return fallback && derbyDashboardPhase(fallback)==="active" ? fallback : null;
+  }
+
   function activeNormalDerby() {
-    const event=state.derbyManagement?.next;
-    return !!(event && event.status==="active" && /normal|standard/i.test(String(event.name||"")));
+    const event=currentActiveDerbyEvent();
+    return !!(event && /normal|standard/i.test(String(event.name||"")));
   }
 
   function renderNormalDerbyCompletion() {

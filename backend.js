@@ -223,7 +223,11 @@
     const derby = d ? { type:d.type, taskTotal:d.task_total, maxPoints:d.max_points, strategy:Array.isArray(d.strategy)?d.strategy:clone(DEFAULT_DERBY.strategy) } : clone(DEFAULT_DERBY);
     const templates = templatesRes.data || [];
     const events = eventsRes.data || [];
-    const next = events.find(e => ["published","active"].includes(e.status)) || null;
+    // Bruk aktivt derby som portalens arbeidskontekst. Et fremtidig publisert derby
+    // må ikke overskygge derbyet som faktisk pågår.
+    const activeEvent = events.find(e => e.status === "active") || null;
+    const publishedEvent = events.find(e => e.status === "published") || null;
+    const next = activeEvent || publishedEvent;
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const completionForView = next ? (completionRes.data || []).filter(row => String(row.event_id) === String(next.id)) : [];
