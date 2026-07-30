@@ -1,3 +1,4 @@
+/* v0.18.0.48 – innloggings- og cachehurtigretting */
 (function () {
   "use strict";
 
@@ -397,9 +398,15 @@
       if (!configured) {
         const a=localState.accounts.find(x=>x.id===userId); if(a)a.choice=choice; localSave(localState); return;
       }
-      const { data:event, error:eventError } = await client.from("derby_events").select("id").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
+      const { data:event, error:eventError } = await client.from("derby_events").select("id,status,start_at,signup_deadline").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
       if (eventError) throw eventError;
       if (event) {
+        const now = Date.now();
+        const deadline = event.signup_deadline ? new Date(event.signup_deadline).getTime() : NaN;
+        const start = event.start_at ? new Date(event.start_at).getTime() : NaN;
+        if (event.status === "active" || (Number.isFinite(deadline) && now >= deadline) || (Number.isFinite(start) && now >= start)) {
+          throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
+        }
         const { error } = await client.from("derby_event_participation").upsert({event_id:event.id,user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
         if (error) throw error;
       } else {

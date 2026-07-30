@@ -1588,6 +1588,30 @@
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
 
+  function participationDeadlineState() {
+    const event = state.derbyManagement?.next;
+    if (!event) return { locked:false, deadline:null };
+    const deadline = event.signup_deadline ? new Date(event.signup_deadline) : null;
+    const start = event.start_at ? new Date(event.start_at) : null;
+    const now = new Date();
+    const locked = event.status === "active" || (deadline && !Number.isNaN(deadline.getTime()) && now >= deadline) || (start && !Number.isNaN(start.getTime()) && now >= start);
+    return { locked:!!locked, deadline };
+  }
+
+  function renderParticipationLock() {
+    const {locked, deadline} = participationDeadlineState();
+    $$(".choice-button").forEach(button => {
+      button.disabled = locked;
+      button.setAttribute("aria-disabled", String(locked));
+      button.title = locked ? "Svarfristen er utløpt. Svaret kan ikke registreres eller endres." : "";
+    });
+    const status = $("participationStatus");
+    if (locked && status) {
+      const suffix = deadline ? ` (${new Intl.DateTimeFormat("nb-NO",{weekday:"long",hour:"2-digit",minute:"2-digit"}).format(deadline)})` : "";
+      status.textContent = `Svarfristen er utløpt${suffix}. Registrert svar er låst og kan ikke endres.`;
+    }
+  }
+
   function renderDerbyConfig() {
     const next = state.derbyManagement?.next;
     const d = next ? {
@@ -1617,6 +1641,7 @@
     taskRange.max = d.taskTotal || 9;
     if (+taskRange.value > taskRange.max) taskRange.value = taskRange.max;
     progress();
+    renderParticipationLock();
   }
 
   function renderDerbyManagement() {
@@ -1959,6 +1984,11 @@
 
   $$(".choice-button").forEach(button => button.onclick = async () => {
     if (busy || !current()) return;
+    if (participationDeadlineState().locked) {
+      renderParticipationLock();
+      alert("Svarfristen er utløpt. Det går ikke an å registrere eller endre derby-svar etter fristen.");
+      return;
+    }
     const user = current(), choice = button.dataset.choice;
     setBusy(true);
     try { await backend.setParticipation(user.id, choice); user.choice = choice; renderSession(); } catch(e) { alert(humanError(e)); }
