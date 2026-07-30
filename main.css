@@ -507,7 +507,10 @@ body:not(.admin-mode) .admin-only {
 .dashboard-derby-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem}
 .dashboard-derby-actions .button{margin-top:0}
 .button-compact{padding:.75rem 1rem;font-size:.88rem;min-height:auto}
-.button-compact.is-completed{opacity:.9}
+.button-compact.is-completed{opacity:.96}
+.button.is-completed{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:.12rem;line-height:1.15}
+.button.is-completed .completion-main{font-weight:700}
+.button.is-completed .completion-sub{font-size:.74em;font-style:italic;font-weight:500;opacity:.82}
 .normal-derby-completion{margin-bottom:1.2rem}
 .normal-derby-completion .button{margin-top:.5rem}
 .preferences-inactive{opacity:.58;pointer-events:none}

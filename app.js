@@ -1608,12 +1608,24 @@
     const completed=!!user?.derbyCompleted;
     const dashboardButton=$("dashboardDerbyComplete");
     const derbyCard=$("normalDerbyCompletionCard");
-    if(dashboardButton){dashboardButton.classList.toggle("hidden",!visible);dashboardButton.textContent=completed?"Ferdig registrert ✓":"Jeg er ferdig";dashboardButton.classList.toggle("is-completed",completed);}
+    if(dashboardButton){
+      dashboardButton.classList.toggle("hidden",!visible);
+      dashboardButton.classList.toggle("is-completed",completed);
+      dashboardButton.innerHTML=completed
+        ? '<span class="completion-main">Ferdig registrert ✓</span><span class="completion-sub">Angre valg?</span>'
+        : 'Jeg er ferdig';
+    }
     derbyCard?.classList.toggle("hidden",!visible);
     setText("normalDerbyCompletionTitle",completed?"Du er registrert som ferdig":"Har du fullført ukens oppgaver?");
     setText("normalDerbyCompletionText",completed?"Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.":"Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.");
     const button=$("derbyCompleteButton");
-    if(button){button.textContent=completed?"Angre – jeg har flere oppgaver":"Jeg er ferdig med ukens oppgaver";button.classList.toggle("button-ghost",completed);}
+    if(button){
+      button.classList.toggle("button-ghost",completed);
+      button.classList.toggle("is-completed",completed);
+      button.innerHTML=completed
+        ? '<span class="completion-main">Ferdig registrert ✓</span><span class="completion-sub">Angre valg?</span>'
+        : 'Jeg er ferdig med ukens oppgaver';
+    }
     setText("derbyCompletionStatus",completed&&user.derbyCompletedAt?`Registrert ${new Date(user.derbyCompletedAt).toLocaleString("nb-NO")}.`:"");
     const preferenceList=$("preferenceList");
     if(preferenceList) preferenceList.classList.toggle("preferences-inactive",visible&&completed);

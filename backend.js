@@ -430,9 +430,20 @@
       if (!configured) {
         const a=localState.accounts.find(x=>x.id===userId); if(a){a.derbyCompleted=!!completed;a.derbyCompletedAt=completed?new Date().toISOString():null;} localSave(localState); return;
       }
-      const { data:event, error:eventError } = await client.from("derby_events").select("id,name,status,start_at,end_at").eq("status","active").order("start_at",{ascending:false}).limit(1).maybeSingle();
+      const { data:events, error:eventError } = await client.from("derby_events")
+        .select("id,name,status,start_at,end_at")
+        .in("status",["published","active"])
+        .order("start_at",{ascending:false})
+        .limit(20);
       if (eventError) throw eventError;
-      if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Ferdigstatus kan bare registreres mens et Normal derby pågår.");
+      const now=Date.now();
+      const candidates=Array.isArray(events)?events:[];
+      const event=candidates.find(item=>item?.status==="active") || candidates.find(item=>{
+        const start=item?.start_at?new Date(item.start_at).getTime():NaN;
+        const end=item?.end_at?new Date(item.end_at).getTime():NaN;
+        return Number.isFinite(start) && now>=start && (!Number.isFinite(end)||now<end);
+      });
+      if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal derby. Oppdater siden og prøv igjen.");
       if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
       if (completed) {
         const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
