@@ -1,4 +1,4 @@
-/* v0.18.0.48 – innloggings- og cachehurtigretting */
+/* v0.18.0.56 – databasehåndhevet rettighetsmodell */
 (function () {
   "use strict";
 
@@ -259,7 +259,7 @@
     let rolePermissions = [], permissionAudit = [], chatReadState = [];
     try {
       const [rolePermRes, auditRes, chatReadRes] = await Promise.all([
-        client.from("role_permissions").select("role,permission_key,enabled,updated_at").order("permission_key"),
+        client.rpc("wgang_get_role_permissions"),
         client.from("permission_audit_log").select("id,role,permission_key,old_value,new_value,changed_by,changed_at").order("changed_at",{ascending:false}).limit(50),
         client.from("chat_read_state").select("channel,last_read_at,last_message_id").eq("user_id",session.user.id)
       ]);
@@ -465,15 +465,15 @@
     },
     async approve(userId) {
       if (!configured) { const a=localState.accounts.find(x=>x.id===userId); if(a){a.approved=true;a.status="approved";a.choice="unsure";} localSave(localState); return; }
-      const { error }=await client.from("profiles").update({status:"approved"}).eq("id",userId); if(error)throw error;
+      const { error }=await client.rpc("wgang_set_member_status",{p_user_id:userId,p_status:"approved"}); if(error)throw error;
     },
     async setMemberStatus(userId,status) {
       if (!configured) { const a=localState.accounts.find(x=>x.id===userId); if(a){a.status=status;a.approved=status==="approved";} localSave(localState); return; }
-      const { error }=await client.from("profiles").update({status}).eq("id",userId); if(error)throw error;
+      const { error }=await client.rpc("wgang_set_member_status",{p_user_id:userId,p_status:status}); if(error)throw error;
     },
     async setRole(userId, role) {
       if (!configured) { const a=localState.accounts.find(x=>x.id===userId); if(a)a.role=role; localSave(localState); return; }
-      const { error }=await client.from("profiles").update({role}).eq("id",userId); if(error)throw error;
+      const { error }=await client.rpc("wgang_set_member_role",{p_user_id:userId,p_role:role}); if(error)throw error;
     },
     async updatePublicProfile(profile) {
       if (!configured) {
@@ -621,17 +621,20 @@
     },
     async updateDerbyTemplate(template) {
       if (!configured) return;
-      const { error } = await client.rpc("update_derby_template", {
-        p_template_id: template.id,
-        p_name: template.name,
-        p_description: template.description || null,
-        p_task_total: template.taskTotal ?? null,
-        p_extra_tasks: template.extraTasks ?? 0,
-        p_max_points: template.maxPoints ?? null,
-        p_daily_task_limit: template.dailyTaskLimit ?? null,
-        p_rules: template.rules || [],
-        p_strategy: template.strategy || []
-      });
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if (userError || !user) throw userError || new Error("Du må være logget inn.");
+      const { error } = await client.from("derby_templates").update({
+        name:template.name,
+        description:template.description || null,
+        default_task_total:template.taskTotal ?? null,
+        default_extra_tasks:template.extraTasks ?? 0,
+        default_max_points:template.maxPoints ?? null,
+        daily_task_limit:template.dailyTaskLimit ?? null,
+        rules:template.rules || [],
+        strategy:template.strategy || [],
+        updated_by:user.id,
+        updated_at:new Date().toISOString()
+      }).eq("id",template.id).select("id").single();
       if (error) throw error;
     },
     async publishDerbyEvent(event) {
@@ -679,8 +682,7 @@
         }
         localSave(localState); return;
       }
-      const changes = {status, published_at:status==="published"?new Date().toISOString():null};
-      const { error } = await client.from("community_content").update(changes).eq("id",id);
+      const { error } = await client.rpc("wgang_moderate_content",{p_content_id:Number(id),p_status:status});
       if (error) throw error;
     },
     async deleteContent(id) {
@@ -752,12 +754,9 @@
     },
     async saveRolePermission(role, permissionKey, enabled) {
       if (!configured) return;
-      const { data:{user}, error:userError } = await client.auth.getUser();
-      if (userError || !user) throw userError || new Error("Du må være logget inn.");
-      const { error } = await client.from("role_permissions").upsert({
-        role, permission_key:permissionKey, enabled:!!enabled,
-        updated_by:user.id, updated_at:new Date().toISOString()
-      },{onConflict:"role,permission_key"});
+      const { error } = await client.rpc("wgang_set_role_permission",{
+        p_role:role,p_permission_key:permissionKey,p_enabled:!!enabled
+      });
       if (error) throw error;
     },
     async markChatRead(channel, lastMessageId, lastReadAt) {

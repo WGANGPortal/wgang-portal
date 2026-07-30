@@ -48,8 +48,11 @@ body.is-busy{cursor:progress}body.is-busy button,body.is-busy input,body.is-busy
 .leadership-only{display:none}
 .leadership-mode .leadership-only{display:block}
 .leadership-mode a.leadership-only{display:flex}
+.admin-access-only{display:none}
+.admin-access-mode .admin-access-only{display:block}
+.admin-access-mode a.admin-access-only{display:flex}
 .owner-only{display:none!important}
-body:has(#profileRole) .owner-only{display:none!important}
+body:not(.owner-mode) .owner-only{display:none!important}
 .derby-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
 @media(max-width:620px){.derby-editor-actions{grid-template-columns:1fr}}
 .owner-mode .owner-only{display:inline-flex!important}
@@ -78,7 +81,7 @@ body:has(#profileRole) .owner-only{display:none!important}
 .admin-module.admin-module-active{display:block!important;margin-top:16px}
 .admin-back-button{margin-bottom:14px}
 body:not(.leadership-mode) [data-page="leadership"],body:not(.leadership-mode) [data-route="leadership"]{display:none!important}
-body:not(.leadership-mode) [data-page="admin"],body:not(.leadership-mode) [data-route="admin"]{display:none!important}
+body:not(.admin-access-mode) [data-page="admin"],body:not(.admin-access-mode) [data-admin-route]{display:none!important}
 @media(max-width:620px){.admin-hub-grid{grid-template-columns:1fr}.language-dropdown{right:-10px}}
 
 /* v0.15.1 – clean page routing and nested Admin navigation */
@@ -94,16 +97,21 @@ body:not(.leadership-mode) [data-page="admin"],body:not(.leadership-mode) [data-
 .admin-module-panel{display:block}
 .admin-module{display:none!important}
 .admin-module.admin-module-active{display:block!important}
+.admin-module.admin-module-active.hidden{display:none!important}
 .admin-hub-grid,.admin-back-button{display:none!important}
 
 /* v0.15.2 – mobile navigation + strict role visibility hotfix */
 
 /* Role visibility must override generic layout rules. */
 body:not(.leadership-mode) .leadership-only,
-body:not(.leadership-mode) .admin-nav-group,
-body:not(.leadership-mode) #adminSubnav,
-body:not(.leadership-mode) [data-page="admin"],
 body:not(.leadership-mode) [data-page="leadership"] {
+  display: none !important;
+}
+
+body:not(.admin-access-mode) .admin-access-only,
+body:not(.admin-access-mode) .admin-nav-group,
+body:not(.admin-access-mode) #adminSubnav,
+body:not(.admin-access-mode) [data-page="admin"] {
   display: none !important;
 }
 

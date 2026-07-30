@@ -1,4 +1,4 @@
-/* v0.18.0.49 – minimert offentlig navnebruk og cacheoppdatering */
+/* v0.18.0.56 – databasehåndhevet rettighetsmodell */
 (function () {
   "use strict";
 
@@ -190,7 +190,7 @@
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
 
   const PERMISSION_DEFINITIONS = [
-    {group:"Medlemmer",key:"members.view",label:"Se medlemsliste",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Medlemmer",key:"members.view",label:"Se administrativ medlemsoversikt",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Medlemmer",key:"members.approve",label:"Godkjenne medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Medlemmer",key:"members.reject",label:"Avslå medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Medlemmer",key:"members.change_role",label:"Endre rolle på medlem",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
@@ -211,7 +211,7 @@
     {group:"Chat",key:"chat.moderate",label:"Slette andres innlegg",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
 
     {group:"Innlegg / godkjenning",key:"content.pending.view",label:"Se innlegg/tips som venter",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
-    {group:"Innlegg / godkjenning",key:"content.approve",label:"Godkjenne innlegg/tips",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Innlegg / godkjenning",key:"content.approve",label:"Godkjenne og publisere innlegg/tips",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Innlegg / godkjenning",key:"content.reject",label:"Avvise innlegg/tips",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
 
     {group:"Varslinger",key:"notifications.admin.membership",label:"Motta varsel om medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
@@ -220,9 +220,8 @@
     {group:"Varslinger",key:"notifications.important_derby",label:"Motta viktige derbyvarsler",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
 
     {group:"Roller og rettigheter",key:"permissions.view",label:"Se rettighetsoppsett",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
-    {group:"Roller og rettigheter",key:"permissions.edit",label:"Endre rettigheter",defaults:{owner:1,admin:0,assistant_leader:0,member:0}},
+    {group:"Roller og rettigheter",key:"permissions.edit",label:"Endre rettigheter",ownerOnly:true,defaults:{owner:1,admin:0,assistant_leader:0,member:0}},
 
-    {group:"Historikk",key:"history.view",label:"Se derby-/medlemshistorikk",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Historikk",key:"history.permission_audit",label:"Se logg over rettighetsendringer",defaults:{owner:1,admin:1,assistant_leader:0,member:0}}
   ];
 
@@ -234,24 +233,34 @@
   function hasPermission(key,user=current()){
     if(!user)return false;
     if(user.role==="owner")return true; // systemkritiske Eier-rettigheter er låst
+    const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
+    if(def?.ownerOnly)return false;
     const override=rolePermissionOverride(user.role,key);
     if(override!==null)return override;
-    const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
     return !!def?.defaults?.[user.role];
   }
-  function isAdmin(user=current()) { return !!user && (user.role==="owner" || (user.role==="admin" && hasPermission("permissions.view",user))); }
-  function isLeadership(user=current()) { return !!user && hasPermission("chat.leadership.view",user); }
   const ADMIN_MODULE_PERMISSIONS = {
     actions:["content.pending.view","members.approve","members.reject"],
     derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish"],
     applications:["members.approve","members.reject"],
-    board:["derby.preferences.view","derby.board.update","derby.board.publish","derby.task_library.edit"],
+    board:["derby.preferences.view"],
     roles:["members.view","members.change_role","members.remove","permissions.view"]
   };
   function hasAnyPermission(keys,user=current()){ return (keys||[]).some(key=>hasPermission(key,user)); }
   function canAccessAdminModule(name,user=current()){ return !!user && hasAnyPermission(ADMIN_MODULE_PERMISSIONS[name]||[],user); }
   function canAccessAdmin(user=current()){ return !!user && Object.keys(ADMIN_MODULE_PERMISSIONS).some(name=>canAccessAdminModule(name,user)); }
   function firstAccessibleAdminModule(user=current()){ return ["actions","derby","applications","board","roles"].find(name=>canAccessAdminModule(name,user)) || null; }
+  const ROUTE_PERMISSIONS = {
+    derby:"derby.view",
+    preferences:"derby.plan",
+    discussions:"chat.community.view",
+    leadership:"chat.leadership.view"
+  };
+  function canAccessRoute(route,user=current()){
+    if(route==="admin" || String(route||"").startsWith("admin-"))return canAccessAdmin(user);
+    const key=ROUTE_PERMISSIONS[route];
+    return key ? hasPermission(key,user) : true;
+  }
   function applyPermissionVisibility(){
     document.querySelectorAll("[data-permission-any]").forEach(el=>{
       const keys=(el.dataset.permissionAny||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -263,6 +272,11 @@
     });
     const group=document.querySelector(".admin-nav-group");
     if(group) group.classList.toggle("hidden",!canAccessAdmin());
+  }
+  function applyAccessModeClasses(user=current()){
+    document.body.classList.toggle("leadership-mode",hasPermission("chat.leadership.view",user));
+    document.body.classList.toggle("admin-access-mode",canAccessAdmin(user));
+    document.body.classList.toggle("owner-mode",isOwner(user));
   }
   function approved() { return state.accounts.filter(a => a.approved); }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",member:"Medlem"}[role] || role; }
@@ -292,8 +306,11 @@
   }
 
   function navigate(route, useHash=true) {
-    if (route==="leadership" && !hasPermission("chat.leadership.view")) route="dashboard";
-    if (route==="admin" && !canAccessAdmin()) route="dashboard";
+    if(!canAccessRoute(route))route="dashboard";
+    if(String(route||"").startsWith("admin-")){
+      showAdminModule(String(route).slice(6),useHash);
+      return;
+    }
     if (route === "admin") { const first=firstAccessibleAdminModule(); if(first) showAdminModule(first,useHash); else navigate("dashboard",useHash); return; }
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
@@ -343,9 +360,7 @@
     portal.classList.remove("hidden");
     portal.setAttribute("aria-hidden", "false");
     applyPermissionVisibility();
-    document.body.classList.toggle("admin-mode", isAdmin(user));
-    document.body.classList.toggle("leadership-mode", isLeadership(user));
-    document.body.classList.toggle("owner-mode", isOwner(user));
+    applyAccessModeClasses(user);
     renderSession();
     const hash = location.hash.replace("#", "");
     navigate(hash && hash !== "landing" ? hash : "dashboard", false);
@@ -360,9 +375,7 @@
     portal.classList.add("hidden");
     portal.setAttribute("aria-hidden", "true");
     landing.classList.remove("hidden");
-    document.body.classList.remove("admin-mode");
-    document.body.classList.remove("leadership-mode");
-    document.body.classList.remove("owner-mode");
+    document.body.classList.remove("admin-mode","leadership-mode","admin-access-mode","owner-mode");
     closeDialog(legalAcceptanceDialog);
     document.body.classList.remove("modal-open");
     sidebar.classList.remove("open");
@@ -481,7 +494,7 @@
     };
 
     const latestPost=newestUnreadActivity(posts,read.derby_chat_seen_at);
-    if(prefs.in_app_derby_chat && latestPost) items.push({
+    if(hasPermission("chat.community.view") && prefs.in_app_derby_chat && latestPost) items.push({
       group:"common",category:"derby_chat",
       title:latestPost.kind==="comment"?"Ny kommentar i Derbyprat":"Nytt innlegg i Derbyprat",
       text:latestPost.text||"",route:"discussions",time:latestPost.time,
@@ -489,17 +502,17 @@
     });
 
     const latestMsg=newestUnreadActivity(msgs,read.leadership_chat_seen_at);
-    if(hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg) items.push({
+    if(hasPermission("chat.leadership.view") && hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg) items.push({
       group:"leadership",category:"leadership_chat",
       title:latestMsg.kind==="comment"?"Ny kommentar i Lederprat":"Nytt i Lederprat",
       text:latestMsg.text||"",route:"leadership",time:latestMsg.time,
       focusEntryId:latestMsg.entryId,focusCommentId:latestMsg.commentId||null
     });
-    if(hasPermission("notifications.admin.membership") && hasPermission("members.approve") && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({group:"leadership",category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
+    if(hasPermission("notifications.admin.membership") && hasAnyPermission(["members.approve","members.reject"]) && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({group:"leadership",category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
     if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({group:"leadership",category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
     if(prefs.in_app_social_activity){
       const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
-      activity.forEach(n=>{
+      activity.filter(n=>n.target_type==="leadership" ? hasPermission("chat.leadership.view") : hasPermission("chat.community.view")).forEach(n=>{
         const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
         const matchingComment=n.activity_type==="comment"
           ? (socialData().comments||[]).filter(c=>String(c.target_type)===String(n.target_type)&&String(c.target_id)===String(n.target_id)&&String(c.user_id)===String(n.actor_id)).sort((x,y)=>Math.abs(new Date(x.created_at)-new Date(n.created_at))-Math.abs(new Date(y.created_at)-new Date(n.created_at)))[0]
@@ -509,13 +522,13 @@
     }
 
     const next=state.derbyManagement?.next;
-    if(hasPermission("notifications.important_derby") && prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)){
+    if(hasPermission("derby.view") && hasPermission("notifications.important_derby") && prefs.in_app_derby_published && next?.published_at && newerThan(next.published_at,read.derby_published_seen_at)){
       items.push({group:"common",category:"derby_published",title:"Nytt derby publisert",text:next.name||"Neste derby er klart",route:"derby",time:next.published_at});
     }
 
     // Personlig påminnelse: varsle bare medlemmet som selv mangler svar,
     // fra 24 timer før påmeldingsfristen og frem til fristen.
-    if(prefs.in_app_derby_deadline_reminders && next?.signup_deadline){
+    if(hasPermission("derby.plan") && prefs.in_app_derby_deadline_reminders && next?.signup_deadline){
       const deadline=new Date(next.signup_deadline);
       const reminderAt=new Date(deadline.getTime()-24*60*60*1000);
       const now=Date.now();
@@ -678,14 +691,14 @@
   }
 
   function renderSession() {
-    if (!isLeadership()) {
-      document.body.classList.remove("leadership-mode", "admin-mode");
+    const user = current();
+    if (!user) return;
+    applyAccessModeClasses(user);
+    applyPermissionVisibility();
+    if (!canAccessAdmin(user)) {
       $("adminSubnav")?.classList.add("hidden");
       $("adminNavToggle")?.setAttribute("aria-expanded", "false");
     }
-
-    const user = current();
-    if (!user) return;
     user.name = String(user.name || "").toUpperCase();
     $("profileAvatar").textContent = user.name.charAt(0).toUpperCase();
     $("profileName").textContent = user.name;
@@ -703,7 +716,7 @@
     renderContent();
     renderLeadershipChat();
     renderAdmin();
-    if (isLeadership()) renderAdminPreferences();
+    if (hasPermission("derby.preferences.view")) renderAdminPreferences();
     renderDerbyManagement();
     renderNotifications();
     renderNotificationSettings();
@@ -780,7 +793,11 @@
 
   function renderBunnyAdmin(){
     const box=$("bunnyAdminBoard");
-    if(!box||!isLeadership())return;
+    if(!box)return;
+    const canUpdate=hasPermission("derby.board.update");
+    const canPublish=hasPermission("derby.board.publish");
+    const canEditLibrary=hasPermission("derby.task_library.edit");
+    if(!canUpdate&&!canPublish&&!canEditLibrary){box.innerHTML="";return;}
 
     const library=(bunnyData.library||[]).filter(t=>t.active!==false);
     const active=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));
@@ -800,21 +817,21 @@
 
     box.innerHTML=`<div class="bunny-admin-actions">
         <strong><span id="bunnyAdminSelected">${active.size}</span> valgt</strong>
-        <button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button>
+        ${canPublish?`<button class="button button-primary" id="publishBunnyBoard">Publiser valgt tavle</button>`:""}
       </div>
 
       <div class="bunny-admin-library">
         ${library.map(t=>`<div class="bunny-admin-choice-wrap">
-          <button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}">
+          <button class="bunny-admin-choice ${active.has(String(t.id))?"selected":""}" data-bunny-pick="${t.id}" ${canUpdate?"":"disabled"}>
             <span class="bunny-admin-thumb">${(()=>{const f=bunnyTaskImageUrl(t)||({"Gjester i Matbutikk":"task-gjester-i-matbutikk.webp","Kake med røde bær":"task-kake-med-rode-baer.webp","Soyabønner":"task-soyabonner.webp","Innbygger":"task-innbygger.webp","Gulrøtter":"task-gulrotter.webp","Bacon":"task-bacon.webp","Gulrotkake":"task-gulrotkake.webp","Eplejuice":"task-eplejuice.webp","Egg":"task-egg.webp","Frutti di Mare-pizza":"task-frutti-di-mare-pizza.webp","Gresskar":"task-gresskar.webp","Hvete":"task-hvete.webp","Cowboy":"task-cowboy.webp","Blå ullue":"task-bla-ullue.webp","Kino":"task-kino.webp","Bomullsskjorte":"task-bomullsskjorte.webp","Sesam-is":"task-sesam-is.webp","Mat dyr":"task-mat-dyr.webp","Sesamkrokan":"task-sesamkrokan.webp","Sushirull":"task-sushirull.webp","Salat":"task-salat.webp","Tofupølse":"task-tofupolse.webp","Bomull":"task-bomull.webp","Stekte tomater":"task-stekte-tomater.webp","Gresskarpai":"task-gresskarpai.webp","Stormester":"task-stormester.webp","Bringebærmuffins":"task-bringebaermuffins.webp"})[t.name];return f?`<img src="./${f}" alt="">`:esc(t.icon||"🐰");})()}</span>
             <strong>${esc(t.name)} <b>×${t.amount}</b></strong>
             <small>${esc(t.category)}</small>
           </button>
-          <button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button>
+          ${canEditLibrary?`<button class="bunny-edit-card" data-bunny-edit="${t.id}" title="Rediger oppgavekort">✎</button>`:""}
         </div>`).join("")}
       </div>
 
-      <div>
+      ${canEditLibrary?`<div>
         <h3>Legg til nytt oppgavekort</h3>
         <p class="helper-text">Velg en kjent oppgavemal. Oppgavenavnene hentes direkte fra oppgavebiblioteket.</p>
 
@@ -832,17 +849,18 @@
         </div>
 
         <p class="helper-text bunny-name-status" id="bunnyNameStatus"></p>
-      </div>`;
+      </div>`:""}`;
 
     box.querySelectorAll("[data-bunny-pick]").forEach(b=>{
       b.onclick=()=>{
+        if(!hasPermission("derby.board.update"))return;
         b.classList.toggle("selected");
         $("bunnyAdminSelected").textContent=box.querySelectorAll("[data-bunny-pick].selected").length;
       };
     });
 
     box.querySelectorAll("[data-bunny-edit]").forEach(b=>b.onclick=(e)=>{
-      e.preventDefault();e.stopPropagation();const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));if(!t)return;openBunnyTaskEditor(t);
+      e.preventDefault();e.stopPropagation();if(!hasPermission("derby.task_library.edit"))return;const t=library.find(x=>String(x.id)===String(b.dataset.bunnyEdit));if(!t)return;openBunnyTaskEditor(t);
     });
 
     const cat=$("newBunnyCategory");
@@ -872,7 +890,9 @@
       fillNames();
     }
 
-    $("publishBunnyBoard").onclick=async()=>{
+    const publishBunnyBoard=$("publishBunnyBoard");
+    if(publishBunnyBoard)publishBunnyBoard.onclick=async()=>{
+      if(!hasPermission("derby.board.publish"))return alert("Du har ikke rettighet til å publisere oppgavetavla.");
       const ids=[...box.querySelectorAll("[data-bunny-pick].selected")].map(x=>x.dataset.bunnyPick);
       if(ids.length!==12)return alert(`Dagens Chill Bunny-tavle skal ha 12 oppgaver. Du har valgt ${ids.length}.`);
       try{
@@ -884,7 +904,9 @@
       }
     };
 
-    $("addBunnyTask").onclick=async()=>{
+    const addBunnyTask=$("addBunnyTask");
+    if(addBunnyTask)addBunnyTask.onclick=async()=>{
+      if(!hasPermission("derby.task_library.edit"))return alert("Du har ikke rettighet til å endre oppgavebiblioteket.");
       const template=library.find(t=>String(t.id)===String(names.value));
       const amount=Number($("newBunnyAmount").value);
       if(!template)return alert("Velg et oppgavenavn.");
@@ -914,7 +936,9 @@
       }
     };
 
-    $("addBunnyTemplate").onclick=async()=>{
+    const addBunnyTemplate=$("addBunnyTemplate");
+    if(addBunnyTemplate)addBunnyTemplate.onclick=async()=>{
+      if(!hasPermission("derby.task_library.edit"))return alert("Du har ikke rettighet til å endre oppgavebiblioteket.");
       const category=prompt("Oppgavetype/kategori:",cat?.value||"");
       if(category===null||!category.trim())return;
 
@@ -1006,7 +1030,7 @@
     if (!user || !list) return;
     list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>Velg hva som passer deg best.</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("")}</section>`).join("");
     $$('[data-pref-task]').forEach(button => button.onclick = async () => {
-      if (busy) return;
+      if (busy || !hasPermission("derby.plan")) return;
       const me = current();
       const task = button.dataset.prefTask;
       const next = me.preferences?.[task] === button.dataset.prefValue ? null : button.dataset.prefValue;
@@ -1051,7 +1075,7 @@
   }
 
   function renderAdminPreferences() {
-    if (!isAdmin()) return;
+    if (!hasPermission("derby.preferences.view")) return;
     const scopedMembers=adminPreferenceAccounts();
     const normalScope=isNormalDerbyPreferenceScope();
     const stats = preferenceStats();
@@ -1113,24 +1137,32 @@
   function socialBlock(type,item) {
     const likes=targetLikes(type,item.id), comments=targetComments(type,item.id);
     const liked=likes.some(x=>String(x.user_id)===String(current()?.id));
+    const canPost=type==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
     const commentsHtml=comments.map(cm=>{
       const author=state.accounts.find(a=>String(a.id)===String(cm.user_id));
       const tr=currentLanguage==="en"?translationFor("comment",cm.id):null;
-      const canDelete=String(cm.user_id)===String(current()?.id) || (type==="community"&&isAdmin()) || (type==="leadership"&&isOwner());
+      const canDelete=String(cm.user_id)===String(current()?.id) || hasPermission("chat.moderate");
       return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p>${canDelete?`<button class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>`;
     }).join("");
-    return `<div class="social-bar"><button class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-id="${item.id}" data-liked="${liked}">👍🏼 <span>${likes.length}</span></button><button class="social-comment-toggle" data-comment-toggle="${type}:${item.id}">💬 <span>${comments.length}</span></button></div><div class="social-comments hidden" data-comments-for="${type}:${item.id}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div><form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form></div>`;
+    const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
+    return `<div class="social-bar"><button class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"}>👍🏼 <span>${likes.length}</span></button><button class="social-comment-toggle" data-comment-toggle="${type}:${item.id}">💬 <span>${comments.length}</span></button></div><div class="social-comments hidden" data-comments-for="${type}:${item.id}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
   }
   function bindSocialActions(root=document) {
     root.querySelectorAll("[data-like-type]").forEach(btn=>btn.onclick=async()=>{
+      const canReact=btn.dataset.likeType==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
+      if(!canReact)return;
       try { await backend.toggleLike(btn.dataset.likeType,btn.dataset.likeId,btn.dataset.liked==="true"); await refreshState(); } catch(e) { alert(humanError(e)); }
     });
     root.querySelectorAll("[data-comment-toggle]").forEach(btn=>btn.onclick=()=>root.querySelector(`[data-comments-for="${btn.dataset.commentToggle}"]`)?.classList.toggle("hidden"));
     root.querySelectorAll("[data-comment-form]").forEach(form=>form.onsubmit=async e=>{
       e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector("input"); if(!input.value.trim()) return;
+      const canPost=type==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
+      if(!canPost)return;
       try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); } catch(err) { alert(humanError(err)); }
     });
     root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
+      const comment=socialData().comments.find(x=>String(x.id)===String(btn.dataset.deleteComment));
+      if(String(comment?.user_id)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
       if(!confirm(currentLanguage==="en"?"Delete this comment?":"Slette denne kommentaren?")) return;
       try { await backend.deleteComment(btn.dataset.deleteComment); await refreshState(); } catch(err) { alert(humanError(err)); }
     });
@@ -1147,13 +1179,13 @@
     if(currentLanguage!=="en") return;
     const content=state.content||{};
     [...(content.announcements||[]),...(content.derbyPosts||[]),...(content.tips||[])].forEach(x=>ensureEnglishTranslation("community",x));
-    if(isLeadership()) (state.leadershipMessages||[]).forEach(x=>ensureEnglishTranslation("leadership",x));
-    (socialData().comments||[]).forEach(x=>ensureEnglishTranslation("comment",x));
+    if(hasPermission("chat.leadership.view")) (state.leadershipMessages||[]).forEach(x=>ensureEnglishTranslation("leadership",x));
+    (socialData().comments||[]).filter(x=>x.target_type!=="leadership" || hasPermission("chat.leadership.view")).forEach(x=>ensureEnglishTranslation("comment",x));
   }
 
   function postCard(item, options={}) {
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
-    const actions = options.admin ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
+    const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
     return `<article class="content-post" data-post-id="${item.id}"><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item)}</article>`;
   }
@@ -1163,18 +1195,19 @@
     const announcementList = $("announcementList");
     const derbyPostList = $("derbyPostList");
     const tipsList = $("communityTipsList");
-    if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
+    const canModerate=hasPermission("chat.moderate");
+    if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
     if (derbyPostList) {
       const posts=content.derbyPosts||[];
       const seenAt=state.notificationReadState?.derby_chat_seen_at||"1970-01-01";
       const chronological=[...posts].sort((a,b)=>new Date(a.publishedAt||a.createdAt)-new Date(b.publishedAt||b.createdAt));
       const firstUnread=chronological.findIndex(x=>newerThan(x.publishedAt||x.createdAt,seenAt));
-      derbyPostList.innerHTML=chronological.length?chronological.map((x,i)=>`${i===firstUnread?`<div class="chat-unread-divider" id="derbyChatUnreadStart">Nye innlegg</div>`:""}${postCard(x,{admin:isAdmin()})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
+      derbyPostList.innerHTML=chronological.length?chronological.map((x,i)=>`${i===firstUnread?`<div class="chat-unread-divider" id="derbyChatUnreadStart">Nye innlegg</div>`:""}${postCard(x,{canModerate})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
       const target=document.getElementById("derbyChatUnreadStart");
       if(target){const jump=()=>target.scrollIntoView({behavior:"auto",block:"center"});requestAnimationFrame(()=>requestAnimationFrame(jump));setTimeout(jump,350);setTimeout(jump,900);}
       else if(chronological.length){setTimeout(()=>derbyPostList.lastElementChild?.scrollIntoView({behavior:"auto",block:"end"}),350);}
     }
-    if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{admin:isAdmin()})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
+    if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
 
     const latestNews = document.querySelector('[data-page="dashboard"] .dashboard-grid article:nth-child(2)');
     if (latestNews && content.announcements.length) {
@@ -1202,7 +1235,7 @@
     }
 
     $$('[data-delete-content]').forEach(b => b.onclick = async () => {
-      if (!isAdmin() || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
+      if (!hasPermission("chat.moderate") || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
       if (busy) return; setBusy(true);
       try { await backend.deleteContent(b.dataset.deleteContent); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
@@ -1257,6 +1290,8 @@
     }
     translateUi(list);
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
+      const message=messages.find(x=>String(x.id)===String(button.dataset.leadershipDelete));
+      if(String(message?.userId)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
       if (!confirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
       if (busy) return; setBusy(true);
       try { await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
@@ -1270,17 +1305,20 @@
     applyPermissionVisibility();
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
-    if($("pendingMembers")) $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions">${hasPermission("members.approve")?`<button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button>`:""}${hasPermission("members.reject")?`<button class="button button-small button-danger" data-reject="${a.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
-    $("accountAdminTable").innerHTML = all.map(a => {
+    const canHandleApplications=hasAnyPermission(["members.approve","members.reject"]);
+    const canManageMembers=hasAnyPermission(["members.view","members.change_role","members.remove"]);
+    const canViewDerbyStatus=hasPermission("derby.settings.publish");
+    if($("pendingMembers")) $("pendingMembers").innerHTML = canHandleApplications ? (pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions">${hasPermission("members.approve")?`<button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button>`:""}${hasPermission("members.reject")?`<button class="button button-small button-danger" data-reject="${a.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`) : "";
+    if($("accountAdminTable")) $("accountAdminTable").innerHTML = canManageMembers ? all.map(a => {
       const lockedOwner = a.role === "owner" && !isOwner();
-      const ownOwner = a.role === "owner" && a.id === current().id;
+      const ownAccount = a.id === current().id;
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
-      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownOwner || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
-    }).join("");
+      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
+    }).join("") : "";
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
-    $("adminStatusGrid").innerHTML = [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("");
-    $("adminResponseBadge").textContent = (all.length - counts.waiting) + " av " + all.length + " svar";
+    if($("adminStatusGrid")) $("adminStatusGrid").innerHTML = canViewDerbyStatus ? [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("") : "";
+    if($("adminResponseBadge")) $("adminResponseBadge").textContent = canViewDerbyStatus ? (all.length - counts.waiting) + " av " + all.length + " svar" : "";
     $$('[data-approve]').forEach(b => b.onclick = async () => {
       if(!hasPermission("members.approve"))return alert("Du har ikke rettighet til å godkjenne medlemmer.");
       if (busy) return; setBusy(true);
@@ -1314,19 +1352,20 @@
   let permissionDraft=null;
   function permissionValue(role,key){
     const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
-    const row=(state.permissions?.rows||[]).find(x=>x.role===role&&x.permission_key===key);
+    if(def?.ownerOnly&&role!=="owner")return false;
+    const row=(state.permissions?.rolePermissions||[]).find(x=>x.role===role&&x.permission_key===key);
     return row ? !!row.enabled : !!def?.defaults?.[role];
   }
   function beginPermissionEdit(){
     permissionDraft={};
-    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.forEach(p=>permissionDraft[`${role}|${p.key}`]=permissionValue(role,p.key)));
+    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>permissionDraft[`${role}|${p.key}`]=permissionValue(role,p.key)));
     permissionEditMode=true; renderPermissionMatrix();
   }
   function cancelPermissionEdit(){permissionEditMode=false;permissionDraft=null;renderPermissionMatrix();}
   async function savePermissionDraft(){
     if(!isOwner()||!permissionDraft)return;
     const changes=[];
-    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.forEach(p=>{
+    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>{
       const before=permissionValue(role,p.key), after=!!permissionDraft[`${role}|${p.key}`];
       if(before!==after)changes.push({role,key:p.key,label:p.label,before,after});
     }));
@@ -1348,6 +1387,7 @@
       const cell=(role)=>{
         const enabled=role==="owner"?true:(permissionEditMode&&permissionDraft?!!permissionDraft[`${role}|${p.key}`]:permissionValue(role,p.key));
         if(role==="owner")return `<td><span class="permission-lock">✓ 🔒</span></td>`;
+        if(p.ownerOnly)return `<td><span class="permission-lock permission-no">– 🔒</span></td>`;
         if(permissionEditMode&&isOwner())return `<td><label class="permission-switch"><input type="checkbox" data-permission-role="${role}" data-permission-key="${p.key}" ${enabled?"checked":""}><span>${enabled?"✓":"–"}</span></label></td>`;
         return `<td><strong class="${enabled?"permission-yes":"permission-no"}">${enabled?"✓":"–"}</strong></td>`;
       };
@@ -1554,7 +1594,7 @@
     bunnyDashboardTimer=setInterval(()=>{paintBunnyDashboard(event);syncBunnyPlannerCycle(event);},1000);
     const btn=$("bunnyRoundCompleteButton");
     if(btn)btn.onclick=async()=>{
-      const round=Number(btn.dataset.round); if(!round||!isLeadership())return; if(!bunnyRoundEventId){alert("Pågående derby mangler Derby-ID. Publiser derbyet i Derbyadministrasjon først.");return;}
+      const round=Number(btn.dataset.round); if(!round||!hasPermission("derby.board.update"))return; if(!bunnyRoundEventId){alert("Pågående derby mangler Derby-ID. Publiser derbyet i Derbyadministrasjon først.");return;}
       if(!confirm(`Bekreft at harepus ${round} er tatt. Da avsluttes denne runden for alle medlemmer.`))return;
       btn.disabled=true;
       try{await backend.completeBunnyRound(bunnyRoundEventId,round);bunnyRoundRows=await backend.getBunnyRoundState(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre harepusstatus. Kontroller at SQL-oppdateringen er kjørt."));}
@@ -1562,13 +1602,13 @@
     };
     const save=$("bunnyManualSave"), clear=$("bunnyManualClear"), input=$("bunnyManualNextAt");
     if(save) save.onclick=async()=>{
-      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
+      if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
       const nextAt=new Date(raw); if(Number.isNaN(nextAt.getTime())){alert("Tidspunktet er ikke gyldig.");return;}
       if(!confirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
       save.disabled=true; try{await backend.setBunnyRoundSchedule(bunnyRoundEventId,model.round,nextAt.toISOString());bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre manuelt harepusttidspunkt. Kontroller at SQL-oppdateringen er kjørt."));} save.disabled=false;
     };
     if(clear) clear.onclick=async()=>{
-      if(!isLeadership()||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!confirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
+      if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!confirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
       clear.disabled=true; try{await backend.clearBunnyRoundSchedule(bunnyRoundEventId,model.round);bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke fjerne tidsjusteringen."));} clear.disabled=false;
     };
   }
@@ -1605,9 +1645,28 @@
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
   }
 
+  function currentActiveDerbyEvent() {
+    const events=Array.isArray(state.derbyManagement?.events)?state.derbyManagement.events:[];
+    const now=Date.now();
+    const currentByTime=events
+      .filter(event=>{
+        const start=event?.start_at?new Date(event.start_at).getTime():NaN;
+        const end=event?.end_at?new Date(event.end_at).getTime():NaN;
+        return Number.isFinite(start) && now>=start && (!Number.isFinite(end)||now<end);
+      })
+      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
+    if(currentByTime)return currentByTime;
+    const activeByStatus=events
+      .filter(event=>event?.status==="active")
+      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
+    if(activeByStatus)return activeByStatus;
+    const fallback=state.derbyManagement?.next;
+    return fallback && derbyDashboardPhase(fallback)==="active" ? fallback : null;
+  }
+
   function activeNormalDerby() {
-    const event=state.derbyManagement?.next;
-    return !!(event && event.status==="active" && /normal|standard/i.test(String(event.name||"")));
+    const event=currentActiveDerbyEvent();
+    return !!(event && derbyDashboardPhase(event)==="active" && /normal|standard/i.test(String(event.name||"")));
   }
 
   function renderNormalDerbyCompletion() {
@@ -1679,10 +1738,11 @@
 
   function renderParticipationLock() {
     const {locked, deadline} = participationDeadlineState();
+    const canPlan=hasPermission("derby.plan");
     $$(".choice-button").forEach(button => {
-      button.disabled = locked;
-      button.setAttribute("aria-disabled", String(locked));
-      button.title = locked ? "Svarfristen er utløpt. Svaret kan ikke registreres eller endres." : "";
+      button.disabled = locked || !canPlan;
+      button.setAttribute("aria-disabled", String(locked || !canPlan));
+      button.title = !canPlan ? "Rollen din har ikke tilgang til derbyplanlegging." : (locked ? "Svarfristen er utløpt. Svaret kan ikke registreres eller endres." : "");
     });
     const status = $("participationStatus");
     if (locked && status) {
@@ -1724,7 +1784,10 @@
   }
 
   function renderDerbyManagement() {
-    if (!isAdmin()) return;
+    if (!hasPermission("derby.settings.publish")) {
+      renderAdminActions();
+      return;
+    }
     const dm = state.derbyManagement || {templates:[],events:[],next:null};
     const select = $("derbyTemplateSelect");
     if (select) {
@@ -1746,13 +1809,13 @@
   }
 
   function renderAdminActions() {
-    const pendingMembers = hasPermission("members.approve") ? state.accounts.filter(a=>a.status==="pending").length : 0;
+    const pendingMembers = hasAnyPermission(["members.approve","members.reject"]) ? state.accounts.filter(a=>a.status==="pending").length : 0;
     const pendingTips = hasPermission("content.pending.view") ? (state.content?.pendingTips?.length || 0) : 0;
     const total = pendingMembers + pendingTips;
     const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
     const list = $("adminActionList");
-    if (list) list.innerHTML = total ? `${pendingMembers ? `<button class="action-item" data-action-route="admin"><strong>${pendingMembers}</strong><span>medlemsforespørsel${pendingMembers===1?"":"er"} venter</span></button>`:""}${pendingTips ? `<button class="action-item" data-action-route="admin"><strong>${pendingTips}</strong><span>tips venter på godkjenning</span></button>`:""}` : `<p class="empty-state">Ingen saker krever handling akkurat nå.</p>`;
-    $$("[data-action-route]").forEach(b=>b.onclick=()=>{ showAdminModule("actions"); });
+    if (list) list.innerHTML = total ? `${pendingMembers ? `<button class="action-item" data-action-admin="applications"><strong>${pendingMembers}</strong><span>medlemsforespørsel${pendingMembers===1?"":"er"} venter</span></button>`:""}${pendingTips ? `<button class="action-item" data-action-admin="actions"><strong>${pendingTips}</strong><span>tips venter på godkjenning</span></button>`:""}` : `<p class="empty-state">Ingen saker krever handling akkurat nå.</p>`;
+    $$("[data-action-admin]").forEach(b=>b.onclick=()=>showAdminModule(b.dataset.actionAdmin));
   }
 
   async function init() {
@@ -2044,7 +2107,7 @@
   };
   if ($("leadershipMessageForm")) $("leadershipMessageForm").onsubmit = async e => {
     e.preventDefault();
-    if (busy || !isLeadership()) return;
+    if (busy || !hasPermission("chat.leadership.post")) return;
     const input = $("leadershipMessageInput");
     const status = $("leadershipMessageStatus");
     const message = input.value.trim();
@@ -2064,7 +2127,7 @@
   $("memberFilter").onchange = renderMembers;
 
   $$(".choice-button").forEach(button => button.onclick = async () => {
-    if (busy || !current()) return;
+    if (busy || !current() || !hasPermission("derby.plan")) return;
     if (participationDeadlineState().locked) {
       renderParticipationLock();
       alert("Svarfristen er utløpt. Det går ikke an å registrere eller endre derby-svar etter fristen.");
@@ -2079,6 +2142,7 @@
   taskRange.oninput = progress;
   $("finishDerby").onclick = () => { taskRange.value = taskRange.max; progress(); $("derbyStatus").value = "Ferdig"; $("finishStatus").textContent = "Ferdig registrert " + new Date().toLocaleString("nb-NO") + "."; };
   function openDerbyEditorDialog() {
+    if(!hasPermission("derby.settings.publish"))return;
     const dates = nextDerbyDates();
     $("derbyStartAt").value = toLocalInput(dates.start);
     $("derbyEndAt").value = toLocalInput(dates.end);
@@ -2126,7 +2190,7 @@
   }
 
   $("saveDerby").onclick = async () => {
-    if (busy) return;
+    if (busy || !hasPermission("derby.settings.publish")) return;
     const event = derbyEditorPayload();
     setBusy(true);
     try { await backend.publishDerbyEvent(event); await refreshState(); closeDialog(editor); } catch(e) { alert(humanError(e)); }
@@ -2155,15 +2219,15 @@
   if($("bunnyAmountMinus")) $("bunnyAmountMinus").onclick=()=>{$("bunnyEditAmount").value=Math.max(1,(Number($("bunnyEditAmount").value)||1)-1);updateBunnyEditorPreview();};
   if($("bunnyAmountPlus")) $("bunnyAmountPlus").onclick=()=>{$("bunnyEditAmount").value=(Number($("bunnyEditAmount").value)||1)+1;updateBunnyEditorPreview();};
   if($("bunnyEditAmount")) $("bunnyEditAmount").oninput=updateBunnyEditorPreview;
-  if($("bunnyTaskEditorForm")) $("bunnyTaskEditorForm").onsubmit=async e=>{e.preventDefault();const id=$("bunnyEditTaskId").value,name=$("bunnyEditName").value.trim(),category=$("bunnyEditCategory").value.trim(),description=$("bunnyEditDescription").value.trim(),amount=Number($("bunnyEditAmount").value);if(!name||!category||!description||!amount)return;const status=$("bunnyTaskEditorStatus");status.textContent="Lagrer …";try{await backend.updateBunnyTask(id,{name,category,description,amount});$("bunnyTaskEditorDialog").close();await loadBunny();}catch(err){status.textContent=humanError(err);}};
+  if($("bunnyTaskEditorForm")) $("bunnyTaskEditorForm").onsubmit=async e=>{e.preventDefault();if(!hasPermission("derby.task_library.edit"))return;const id=$("bunnyEditTaskId").value,name=$("bunnyEditName").value.trim(),category=$("bunnyEditCategory").value.trim(),description=$("bunnyEditDescription").value.trim(),amount=Number($("bunnyEditAmount").value);if(!name||!category||!description||!amount)return;const status=$("bunnyTaskEditorStatus");status.textContent="Lagrer …";try{await backend.updateBunnyTask(id,{name,category,description,amount});$("bunnyTaskEditorDialog").close();await loadBunny();}catch(err){status.textContent=humanError(err);}};
 
-  if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
-  if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
+  if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { if(!hasPermission("content.approve"))return; $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
+  if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { if(!hasPermission("chat.community.post"))return; $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
   if ($("openTipForm")) $("openTipForm").onclick = () => { adminTipMode=false; $("tipForm").reset(); $("tipDialogTitle").textContent="Send inn tips"; $("tipSubmitButton").textContent="Send til godkjenning"; $("tipMessage").textContent=""; showDialog(tipDialog); };
-  if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { adminTipMode=true; $("tipForm").reset(); $("tipDialogTitle").textContent="Publiser tips"; $("tipSubmitButton").textContent="Publiser tips"; $("tipMessage").textContent=""; showDialog(tipDialog); };
+  if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { if(!hasPermission("content.approve"))return; adminTipMode=true; $("tipForm").reset(); $("tipDialogTitle").textContent="Publiser tips"; $("tipSubmitButton").textContent="Publiser tips"; $("tipMessage").textContent=""; showDialog(tipDialog); };
 
   if ($("announcementForm")) $("announcementForm").onsubmit = async e => {
-    e.preventDefault(); if (busy || !isAdmin()) return;
+    e.preventDefault(); if (busy || !hasPermission("content.approve")) return;
     setBusy(true);
     try { await backend.createContent("announcement", $("announcementTitle").value.trim(), $("announcementBody").value.trim(), "", true); closeDialog(announcementDialog); e.target.reset(); await refreshState(); }
     catch(err) { $("announcementMessage").textContent=humanError(err); }
@@ -2171,7 +2235,7 @@
   };
 
   if ($("derbyPostForm")) $("derbyPostForm").onsubmit = async e => {
-    e.preventDefault(); if (busy) return;
+    e.preventDefault(); if (busy || !hasPermission("chat.community.post")) return;
     setBusy(true);
     try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); }
     catch(err) { $("derbyPostMessage").textContent=humanError(err); }
@@ -2179,10 +2243,11 @@
   };
 
   if ($("tipForm")) $("tipForm").onsubmit = async e => {
-    e.preventDefault(); if (busy) return;
+    e.preventDefault(); if (busy || (adminTipMode && !hasPermission("content.approve"))) return;
     setBusy(true);
     try {
-      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, adminTipMode && isAdmin());
+      const publishNow=adminTipMode && hasPermission("content.approve");
+      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, publishNow);
       closeDialog(tipDialog); e.target.reset(); await refreshState();
       if (!adminTipMode) alert("Takk! Tipset er sendt til admin for gjennomgang.");
     } catch(err) { $("tipMessage").textContent=humanError(err); }
@@ -2219,7 +2284,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.49").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.56").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
