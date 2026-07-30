@@ -672,6 +672,7 @@
     $("participationStatus").textContent = user.choice === "joined" ? "Du har bekreftet at du deltar." : user.choice === "pause" ? "Du tar pause i neste derby." : user.choice === "unsure" ? "Du er registrert som usikker." : "Du har ikke svart på deltakelse ennå.";
     $("myStatusMetric").textContent = choiceLabel(user.choice);
     renderDerbyConfig();
+    renderNormalDerbyCompletion();
     renderMetrics();
     renderMembers();
     renderPreferences();
@@ -1004,7 +1005,7 @@
 
   function adminPreferenceAccounts() {
     const members=approved();
-    return isNormalDerbyPreferenceScope() ? members.filter(a=>a.choice==="joined") : members;
+    return isNormalDerbyPreferenceScope() ? members.filter(a=>a.choice==="joined" && !a.derbyCompleted) : members;
   }
 
   function preferenceStats() {
@@ -1033,7 +1034,7 @@
     const rows = TASK_TYPES.map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
     const scopeText=$("adminPreferenceScope");
     if(scopeText) scopeText.textContent=normalScope
-      ? `Viser kun de ${scopedMembers.length} medlem${scopedMembers.length===1?"met":"mene"} som har svart «Jeg deltar» i dette Normal derbyet.`
+      ? `Viser de ${scopedMembers.length} medlem${scopedMembers.length===1?"met":"mene"} som deltar og fortsatt har oppgaver igjen i dette Normal derbyet.`
       : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.";
     $("adminPreferenceTable").innerHTML = rows.map(x => `<tr><td><strong>${esc(x.t)}</strong></td><td>${x.s.like}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td>${x.s.no}</td><td><span class="recommendation ${x.r.cls}">${x.r.label}</span></td></tr>`).join("");
     const most = rows.slice().sort((a,b) => (b.s.like*2+b.s.can)-(a.s.like*2+a.s.can)).slice(0,3);
@@ -1046,7 +1047,7 @@
         const likes = TASK_TYPES.filter(t => a.preferences?.[t] === "like");
         const can = TASK_TYPES.filter(t => a.preferences?.[t] === "can");
         return `<article class="preference-member-card"><h4>${esc(a.name)}</h4><p><strong>❤️ Liker:</strong> ${likes.map(esc).join(", ") || "Ikke registrert"}</p><p><strong>👍 Kan ta:</strong> ${can.map(esc).join(", ") || "Ikke registrert"}</p></article>`;
-      }).join("") || `<p class="empty-state">${normalScope?"Ingen medlemmer har svart «Jeg deltar» i dette Normal derbyet ennå.":"Ingen preferanser registrert ennå."}</p>`;
+      }).join("") || `<p class="empty-state">${normalScope?"Ingen deltakere med oppgaver igjen er med i statistikken akkurat nå.":"Ingen preferanser registrert ennå."}</p>`;
     }
   }
 
@@ -1567,6 +1568,7 @@
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
+    renderNormalDerbyCompletion();
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
     setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
     setText("dashboardDeadline", active ? "Pågår nå" : "Mandag kl. 23:00");
@@ -1574,6 +1576,44 @@
     setText("dashboardDerbyMetricLabel", active ? "Pågående derby" : "Neste derby");
     setText("dashboardNextDerbyName", shortType);
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
+  }
+
+  function activeNormalDerby() {
+    const event=state.derbyManagement?.next;
+    return !!(event && event.status==="active" && /normal|standard/i.test(String(event.name||"")));
+  }
+
+  function renderNormalDerbyCompletion() {
+    const user=current();
+    const visible=!!(user && user.choice==="joined" && activeNormalDerby());
+    const completed=!!user?.derbyCompleted;
+    const dashboardButton=$("dashboardDerbyComplete");
+    const derbyCard=$("normalDerbyCompletionCard");
+    if(dashboardButton){dashboardButton.classList.toggle("hidden",!visible);dashboardButton.textContent=completed?"Ferdig registrert ✓":"Jeg er ferdig";dashboardButton.classList.toggle("is-completed",completed);}
+    derbyCard?.classList.toggle("hidden",!visible);
+    setText("normalDerbyCompletionTitle",completed?"Du er registrert som ferdig":"Har du fullført ukens oppgaver?");
+    setText("normalDerbyCompletionText",completed?"Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.":"Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.");
+    const button=$("derbyCompleteButton");
+    if(button){button.textContent=completed?"Angre – jeg har flere oppgaver":"Jeg er ferdig med ukens oppgaver";button.classList.toggle("button-ghost",completed);}
+    setText("derbyCompletionStatus",completed&&user.derbyCompletedAt?`Registrert ${new Date(user.derbyCompletedAt).toLocaleString("nb-NO")}.`:"");
+    const preferenceList=$("preferenceList");
+    if(preferenceList) preferenceList.classList.toggle("preferences-inactive",visible&&completed);
+  }
+
+  async function toggleNormalDerbyCompletion() {
+    if(busy||!current()||!activeNormalDerby()||current().choice!=="joined") return;
+    const user=current(), next=!user.derbyCompleted;
+    const message=next
+      ? "Registrere at du er ferdig med ukens oppgaver? Oppgavepreferansene dine tas da ut av den aktive statistikken."
+      : "Angre ferdigstatus? Oppgavepreferansene dine tas da med i den aktive statistikken igjen.";
+    if(!confirm(message)) return;
+    setBusy(true);
+    try{
+      await backend.setDerbyCompleted(user.id,next);
+      user.derbyCompleted=next;user.derbyCompletedAt=next?new Date().toISOString():null;
+      renderNormalDerbyCompletion();renderAdminPreferences();renderMembers();
+    }catch(e){alert(humanError(e,"Kunne ikke oppdatere ferdigstatus."));}
+    setBusy(false);
   }
 
   function renderTaskHubContext(){
@@ -1808,6 +1848,8 @@
     closeMenu();
   }));
   const dashboardDerbyAction=$("dashboardDerbyAction");
+  if($("dashboardDerbyComplete")) $("dashboardDerbyComplete").onclick=toggleNormalDerbyCompletion;
+  if($("derbyCompleteButton")) $("derbyCompleteButton").onclick=toggleNormalDerbyCompletion;
   // Route is set dynamically in renderDashboard(): Harepus -> Oppgaver, otherwise -> Derby.
 
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");

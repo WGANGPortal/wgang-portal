@@ -198,7 +198,7 @@
     } catch (weeklyDerbyError) {
       console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -207,6 +207,7 @@
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at"),
+      client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle(),
@@ -215,7 +216,7 @@
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100)
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -225,7 +226,14 @@
     const next = events.find(e => ["published","active"].includes(e.status)) || null;
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
-    const accounts = (profilesRes.data || []).map(row => mapProfile(row, participationForView, preferencesRes.data));
+    const completionForView = next ? (completionRes.data || []).filter(row => String(row.event_id) === String(next.id)) : [];
+    const accounts = (profilesRes.data || []).map(row => {
+      const account = mapProfile(row, participationForView, preferencesRes.data);
+      const completion = completionForView.find(item => String(item.user_id) === String(row.id));
+      account.derbyCompleted = !!completion;
+      account.derbyCompletedAt = completion?.completed_at || null;
+      return account;
+    });
     const ownAccount = accounts.find(account => String(account.id) === String(session.user.id));
     if (ownAccount) ownAccount.email = session.user.email || "";
     const contentRows = mapContent(contentRes.data, accounts);
@@ -411,6 +419,22 @@
         if (error) throw error;
       } else {
         const { error } = await client.from("derby_participation").upsert({user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+        if (error) throw error;
+      }
+    },
+    async setDerbyCompleted(userId, completed) {
+      if (!configured) {
+        const a=localState.accounts.find(x=>x.id===userId); if(a){a.derbyCompleted=!!completed;a.derbyCompletedAt=completed?new Date().toISOString():null;} localSave(localState); return;
+      }
+      const { data:event, error:eventError } = await client.from("derby_events").select("id,name,status,start_at,end_at").eq("status","active").order("start_at",{ascending:false}).limit(1).maybeSingle();
+      if (eventError) throw eventError;
+      if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Ferdigstatus kan bare registreres mens et Normal derby pågår.");
+      if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
+      if (completed) {
+        const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("derby_member_completion").delete().eq("event_id",event.id).eq("user_id",userId);
         if (error) throw error;
       }
     },

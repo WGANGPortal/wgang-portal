@@ -502,3 +502,13 @@ body:not(.admin-mode) .admin-only {
   .legal-table{min-width:560px}
   .privacy-summary-card{grid-template-columns:1fr}
 }
+
+/* v0.18.0.51 – Normal derby ferdigstatus */
+.dashboard-derby-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem}
+.dashboard-derby-actions .button{margin-top:0}
+.button-compact{padding:.75rem 1rem;font-size:.88rem;min-height:auto}
+.button-compact.is-completed{opacity:.9}
+.normal-derby-completion{margin-bottom:1.2rem}
+.normal-derby-completion .button{margin-top:.5rem}
+.preferences-inactive{opacity:.58;pointer-events:none}
+@media(max-width:520px){.dashboard-derby-actions{align-items:stretch}.dashboard-derby-actions #dashboardDerbyAction{flex:1 1 58%}.dashboard-derby-actions #dashboardDerbyComplete{flex:0 1 auto;margin-left:auto}}
