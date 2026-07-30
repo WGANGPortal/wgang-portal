@@ -198,6 +198,7 @@
 
     {group:"Derby",key:"derby.view",label:"Se derby",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
     {group:"Derby",key:"derby.plan",label:"Delta i derbyplanlegging",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
+    {group:"Derby",key:"derby.preferences.view",label:"Se aktiv oppgavepreferansestatistikk",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Derby",key:"derby.board.update",label:"Oppdatere dagens oppgavetavle",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Derby",key:"derby.board.publish",label:"Publisere oppgavetavle",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Derby",key:"derby.task_library.edit",label:"Legge til/redigere oppgavemaler",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
@@ -240,6 +241,29 @@
   }
   function isAdmin(user=current()) { return !!user && (user.role==="owner" || (user.role==="admin" && hasPermission("permissions.view",user))); }
   function isLeadership(user=current()) { return !!user && hasPermission("chat.leadership.view",user); }
+  const ADMIN_MODULE_PERMISSIONS = {
+    actions:["content.pending.view","members.approve","members.reject"],
+    derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish"],
+    applications:["members.approve","members.reject"],
+    board:["derby.preferences.view","derby.board.update","derby.board.publish","derby.task_library.edit"],
+    roles:["members.view","members.change_role","members.remove","permissions.view"]
+  };
+  function hasAnyPermission(keys,user=current()){ return (keys||[]).some(key=>hasPermission(key,user)); }
+  function canAccessAdminModule(name,user=current()){ return !!user && hasAnyPermission(ADMIN_MODULE_PERMISSIONS[name]||[],user); }
+  function canAccessAdmin(user=current()){ return !!user && Object.keys(ADMIN_MODULE_PERMISSIONS).some(name=>canAccessAdminModule(name,user)); }
+  function firstAccessibleAdminModule(user=current()){ return ["actions","derby","applications","board","roles"].find(name=>canAccessAdminModule(name,user)) || null; }
+  function applyPermissionVisibility(){
+    document.querySelectorAll("[data-permission-any]").forEach(el=>{
+      const keys=(el.dataset.permissionAny||"").split(",").map(x=>x.trim()).filter(Boolean);
+      el.classList.toggle("hidden",!hasAnyPermission(keys));
+    });
+    document.querySelectorAll("[data-permission-all]").forEach(el=>{
+      const keys=(el.dataset.permissionAll||"").split(",").map(x=>x.trim()).filter(Boolean);
+      el.classList.toggle("hidden",!keys.every(key=>hasPermission(key)));
+    });
+    const group=document.querySelector(".admin-nav-group");
+    if(group) group.classList.toggle("hidden",!canAccessAdmin());
+  }
   function approved() { return state.accounts.filter(a => a.approved); }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
@@ -269,8 +293,8 @@
 
   function navigate(route, useHash=true) {
     if (route==="leadership" && !hasPermission("chat.leadership.view")) route="dashboard";
-    if (route==="admin" && !hasPermission("permissions.view") && !hasPermission("derby.board.update")) route="dashboard";
-    if (route === "admin") { showAdminModule(isAdmin() ? "actions" : "board", useHash); return; }
+    if (route==="admin" && !canAccessAdmin()) route="dashboard";
+    if (route === "admin") { const first=firstAccessibleAdminModule(); if(first) showAdminModule(first,useHash); else navigate("dashboard",useHash); return; }
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
     sidebar.classList.remove("open");
@@ -288,8 +312,7 @@
   };
 
   function showAdminModule(name, useHash=true) {
-    const modulePermission={actions:"content.pending.view",applications:"members.approve",roles:"permissions.view",derby:"derby.board.update",board:"derby.board.update"}[name];
-    if(modulePermission && !hasPermission(modulePermission)){navigate("dashboard");return;}
+    if(!canAccessAdminModule(name)){ const fallback=firstAccessibleAdminModule(); if(fallback && fallback!==name){showAdminModule(fallback,useHash);} else {navigate("dashboard",useHash);} return;}
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === "admin"));
     document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
     const meta = ADMIN_MODULE_META[name] || ["Admin", ""];
@@ -319,6 +342,7 @@
     landing.classList.add("hidden");
     portal.classList.remove("hidden");
     portal.setAttribute("aria-hidden", "false");
+    applyPermissionVisibility();
     document.body.classList.toggle("admin-mode", isAdmin(user));
     document.body.classList.toggle("leadership-mode", isLeadership(user));
     document.body.classList.toggle("owner-mode", isOwner(user));
@@ -1160,15 +1184,17 @@
       latestNews.querySelector('[data-route="discussions"]').onclick = () => navigate("discussions");
     }
 
-    if (isAdmin()) {
+    if (hasPermission("content.pending.view")) {
       const pending = $("pendingTips");
-      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p></div><div class="approval-actions"><button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button><button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
+      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p></div><div class="approval-actions">${hasPermission("content.approve")?`<button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button>`:""}${hasPermission("content.reject")?`<button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
       $$('[data-tip-approve]').forEach(b => b.onclick = async () => {
+        if(!hasPermission("content.approve")) return alert("Du har ikke rettighet til å godkjenne innhold.");
         if (busy) return; setBusy(true);
         try { await backend.moderateContent(b.dataset.tipApprove,"published"); await refreshState(); } catch(e) { alert(humanError(e)); }
         setBusy(false);
       });
       $$('[data-tip-reject]').forEach(b => b.onclick = async () => {
+        if(!hasPermission("content.reject")) return alert("Du har ikke rettighet til å avvise innhold.");
         if (busy) return; setBusy(true);
         try { await backend.moderateContent(b.dataset.tipReject,"rejected"); await refreshState(); } catch(e) { alert(humanError(e)); }
         setBusy(false);
@@ -1240,15 +1266,16 @@
   }
 
   function renderAdmin() {
-    if (!hasPermission("members.view") && !hasPermission("members.approve") && !hasPermission("permissions.view")) return;
+    if (!canAccessAdmin()) return;
+    applyPermissionVisibility();
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
-    $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions"><button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button><button class="button button-small button-danger" data-reject="${a.id}">Avslå</button></div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
+    if($("pendingMembers")) $("pendingMembers").innerHTML = pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions">${hasPermission("members.approve")?`<button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button>`:""}${hasPermission("members.reject")?`<button class="button button-small button-danger" data-reject="${a.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`;
     $("accountAdminTable").innerHTML = all.map(a => {
       const lockedOwner = a.role === "owner" && !isOwner();
       const ownOwner = a.role === "owner" && a.id === current().id;
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
-      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${ownOwner || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : `<button class="table-action" data-remove="${a.id}">Fjern</button>`}</td></tr>`;
+      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownOwner || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
     }).join("");
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
@@ -1578,28 +1605,9 @@
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
   }
 
-  function currentActiveDerbyEvent() {
-    const events=Array.isArray(state.derbyManagement?.events)?state.derbyManagement.events:[];
-    const now=Date.now();
-    const activeByStatus=events
-      .filter(event=>event?.status==="active")
-      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
-    if(activeByStatus) return activeByStatus;
-    const currentByTime=events
-      .filter(event=>{
-        const start=event?.start_at?new Date(event.start_at).getTime():NaN;
-        const end=event?.end_at?new Date(event.end_at).getTime():NaN;
-        return Number.isFinite(start) && now>=start && (!Number.isFinite(end)||now<end);
-      })
-      .sort((a,b)=>new Date(b.start_at||0)-new Date(a.start_at||0))[0];
-    if(currentByTime) return currentByTime;
-    const fallback=state.derbyManagement?.next;
-    return fallback && derbyDashboardPhase(fallback)==="active" ? fallback : null;
-  }
-
   function activeNormalDerby() {
-    const event=currentActiveDerbyEvent();
-    return !!(event && /normal|standard/i.test(String(event.name||"")));
+    const event=state.derbyManagement?.next;
+    return !!(event && event.status==="active" && /normal|standard/i.test(String(event.name||"")));
   }
 
   function renderNormalDerbyCompletion() {
