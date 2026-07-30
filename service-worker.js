@@ -1,6 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.47-privacy-legal-restore";
+const CACHE_NAME = "wgang-v0.18.0.49-name-minimization";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css", "/app.js", "/backend.js", "/config.js",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css",
+  "/app.js?v=0.18.0.49", "/backend.js?v=0.18.0.49", "/config.js?v=0.18.0.49",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
