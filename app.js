@@ -1,4 +1,4 @@
-/* v0.18.0.56 – databasehåndhevet rettighetsmodell */
+/* v0.18.0.57 – Seniorrolle på databasehåndhevet rettighetsmodell */
 (function () {
   "use strict";
 
@@ -35,7 +35,7 @@
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
     "Din status":"Your status","Svarfrist":"Response deadline","Har svart":"Responded","Neste derby":"Next derby",
-    "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Ass. leder":"Assistant leader","Administrator":"Administrator","Eier":"Owner",
+    "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Senior":"Senior","Ass. leder":"Assistant leader","Administrator":"Administrator","Eier":"Owner",
     "Derby-senter":"Derby Center","Planlegg deltakelsen og følg fremdriften.":"Plan your participation and follow progress.",
     "Medlemsoversikt":"Member overview","Finn naboene dine og se derby-status.":"Find your neighbors and see their Derby status.",
     "Oppgavepreferanser":"Task preferences","Velg hva som passer deg best.":"Choose what suits you best.",
@@ -60,7 +60,7 @@
     "Nytt innlegg":"New post","Ny kunngjøring":"New announcement","Publiser kunngjøring":"Publish announcement","Publiser innlegg":"Publish post",
     "KUNNSKAP":"KNOWLEDGE","WGANG Tips & triks":"WGANG Tips & Tricks","Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.":"What we already know works well – gathered in one place and developed together with the Neighborhood.",
     "WGANGS GRUNNSTRATEGI":"WGANG'S CORE STRATEGY","320 poeng – og en tavle som holdes i bevegelse":"320 points – and a task board that keeps moving",
-    "LEDELSE":"LEADERSHIP","Lederprat":"Leadership Chat","Et lukket rom for Ass. leder, Administrator og Eier.":"A private space for Assistant Leaders, Administrators and the Owner.",
+    "LEDELSE":"LEADERSHIP","Lederprat":"Leadership Chat","Et lukket rom for Ass. leder, Senior, Administrator og Eier.":"A private space for Assistant Leaders, Seniors, Administrators and the Owner.",
     "STRATEGIROM":"STRATEGY ROOM","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to WGANG leadership.",
     "Ny melding":"New message","Send melding":"Send message","Skriv en melding til ledelsen …":"Write a message to the leadership …",
     "Starter tirsdag kl. 10:00":"Starts Tuesday at 10:00","Mandag kl. 23:00":"Monday at 23:00","Svar gjerne innen mandag kl. 23:00.":"Please respond by Monday at 23:00.",
@@ -82,7 +82,7 @@
     "Godkjente medlemmer":"Approved members","Ingen svar ennå":"No responses yet",
     "Neste derby er ikke publisert ennå.":"The next Derby has not been published yet.",
     "Ingen kunngjøringer ennå.":"No announcements yet.","Ingen innlegg ennå.":"No posts yet.",
-    "Lederprat":"Leadership Chat","Lukket chat for Ass. leder, Admin og Eier.":"Private chat for Assistant Leaders, Admins and the Owner.",
+    "Lederprat":"Leadership Chat","Lukket chat for Ass. leder, Senior, Admin og Eier.":"Private chat for Assistant Leaders, Seniors, Admins and the Owner.",
     "Skriv en melding":"Write a message","Send melding":"Send message","Ingen meldinger ennå.":"No messages yet.",
     "Slett melding":"Delete message","Rediger melding":"Edit message",
     "Påmeldt":"Participating","Pause":"Taking a break","Venter":"Waiting","Ikke svart":"No response",
@@ -190,7 +190,7 @@
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
 
   const PERMISSION_DEFINITIONS = [
-    {group:"Medlemmer",key:"members.view",label:"Se administrativ medlemsoversikt",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
+    {group:"Medlemmer",key:"members.view",label:"Se administrativ medlemsoversikt",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Medlemmer",key:"members.approve",label:"Godkjenne medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Medlemmer",key:"members.reject",label:"Avslå medlemsforespørsel",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
     {group:"Medlemmer",key:"members.change_role",label:"Endre rolle på medlem",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
@@ -225,6 +225,11 @@
     {group:"Historikk",key:"history.permission_audit",label:"Se logg over rettighetsendringer",defaults:{owner:1,admin:1,assistant_leader:0,member:0}}
   ];
 
+  const EDITABLE_PERMISSION_ROLES = ["admin","assistant_leader","senior","member"];
+  function defaultPermissionValue(def,role){
+    const defaultRole=role==="senior"?"assistant_leader":role;
+    return !!def?.defaults?.[defaultRole];
+  }
   function rolePermissionOverride(role,key){
     const rows=state.permissions?.rolePermissions||[];
     const row=rows.find(x=>x.role===role&&x.permission_key===key);
@@ -237,7 +242,7 @@
     if(def?.ownerOnly)return false;
     const override=rolePermissionOverride(user.role,key);
     if(override!==null)return override;
-    return !!def?.defaults?.[user.role];
+    return defaultPermissionValue(def,user.role);
   }
   const ADMIN_MODULE_PERMISSIONS = {
     actions:["content.pending.view","members.approve","members.reject"],
@@ -279,7 +284,7 @@
     document.body.classList.toggle("owner-mode",isOwner(user));
   }
   function approved() { return state.accounts.filter(a => a.approved); }
-  function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",member:"Medlem"}[role] || role; }
+  function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
@@ -1313,7 +1318,7 @@
       const lockedOwner = a.role === "owner" && !isOwner();
       const ownAccount = a.id === current().id;
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
-      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
+      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="senior" ${a.role === "senior" ? "selected" : ""}>Senior</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
     }).join("") : "";
     const counts = {joined:0,pause:0,unsure:0,waiting:0};
     all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
@@ -1354,18 +1359,18 @@
     const def=PERMISSION_DEFINITIONS.find(x=>x.key===key);
     if(def?.ownerOnly&&role!=="owner")return false;
     const row=(state.permissions?.rolePermissions||[]).find(x=>x.role===role&&x.permission_key===key);
-    return row ? !!row.enabled : !!def?.defaults?.[role];
+    return row ? !!row.enabled : defaultPermissionValue(def,role);
   }
   function beginPermissionEdit(){
     permissionDraft={};
-    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>permissionDraft[`${role}|${p.key}`]=permissionValue(role,p.key)));
+    EDITABLE_PERMISSION_ROLES.forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>permissionDraft[`${role}|${p.key}`]=permissionValue(role,p.key)));
     permissionEditMode=true; renderPermissionMatrix();
   }
   function cancelPermissionEdit(){permissionEditMode=false;permissionDraft=null;renderPermissionMatrix();}
   async function savePermissionDraft(){
     if(!isOwner()||!permissionDraft)return;
     const changes=[];
-    ["admin","assistant_leader","member"].forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>{
+    EDITABLE_PERMISSION_ROLES.forEach(role=>PERMISSION_DEFINITIONS.filter(p=>!p.ownerOnly).forEach(p=>{
       const before=permissionValue(role,p.key), after=!!permissionDraft[`${role}|${p.key}`];
       if(before!==after)changes.push({role,key:p.key,label:p.label,before,after});
     }));
@@ -1383,7 +1388,7 @@
     if(!hasPermission("permissions.view")){body.innerHTML="";return;}
     let currentGroup="";
     body.innerHTML=PERMISSION_DEFINITIONS.map(p=>{
-      const groupRow=p.group!==currentGroup ? (currentGroup=p.group,`<tr class="permission-group-row"><th colspan="5">${esc(p.group)}</th></tr>`) : "";
+      const groupRow=p.group!==currentGroup ? (currentGroup=p.group,`<tr class="permission-group-row"><th colspan="6">${esc(p.group)}</th></tr>`) : "";
       const cell=(role)=>{
         const enabled=role==="owner"?true:(permissionEditMode&&permissionDraft?!!permissionDraft[`${role}|${p.key}`]:permissionValue(role,p.key));
         if(role==="owner")return `<td><span class="permission-lock">✓ 🔒</span></td>`;
@@ -1391,7 +1396,7 @@
         if(permissionEditMode&&isOwner())return `<td><label class="permission-switch"><input type="checkbox" data-permission-role="${role}" data-permission-key="${p.key}" ${enabled?"checked":""}><span>${enabled?"✓":"–"}</span></label></td>`;
         return `<td><strong class="${enabled?"permission-yes":"permission-no"}">${enabled?"✓":"–"}</strong></td>`;
       };
-      return groupRow+`<tr><td>${esc(p.label)}</td>${cell("owner")}${cell("admin")}${cell("assistant_leader")}${cell("member")}</tr>`;
+      return groupRow+`<tr><td>${esc(p.label)}</td>${cell("owner")}${cell("admin")}${cell("assistant_leader")}${cell("senior")}${cell("member")}</tr>`;
     }).join("");
     body.querySelectorAll("[data-permission-key]").forEach(input=>input.onchange=()=>{if(!permissionDraft)return;permissionDraft[`${input.dataset.permissionRole}|${input.dataset.permissionKey}`]=input.checked;renderPermissionMatrix();});
     let controls=card?.querySelector(".permission-edit-controls");
@@ -2284,7 +2289,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.56").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.57").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

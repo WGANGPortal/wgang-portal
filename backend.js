@@ -1,4 +1,4 @@
-/* v0.18.0.56 – databasehåndhevet rettighetsmodell */
+/* v0.18.0.57 – Seniorrolle på databasehåndhevet rettighetsmodell */
 (function () {
   "use strict";
 

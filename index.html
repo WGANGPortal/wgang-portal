@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.56">
+  <link rel="stylesheet" href="main.css?v=0.18.0.57">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -117,7 +117,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.56</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.57</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -209,13 +209,13 @@
 <article class="portal-card admin-module" data-permission-any="members.view,members.change_role,members.remove" data-admin-module="roles"><div class="card-header"><div><p class="card-kicker">GODKJENTE MEDLEMMER</p><h2>Medlemmer og roller</h2></div></div><div class="table-wrap"><table><thead><tr><th>Spillnavn</th><th>Rolle</th><th>Derbystatus</th><th></th></tr></thead><tbody id="accountAdminTable"></tbody></table></div></article><article class="portal-card admin-module" data-permission-any="permissions.view" data-admin-module="roles" id="permissionsMatrixCard">
   <div class="card-header">
     <div><p class="card-kicker">TILGANGSKONTROLL</p><h2>Roller og rettigheter</h2>
-      <p class="helper-text">Oversikten viser hvilke tilganger portalen faktisk bruker. Eier kan endre rettigheter for Admin, Ass. leder og Medlem. Eier-rettigheter er låst.</p>
+      <p class="helper-text">Oversikten viser hvilke tilganger portalen faktisk bruker. Eier kan endre rettigheter for Admin, Ass. leder, Senior og Medlem. Eier-rettigheter er låst.</p>
     </div>
     <button type="button" class="button button-secondary owner-only" id="togglePermissionEdit">Rediger rettigheter</button>
   </div>
   <div class="table-wrap permission-table-wrap">
     <table class="permission-table">
-      <thead><tr><th>Område / rettighet</th><th>Eier</th><th>Admin</th><th>Ass. leder</th><th>Medlem</th></tr></thead>
+      <thead><tr><th>Område / rettighet</th><th>Eier</th><th>Admin</th><th>Ass. leder</th><th>Senior</th><th>Medlem</th></tr></thead>
       <tbody id="permissionMatrixBody"></tbody>
     </table>
   </div>
@@ -428,6 +428,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.56"></script><script src="backend.js?v=0.18.0.56"></script><script src="app.js?v=0.18.0.56"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.57"></script><script src="backend.js?v=0.18.0.57"></script><script src="app.js?v=0.18.0.57"></script>
 </body>
 </html>
