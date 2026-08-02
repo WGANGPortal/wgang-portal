@@ -1,4 +1,4 @@
-/* v0.18.0.58 – Dynamic Derby Engine på v0.18.0.57-rettighetsmodellen */
+/* v0.18.0.59 – Derby Rule Confirmation på v0.18.0.58-motoren */
 (function () {
   "use strict";
 
@@ -27,6 +27,7 @@
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
+  const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -97,10 +98,16 @@
     return true;
   }
 
-  function mapProfile(row, participation, preferences) {
+  function mapProfile(row, participation, preferences, expectedMaxPoints) {
     const prefMap = {};
     (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
     const part = (participation || []).find(p => p.user_id === row.id);
+    const rawChoice = part ? part.choice : "waiting";
+    const participationAcknowledged = rawChoice !== "joined" || Boolean(
+      part?.rules_acknowledged_at &&
+      part?.rules_acknowledgement_version === DERBY_RULES_ACK_VERSION &&
+      Number(part?.acknowledged_max_points) === Number(expectedMaxPoints || 320)
+    );
     return {
       id: row.id,
       name: String(row.hay_day_name || "").toUpperCase(),
@@ -114,7 +121,9 @@
       otherLanguages: row.other_languages || "",
       status: row.status || "pending",
       approved: row.status === "approved",
-      choice: part ? part.choice : "waiting",
+      choice: rawChoice === "joined" && !participationAcknowledged ? "waiting" : rawChoice,
+      participationNeedsConfirmation: rawChoice === "joined" && !participationAcknowledged,
+      participationRulesAcknowledgedAt: participationAcknowledged ? part?.rules_acknowledged_at || null : null,
       preferences: prefMap,
       createdAt: row.created_at || null,
       updatedAt: row.updated_at || null
@@ -200,13 +209,13 @@
     }
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
-      client.from("derby_participation").select("user_id,choice"),
+      client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
-      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at"),
+      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
@@ -231,8 +240,9 @@
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const completionForView = next ? (completionRes.data || []).filter(row => String(row.event_id) === String(next.id)) : [];
+    const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
     const accounts = (profilesRes.data || []).map(row => {
-      const account = mapProfile(row, participationForView, preferencesRes.data);
+      const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
       const completion = completionForView.find(item => String(item.user_id) === String(row.id));
       account.derbyCompleted = !!completion;
       account.derbyCompletedAt = completion?.completed_at || null;
@@ -406,11 +416,23 @@
       const { data } = await client.auth.getSession();
       return loadRemoteState(data.session);
     },
-    async setParticipation(userId, choice) {
-      if (!configured) {
-        const a=localState.accounts.find(x=>x.id===userId); if(a)a.choice=choice; localSave(localState); return;
+    async setParticipation(userId, choice, acknowledgement={}) {
+      if (!new Set(["joined","pause","unsure"]).has(choice)) throw new Error("Ugyldig derby-svar.");
+      if (choice === "joined" && acknowledgement.accepted !== true) {
+        throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
       }
-      const { data:event, error:eventError } = await client.from("derby_events").select("id,status,start_at,signup_deadline").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
+      if (!configured) {
+        const a=localState.accounts.find(x=>x.id===userId);
+        if(a){
+          a.choice=choice;
+          a.participationNeedsConfirmation=false;
+          a.participationRulesAcknowledgedAt=choice==="joined"?new Date().toISOString():null;
+        }
+        localSave(localState); return;
+      }
+      const authUser = await getAuthUser();
+      if (!authUser?.id || String(authUser.id) !== String(userId)) throw new Error("Du kan bare registrere ditt eget derby-svar.");
+      const { data:event, error:eventError } = await client.from("derby_events").select("id,name,status,start_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
       if (eventError) throw eventError;
       if (event) {
         const now = Date.now();
@@ -419,10 +441,28 @@
         if (event.status === "active" || (Number.isFinite(deadline) && now >= deadline) || (Number.isFinite(start) && now >= start)) {
           throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
         }
-        const { error } = await client.from("derby_event_participation").upsert({event_id:event.id,user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
+        const acknowledgedAt = choice === "joined" ? new Date().toISOString() : null;
+        const { error } = await client.from("derby_event_participation").upsert({
+          event_id:event.id,
+          user_id:userId,
+          choice,
+          rules_acknowledged_at:acknowledgedAt,
+          rules_acknowledgement_version:choice === "joined" ? DERBY_RULES_ACK_VERSION : null,
+          acknowledged_max_points:choice === "joined" ? Number(event.max_points || DEFAULT_DERBY.maxPoints) : null,
+          updated_at:new Date().toISOString()
+        },{onConflict:"event_id,user_id"});
         if (error) throw error;
       } else {
-        const { error } = await client.from("derby_participation").upsert({user_id:userId,choice,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+        const { data:settings, error:settingsError } = await client.from("derby_settings").select("max_points").eq("id",1).maybeSingle();
+        if (settingsError) throw settingsError;
+        const { error } = await client.from("derby_participation").upsert({
+          user_id:userId,
+          choice,
+          rules_acknowledged_at:choice === "joined" ? new Date().toISOString() : null,
+          rules_acknowledgement_version:choice === "joined" ? DERBY_RULES_ACK_VERSION : null,
+          acknowledged_max_points:choice === "joined" ? Number(settings?.max_points || DEFAULT_DERBY.maxPoints) : null,
+          updated_at:new Date().toISOString()
+        },{onConflict:"user_id"});
         if (error) throw error;
       }
     },

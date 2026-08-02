@@ -535,4 +535,36 @@ body:not(.admin-mode) .admin-only {
 .derby-warning-card{border-color:rgba(184,112,37,.28);background:linear-gradient(180deg,#fffaf2,#fff)}
 .derby-warning-note{margin:16px 0 0;padding:12px 14px;border-radius:14px;background:rgba(184,112,37,.10)}
 @media(max-width:760px){.derby-rule-grid{grid-template-columns:1fr}.derby-target-facts{grid-template-columns:1fr 1fr}}
+
+/* v0.18.0.59 – tydelig og obligatorisk regelbekreftelse ved derbydeltakelse */
+.participation-card{align-self:start}
+.participation-commitment{margin:18px 0;padding:16px;border:1px solid rgba(184,112,37,.32);border-radius:16px;background:linear-gradient(145deg,#fff8ec,#fff)}
+.participation-commitment>strong{display:block;color:#7b4b20;font-size:.92rem}
+.participation-commitment>p{margin:6px 0 14px;color:var(--muted);font-size:.82rem;line-height:1.5}
+.participation-commitment-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.participation-commitment-facts span{min-width:0;padding:10px;border-radius:12px;background:rgba(184,112,37,.09)}
+.participation-commitment-facts b,.participation-commitment-facts small{display:block}
+.participation-commitment-facts b{color:#6f431c;font-size:.82rem;line-height:1.25}
+.participation-commitment-facts small{margin-top:3px;color:var(--muted);font-size:.67rem;line-height:1.3}
+.choice-button[data-choice="joined"]{position:relative}
+.choice-button[data-choice="joined"] small{font-weight:750}
+.choice-button[data-choice="joined"]::after{content:"✓";position:absolute;right:14px;top:50%;translate:0 -50%;display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--pink-soft);color:var(--pink);font-weight:900}
+.derby-participation-dialog{width:min(660px,calc(100% - 24px))}
+.participation-confirm-card{max-height:min(86vh,780px);overflow:auto}
+.participation-confirm-intro{margin:14px 0 16px;color:var(--muted);line-height:1.55}
+.participation-confirm-summary{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:9px;margin-bottom:20px}
+.participation-confirm-summary>div{padding:12px;border-radius:13px;background:var(--cream)}
+.participation-confirm-summary span,.participation-confirm-summary strong{display:block}
+.participation-confirm-summary span{color:var(--muted);font-size:.7rem}
+.participation-confirm-summary strong{margin-top:4px;font-size:.9rem}
+.participation-confirm-list{display:grid;gap:10px;margin:0;padding:0;border:0}
+.participation-confirm-list legend{margin-bottom:10px;color:var(--ink);font-weight:850}
+.dialog-card .participation-rule-check{display:grid;grid-template-columns:24px 1fr;align-items:start;gap:10px;margin:0;padding:12px 13px;border:1px solid var(--border);border-radius:13px;background:#fff;font-weight:650;line-height:1.45;cursor:pointer}
+.participation-rule-check:has(input:checked){border-color:rgba(157,42,83,.38);background:var(--pink-soft)}
+.participation-rule-check input{width:19px;height:19px;margin:1px 0 0;accent-color:var(--pink)}
+.participation-loss-warning{margin:16px 0 0;padding:13px 14px;border-radius:14px;background:rgba(184,112,37,.12);color:#6f431c;font-size:.82rem;line-height:1.5}
+.participation-dialog-actions{margin-top:18px}
+.participation-dialog-actions .button{min-height:44px}
+.participation-dialog-actions .button-primary:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:760px){.participation-commitment-facts,.participation-confirm-summary{grid-template-columns:1fr}.participation-dialog-actions{display:grid;grid-template-columns:1fr}.participation-dialog-actions .button-primary{order:-1}}
 @media(max-width:420px){.derby-target-facts{grid-template-columns:1fr}}

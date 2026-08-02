@@ -1,4 +1,4 @@
-/* v0.18.0.58 – Dynamic Derby Engine på v0.18.0.57-rettighetsmodellen */
+/* v0.18.0.59 – Derby Rule Confirmation på v0.18.0.58-motoren */
 (function () {
   "use strict";
 
@@ -64,8 +64,10 @@
     "STRATEGIROM":"STRATEGY ROOM","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to WGANG leadership.",
     "Ny melding":"New message","Send melding":"Send message","Skriv en melding til ledelsen …":"Write a message to the leadership …",
     "Starter tirsdag kl. 10:00":"Starts Tuesday at 10:00","Mandag kl. 23:00":"Monday at 23:00","Svar gjerne innen mandag kl. 23:00.":"Please respond by Monday at 23:00.",
-    "Jeg deltar":"I'm participating","Jeg gjør mitt beste":"I'll do my best","Jeg tar pause":"I'm taking a break","Ikke med denne uken":"Not participating this week","Jeg er usikker":"I'm unsure","Avklarer før fristen":"I'll decide before the deadline",
+    "Jeg deltar":"I'm participating","Jeg gjør mitt beste":"I'll do my best","Krever regelbekreftelse":"Rule confirmation required","Jeg tar pause":"I'm taking a break","Ikke med denne uken":"Not participating this week","Jeg er usikker":"I'm unsure","Avklarer før fristen":"I'll decide before the deadline",
     "Velg status for uken":"Choose your status for the week","Velg status for neste derby.":"Choose your status for the next Derby.",
+    "Før du velger «Jeg deltar»":"Before choosing ‘I'm participating’","Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.":"Participation is voluntary. When you sign up, you confirm the rules before your response is saved.","på hver oppgave":"on every task","minimum av mulig makspoeng":"minimum of the maximum possible score","0 tapte oppgaver":"0 lost tasks","ingen sletting eller tidsutløp":"no deletion or expiry",
+    "BEKREFT DELTAKELSE":"CONFIRM PARTICIPATION","Du melder deg på neste derby":"You are signing up for the next Derby","Les hvert punkt før du bekrefter.":"Read each item before confirming.","Mål 100 %":"Goal 100%","Minimum 80 %":"Minimum 80%","Dette bekrefter du:":"You confirm the following:","Jeg velger bare oppgaver med derbyets makspoeng.":"I only choose tasks worth the Derby's maximum points.","Jeg kontrollerer oppgavens tidsfrist før jeg velger den, og fullfører oppgaven innen fristen.":"I check the task's time limit before choosing it and complete the task before it expires.","Jeg sletter eller avbryter ikke en oppgave etter at jeg har valgt den, og lar den ikke gå ut på tid.":"I do not delete or abandon a task after choosing it, and I do not let it expire.","Jeg kjenner WGANGs mål og minimumskrav for dette derbyet.":"I understand WGANG's goal and minimum requirement for this Derby.","En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.":"A deleted, abandoned or expired task gives 0 points and uses one of your available tasks.","Avbryt":"Cancel","Bekreft at jeg deltar":"Confirm my participation",
     "Regler":"Rules","WGANG-strategi":"WGANG strategy","Oppgaver":"Tasks","Maks poeng":"Max points","Status":"Status",
     "Publiser kun dette derbyet":"Publish this Derby only","Lagre som standard":"Save as default","Velg grunnmal":"Choose template","Velg derbytype":"Choose Derby type",
     "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description",
@@ -191,6 +193,7 @@
   const legalAcceptanceDialog = $("legalAcceptanceDialog");
   const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
+  const derbyParticipationDialog = $("derbyParticipationDialog");
   const taskRange = $("taskRange");
   const announcementDialog = $("announcementDialog");
   const derbyPostDialog = $("derbyPostDialog");
@@ -724,7 +727,12 @@
     $("welcomeHeading").textContent = "Hei, " + user.name + " 👋";
     $("accountBadge").textContent = roleLabel(user.role).toUpperCase();
     $$(".choice-button").forEach(b => b.classList.toggle("selected", b.dataset.choice === user.choice));
-    $("participationStatus").textContent = user.choice === "joined" ? "Du har bekreftet at du deltar." : user.choice === "pause" ? "Du tar pause i neste derby." : user.choice === "unsure" ? "Du er registrert som usikker." : "Du har ikke svart på deltakelse ennå.";
+    $("participationStatus").textContent = user.participationNeedsConfirmation
+      ? (currentLanguage === "en" ? "Your previous participation response is missing a valid rule confirmation. Choose ‘I'm participating’ and confirm the rules." : "Det tidligere deltakelsessvaret mangler gyldig regelbekreftelse. Velg «Jeg deltar» og bekreft reglene.")
+      : user.choice === "joined" ? (currentLanguage === "en" ? "You have confirmed both your participation and the Derby rules." : "Du har bekreftet at du deltar og at derbyreglene er lest.")
+      : user.choice === "pause" ? (currentLanguage === "en" ? "You are taking a break from the next Derby." : "Du tar pause i neste derby.")
+      : user.choice === "unsure" ? (currentLanguage === "en" ? "You are registered as unsure." : "Du er registrert som usikker.")
+      : (currentLanguage === "en" ? "You have not responded about participation yet." : "Du har ikke svart på deltakelse ennå.");
     $("myStatusMetric").textContent = choiceLabel(user.choice);
     renderDerbyConfig();
     renderNormalDerbyCompletion();
@@ -1744,6 +1752,63 @@
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
 
+  function derbyCommitmentDetails() {
+    const event = state.derbyManagement?.next;
+    const eventName = String(event?.name || state.derby?.type || "Normal Derby");
+    const includedTasks = Math.max(0, Number(event?.task_total || state.derby?.taskTotal || 0));
+    const extraTasks = Math.max(0, Number(event?.extra_tasks || 0));
+    const pointsPerTask = Math.max(0, Number(event?.max_points || state.derby?.maxPoints || 320));
+    const baseMaximum = includedTasks * pointsPerTask;
+    return {
+      eventName: /^Standard Derby$/i.test(eventName) ? "Normal Derby" : eventName,
+      includedTasks,
+      extraTasks,
+      pointsPerTask,
+      baseMaximum,
+      minimumPoints: Math.ceil(baseMaximum * 0.8)
+    };
+  }
+
+  function derbyCommitmentNumber(value) {
+    return new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO").format(Number(value || 0));
+  }
+
+  function renderParticipationCommitment(details=derbyCommitmentDetails()) {
+    setText("participationPointsCommitment", `${derbyCommitmentNumber(details.pointsPerTask)} ${currentLanguage === "en" ? "points" : "poeng"}`);
+    setText("participationMinimumCommitment", `${derbyCommitmentNumber(details.minimumPoints)} ${currentLanguage === "en" ? "points (80%)" : "poeng (80 %)"}`);
+  }
+
+  function updateParticipationConfirmationState() {
+    const checks = [...document.querySelectorAll("[data-participation-rule]")];
+    const confirmButton = $("confirmDerbyParticipation");
+    if (confirmButton) confirmButton.disabled = busy || !checks.length || !checks.every(input => input.checked);
+  }
+
+  function openParticipationConfirmation() {
+    if (participationDeadlineState().locked) {
+      renderParticipationLock();
+      alert(currentLanguage === "en" ? "The response deadline has passed. Your Derby response cannot be changed." : "Svarfristen er utløpt. Det går ikke an å registrere eller endre derby-svaret.");
+      return;
+    }
+    const details = derbyCommitmentDetails();
+    const number = derbyCommitmentNumber;
+    $("derbyParticipationForm")?.reset();
+    setText("participationDialogTitle", currentLanguage === "en" ? `Confirm participation in ${tText(details.eventName)}` : `Bekreft deltakelse i ${details.eventName}`);
+    setText("participationDialogIntro", currentLanguage === "en" ? "Read and tick every item before your response can be saved." : "Les og kryss av hvert punkt før svaret kan lagres.");
+    setText("participationDialogDerbyName", currentLanguage === "en" ? tText(details.eventName) : details.eventName);
+    setText("participationDialogTarget", `${number(details.baseMaximum)} ${currentLanguage === "en" ? "points" : "poeng"}`);
+    setText("participationDialogMinimum", `${number(details.minimumPoints)} ${currentLanguage === "en" ? "points" : "poeng"}`);
+    setText("participationRulePoints", currentLanguage === "en"
+      ? `I only choose tasks worth ${number(details.pointsPerTask)} points (the maximum per task for this Derby).`
+      : `Jeg velger bare oppgaver med ${number(details.pointsPerTask)} poeng (makspoeng per oppgave i dette derbyet).`);
+    setText("participationRuleTarget", currentLanguage === "en"
+      ? `I understand that WGANG's goal is 100% (${number(details.baseMaximum)} points) and the minimum is 80% (${number(details.minimumPoints)} points).`
+      : `Jeg forstår at WGANGs mål er 100 % (${number(details.baseMaximum)} poeng) og minimum er 80 % (${number(details.minimumPoints)} poeng).`);
+    setText("participationDialogStatus", "");
+    updateParticipationConfirmationState();
+    showDialog(derbyParticipationDialog);
+  }
+
   function participationDeadlineState() {
     const event = state.derbyManagement?.next;
     if (!event) return { locked:false, deadline:null };
@@ -1795,6 +1860,7 @@
     const baseMaximum = includedTasks * pointsPerTask;
     const extraMaximum = (includedTasks + extraTasks) * pointsPerTask;
     const number = value => new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO").format(value || 0);
+    renderParticipationCommitment();
     setText("derbyIncludedTasks", number(includedTasks));
     setText("derbyPointsPerTask", number(pointsPerTask));
     setText("derbyBaseMaximum", number(baseMaximum));
@@ -2163,6 +2229,40 @@
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
 
+  document.querySelectorAll("[data-participation-rule]").forEach(input => {
+    input.onchange = updateParticipationConfirmationState;
+  });
+
+  if ($("derbyParticipationForm")) $("derbyParticipationForm").onsubmit = async event => {
+    event.preventDefault();
+    if (busy || !current() || !hasPermission("derby.plan")) return;
+    const checks = [...document.querySelectorAll("[data-participation-rule]")];
+    if (!checks.length || !checks.every(input => input.checked)) {
+      setText("participationDialogStatus", currentLanguage === "en" ? "Tick every item before confirming." : "Kryss av alle punktene før du bekrefter.");
+      updateParticipationConfirmationState();
+      return;
+    }
+    if (participationDeadlineState().locked) {
+      closeDialog(derbyParticipationDialog);
+      renderParticipationLock();
+      alert(currentLanguage === "en" ? "The response deadline has passed. Your Derby response cannot be changed." : "Svarfristen er utløpt. Det går ikke an å registrere eller endre derby-svaret.");
+      return;
+    }
+    const user = current();
+    setBusy(true);
+    updateParticipationConfirmationState();
+    setText("participationDialogStatus", currentLanguage === "en" ? "Saving your confirmation …" : "Lagrer bekreftelsen …");
+    try {
+      await backend.setParticipation(user.id, "joined", {accepted:true});
+      await refreshState();
+      closeDialog(derbyParticipationDialog);
+    } catch(error) {
+      setText("participationDialogStatus", humanError(error, currentLanguage === "en" ? "Could not save the confirmation." : "Kunne ikke lagre bekreftelsen."));
+    }
+    setBusy(false);
+    updateParticipationConfirmationState();
+  };
+
   $$(".choice-button").forEach(button => button.onclick = async () => {
     if (busy || !current() || !hasPermission("derby.plan")) return;
     if (participationDeadlineState().locked) {
@@ -2171,8 +2271,12 @@
       return;
     }
     const user = current(), choice = button.dataset.choice;
+    if (choice === "joined") {
+      openParticipationConfirmation();
+      return;
+    }
     setBusy(true);
-    try { await backend.setParticipation(user.id, choice); user.choice = choice; renderSession(); } catch(e) { alert(humanError(e)); }
+    try { await backend.setParticipation(user.id, choice); await refreshState(); } catch(e) { alert(humanError(e)); }
     setBusy(false);
   });
 
@@ -2321,7 +2425,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.58").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.59").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

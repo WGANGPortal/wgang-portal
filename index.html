@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.58">
+  <link rel="stylesheet" href="main.css?v=0.18.0.59">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -117,7 +117,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.58</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.59</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -144,7 +144,31 @@
         <section class="page" data-page="derby">
           <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegg deltakelsen og følg fremdriften.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
           <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk oppgavefremdrift, poeng og scoreboard er ikke koblet til reelle derbydata ennå. Dette bygges senere på grunnlag av hvordan WGANG faktisk bruker portalen.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
-          <article class="portal-card"><div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div><p class="card-kicker">DELTAR DU?</p><h2>Velg status for uken</h2><div class="choice-grid"><button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Jeg gjør mitt beste</small></button><button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button><button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button></div><p class="helper-text" id="participationStatus">Velg status for neste derby.</p><p class="helper-text"><strong>Svar gjerne innen mandag kl. 23:00.</strong></p><div id="nextDerbyInfo" class="derby-published-info"></div><hr><p class="card-kicker">STRATEGI</p><ul class="strategy-list" id="derbyStrategy"><li>Ta kun oppgaver med 320 poeng i Standard Derby.</li><li>Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.</li><li>Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.</li></ul></article></div>
+          <article class="portal-card participation-card">
+            <div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div>
+            <p class="card-kicker">DELTAR DU?</p>
+            <h2>Velg status for uken</h2>
+            <div class="participation-commitment" id="participationCommitment">
+              <strong>Før du velger «Jeg deltar»</strong>
+              <p>Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.</p>
+              <div class="participation-commitment-facts">
+                <span><b id="participationPointsCommitment">320 poeng</b><small>på hver oppgave</small></span>
+                <span><b id="participationMinimumCommitment">80 %</b><small>minimum av mulig makspoeng</small></span>
+                <span><b>0 tapte oppgaver</b><small>ingen sletting eller tidsutløp</small></span>
+              </div>
+            </div>
+            <div class="choice-grid">
+              <button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Krever regelbekreftelse</small></button>
+              <button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button>
+              <button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button>
+            </div>
+            <p class="helper-text" id="participationStatus">Velg status for neste derby.</p>
+            <p class="helper-text"><strong>Svar gjerne innen mandag kl. 23:00.</strong></p>
+            <div id="nextDerbyInfo" class="derby-published-info"></div>
+            <hr>
+            <p class="card-kicker">STRATEGI</p>
+            <ul class="strategy-list" id="derbyStrategy"><li>Ta kun oppgaver med 320 poeng i Standard Derby.</li><li>Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.</li><li>Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.</li></ul>
+          </article></div>
           
           <div class="derby-rule-grid">
             <article class="portal-card derby-target-card">
@@ -314,6 +338,34 @@
   <p class="helper-text" id="templateAudit"></p>
   <div class="derby-editor-actions"><button type="button" class="button owner-only" id="saveDerbyTemplate">Lagre som standard</button><button type="button" class="button button-primary" id="saveDerby">Publiser kun dette derbyet</button></div></form></dialog>
 
+  <dialog id="derbyParticipationDialog" class="derby-participation-dialog">
+    <form id="derbyParticipationForm" class="dialog-card participation-confirm-card">
+      <div class="card-header">
+        <div><p class="card-kicker">BEKREFT DELTAKELSE</p><h2 id="participationDialogTitle">Du melder deg på neste derby</h2></div>
+        <button type="button" class="icon-button" data-close-dialog="derbyParticipationDialog" aria-label="Lukk">×</button>
+      </div>
+      <p class="participation-confirm-intro" id="participationDialogIntro">Les hvert punkt før du bekrefter.</p>
+      <div class="participation-confirm-summary">
+        <div><span>Derby</span><strong id="participationDialogDerbyName">–</strong></div>
+        <div><span>Mål 100 %</span><strong id="participationDialogTarget">–</strong></div>
+        <div><span>Minimum 80 %</span><strong id="participationDialogMinimum">–</strong></div>
+      </div>
+      <fieldset class="participation-confirm-list">
+        <legend>Dette bekrefter du:</legend>
+        <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span id="participationRulePoints">Jeg velger bare oppgaver med derbyets makspoeng.</span></label>
+        <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span>Jeg kontrollerer oppgavens tidsfrist før jeg velger den, og fullfører oppgaven innen fristen.</span></label>
+        <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span>Jeg sletter eller avbryter ikke en oppgave etter at jeg har valgt den, og lar den ikke gå ut på tid.</span></label>
+        <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span id="participationRuleTarget">Jeg kjenner WGANGs mål og minimumskrav for dette derbyet.</span></label>
+      </fieldset>
+      <p class="participation-loss-warning"><strong>Viktig:</strong> En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.</p>
+      <div class="dialog-actions participation-dialog-actions">
+        <button type="button" class="button button-ghost" data-close-dialog="derbyParticipationDialog">Avbryt</button>
+        <button type="submit" class="button button-primary" id="confirmDerbyParticipation" disabled>Bekreft at jeg deltar</button>
+      </div>
+      <p class="form-message" id="participationDialogStatus"></p>
+    </form>
+  </dialog>
+
   <dialog id="bunnyTaskEditorDialog"><form id="bunnyTaskEditorForm" class="dialog-card bunny-task-editor-card"><div class="card-header"><div><p class="card-kicker">OPPGAVEKORT</p><h2>Rediger oppgave</h2></div><button type="button" class="icon-button" data-close-dialog="bunnyTaskEditorDialog">×</button></div><input type="hidden" id="bunnyEditTaskId"><div class="bunny-editor-preview" id="bunnyEditorPreview"></div><label>Oppgavenavn<input id="bunnyEditName" maxlength="80" required></label><label>Kategori<input id="bunnyEditCategory" maxlength="60" required></label><label>Kort beskrivelse <small>uten antall</small><textarea id="bunnyEditDescription" rows="3" maxlength="180" required></textarea></label><label>Antall som skal gjøres<div class="bunny-amount-stepper"><button type="button" id="bunnyAmountMinus">−</button><input id="bunnyEditAmount" type="number" min="1" max="999" required><button type="button" id="bunnyAmountPlus">+</button></div></label><p class="helper-text">Illustrasjonen beholdes selv om navn, beskrivelse eller antall justeres. Antallet ligger aldri i bildefilen.</p><div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="bunnyTaskEditorDialog">Avbryt</button><button type="submit" class="button button-primary">Lagre endringer</button></div><p class="form-message" id="bunnyTaskEditorStatus"></p></form></dialog>
 
   <dialog id="announcementDialog"><form id="announcementForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Ny kunngjøring</h2></div><button type="button" class="icon-button" data-close-dialog="announcementDialog">×</button></div><label>Tittel<input id="announcementTitle" maxlength="100" required></label><label>Beskjed<textarea id="announcementBody" rows="6" maxlength="2000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser kunngjøring</button><p class="form-message" id="announcementMessage"></p></form></dialog>
@@ -453,6 +505,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.58"></script><script src="backend.js?v=0.18.0.58"></script><script src="app.js?v=0.18.0.58"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.59"></script><script src="backend.js?v=0.18.0.59"></script><script src="app.js?v=0.18.0.59"></script>
 </body>
 </html>
