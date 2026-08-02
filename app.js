@@ -1,4 +1,4 @@
-/* v0.18.0.59 – Derby Rule Confirmation på v0.18.0.58-motoren */
+/* v0.18.0.60 – Derbyhistorikk og resultater */
 (function () {
   "use strict";
 
@@ -97,10 +97,20 @@
     "Søk":"Search","Alle":"All","Velg medlem":"Choose member","Velg oppgave":"Choose task","Velg preferanse":"Choose preference",
     "Ingen tips ennå.":"No tips yet.","Venter på godkjenning":"Awaiting approval","Godkjent":"Approved",
     "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
-    "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings"
+    "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings",
+    "Derbyhistorikk":"Derby history","DERBYHISTORIKK":"DERBY HISTORY","Resultater over tid":"Results over time","Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.":"View the team's Derby archive, your own results and development across multiple Derbies.",
+    "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","ekstra begrenset til 100 %":"extra capped at 100%","resultater":"results","Under 80 %":"Below 80%",
+    "DERBYARKIV":"DERBY ARCHIVE","WGANGs sluttresultater":"WGANG final results","Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.":"All approved members can view Derby type, date, league, placement, total points and participant count.",
+    "MIN HISTORIKK":"MY HISTORY","Mine derbyresultater":"My Derby results","Poengprosenten beregnes mot ordinært makspoeng. Ekstraoppgaver vises separat.":"The score percentage is calculated against the regular maximum. Extra tasks are shown separately.",
+    "LEDEROVERSIKT":"LEADERSHIP OVERVIEW","Gjennomsnitt og utvikling":"Average and development","Gjennomsnitt begrenses til 100 %, slik at ekstraoppgaver ikke løfter resultatet kunstig.":"The average is capped at 100%, so extra tasks do not artificially raise the result.",
+    "Snitt":"Average","Ikke fullført":"Incomplete","Utvikling":"Development","SLUTTRESULTAT":"FINAL RESULT","Registrer derbyresultat":"Register Derby result","Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.":"Use the final screen from Hay Day. The result is saved as one transaction, and later corrections require a reason.","Registrer eller korriger":"Register or correct",
+    "Registrer sluttresultat":"Register final result","Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet.":"Choose the completed Derby and enter the details exactly as shown on the final screen.","Avsluttet derby":"Completed Derby","Liga":"League","Plassering":"Placement","Lagets totalpoeng":"Team total points","Tapte / slettede oppgaver totalt":"Total lost / deleted tasks","Merknad":"Note","valgfritt":"optional","Relevant forklaring til sluttresultatet":"Relevant explanation for the final result","RESULTAT PER MEDLEM":"RESULT BY MEMBER","Bekreftede deltakere":"Confirmed participants","Begrunnelse for korreksjon":"Reason for correction","obligatorisk og lagres i endringsloggen":"required and saved in the change log","Lagre hele resultatet":"Save complete result"
 
   };
   const STATIC_EN_EXTRA = {
+    "Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.":"Automatic live progress during the Derby will be added later. Final results and development over time are now available in Derby History.",
+    "Automatisk livefremdrift og scoreboard er ikke koblet til reelle data ennå. Kontrollerte sluttresultater og personlig historikk er tilgjengelig i Derbyhistorikk.":"Automatic live progress and the scoreboard are not connected to real data yet. Verified final results and personal history are available in Derby History.",
+    "Publiser neste derby og registrer kontrollerte sluttresultater.":"Publish the next Derby and register verified final results.",
     "Automatisk oppgavefremdrift, poeng og scoreboard er ikke koblet til reelle derbydata ennå. Dette bygges senere på grunnlag av hvordan WGANG faktisk bruker portalen.":"Automatic task progress, points and the scoreboard are not connected to live Derby data yet. This will be developed based on how WGANG actually uses the portal.",
     "oppgaver fullført":"tasks completed","I gang":"In progress","Ferdig":"Completed","Marker som ferdig":"Mark as completed",
     "DELTAR DU?":"ARE YOU PARTICIPATING?","STRATEGI":"STRATEGY","ADMINOVERSIKT":"ADMIN OVERVIEW","Status per medlem":"Status by member","Deltakelse":"Participation",
@@ -179,7 +189,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
 
   const landing = $("landing");
@@ -194,6 +204,7 @@
   const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
   const derbyParticipationDialog = $("derbyParticipationDialog");
+  const derbyResultDialog = $("derbyResultDialog");
   const taskRange = $("taskRange");
   const announcementDialog = $("announcementDialog");
   const derbyPostDialog = $("derbyPostDialog");
@@ -260,6 +271,19 @@
     if(override!==null)return override;
     return defaultPermissionValue(def,user.role);
   }
+  function canManageDerbyResults(user=current()) {
+    return !!user
+      && (user.role === "owner" || user.role === "admin")
+      && hasPermission("derby.settings.publish", user);
+  }
+  function canViewDerbyLeadership(user=current()) {
+    return !!user
+      && ["owner","admin","assistant_leader","senior"].includes(user.role)
+      && (
+        hasPermission("derby.preferences.view", user)
+        || hasPermission("derby.settings.publish", user)
+      );
+  }
   const ADMIN_MODULE_PERMISSIONS = {
     actions:["content.pending.view","members.approve","members.reject"],
     derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish"],
@@ -273,6 +297,7 @@
   function firstAccessibleAdminModule(user=current()){ return ["actions","derby","applications","board","roles"].find(name=>canAccessAdminModule(name,user)) || null; }
   const ROUTE_PERMISSIONS = {
     derby:"derby.view",
+    history:"derby.view",
     preferences:"derby.plan",
     discussions:"chat.community.view",
     leadership:"chat.leadership.view"
@@ -290,6 +315,12 @@
     document.querySelectorAll("[data-permission-all]").forEach(el=>{
       const keys=(el.dataset.permissionAll||"").split(",").map(x=>x.trim()).filter(Boolean);
       el.classList.toggle("hidden",!keys.every(key=>hasPermission(key)));
+    });
+    document.querySelectorAll("[data-result-manager-only]").forEach(el=>{
+      el.classList.toggle("hidden",!canManageDerbyResults());
+    });
+    document.querySelectorAll("[data-result-leadership-only]").forEach(el=>{
+      el.classList.toggle("hidden",!canViewDerbyLeadership());
     });
     const group=document.querySelector(".admin-nav-group");
     if(group) group.classList.toggle("hidden",!canAccessAdmin());
@@ -343,7 +374,7 @@
 
   const ADMIN_MODULE_META = {
     actions: ["Til behandling", "Varsler, tips og andre saker som venter på gjennomgang."],
-    derby: ["Derbyadministrasjon", "Velg, kontroller og publiser neste derby."],
+    derby: ["Derbyadministrasjon", "Publiser neste derby og registrer kontrollerte sluttresultater."],
     applications: ["Medlemssøknader", "Godkjenn eller avslå nye medlemsforespørsler."],
     board: ["Oppslagstavla", "Se lagets oppgavepreferanser og planlegg hvilke oppgaver som bør beholdes."],
     roles: ["Medlemmer og roller", "Administrer medlemmer, roller og tilgang."]
@@ -741,6 +772,8 @@
     renderPreferences();
     renderContent();
     renderLeadershipChat();
+    renderDerbyHistory();
+    renderResultManagement();
     renderAdmin();
     if (hasPermission("derby.preferences.view")) renderAdminPreferences();
     renderDerbyManagement();
@@ -1147,6 +1180,259 @@
   function toLocalInput(date) {
     const z = n => String(n).padStart(2,"0");
     return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}T${z(date.getHours())}:${z(date.getMinutes())}`;
+  }
+
+  function derbyHistoryData() {
+    return state.derbyHistory || {archives:[],results:[],changeLog:[]};
+  }
+
+  function historyNumber(value) {
+    return new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO").format(Number(value) || 0);
+  }
+
+  function historyPercent(value) {
+    const number = Number(value) || 0;
+    return new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO", {minimumFractionDigits:number % 1 ? 2 : 0,maximumFractionDigits:2}).format(number) + " %";
+  }
+
+  function historyDate(value) {
+    if (!value) return "–";
+    try {
+      return new Intl.DateTimeFormat(currentLanguage === "en" ? "en-GB" : "nb-NO", {day:"2-digit",month:"short",year:"numeric"}).format(new Date(value));
+    } catch (_) { return "–"; }
+  }
+
+  function incompleteTaskCount(result) {
+    return Math.max(0, Number(result?.tasks_used || 0) - Number(result?.tasks_completed || 0));
+  }
+
+  function resultStatusModel(result) {
+    const percent = Number(result?.result_percent || 0);
+    const incomplete = incompleteTaskCount(result);
+    const extra = Number(result?.extra_tasks || 0);
+    let tone = "below", label = currentLanguage === "en" ? "Below 80%" : "Under 80 %";
+    if (percent >= 100) {
+      tone = "perfect";
+      label = percent > 100 ? (currentLanguage === "en" ? "100% + extra" : "100 % + ekstra") : "100 %";
+    } else if (percent >= 80) {
+      tone = "minimum";
+      label = historyPercent(percent);
+    }
+    return {percent,incomplete,extra,tone,label};
+  }
+
+  function archiveResults(archiveId) {
+    return (derbyHistoryData().results || []).filter(row => String(row.archive_id) === String(archiveId));
+  }
+
+  function renderDerbyHistory() {
+    const history = derbyHistoryData();
+    const archives = history.archives || [];
+    const allResults = history.results || [];
+    const canViewLeadership = canViewDerbyLeadership();
+    const canManage = canManageDerbyResults();
+    const archiveList = $("derbyArchiveList");
+    if (archiveList) {
+      archiveList.innerHTML = archives.length ? archives.map(archive => {
+        const rows = archiveResults(archive.id);
+        const memberTotal = rows.reduce((sum,row)=>sum+Number(row.points_earned||0),0);
+        const difference = Number(archive.neighborhood_points || 0) - memberTotal;
+        const changeCount = (history.changeLog || []).filter(item=>String(item.archive_id)===String(archive.id)&&item.action==="corrected").length;
+        const totalNote = canViewLeadership && rows.length
+          ? `<small class="archive-control ${difference===0?"match":"mismatch"}">${difference===0?(currentLanguage==="en"?"Member total matches":"Medlemssummen stemmer"):`${currentLanguage==="en"?"Difference":"Avvik"}: ${historyNumber(difference)} ${currentLanguage==="en"?"points":"poeng"}`}</small>`
+          : "";
+        return `<article class="derby-archive-card">
+          <div class="derby-archive-heading"><div><span>${historyDate(archive.started_at || archive.ended_at)}</span><h3>${esc(tText(archive.derby_name || archive.derby_type || "Derby"))}</h3></div><strong>${archive.placement ? `#${historyNumber(archive.placement)}` : "–"}</strong></div>
+          <div class="derby-archive-facts"><span><small>${currentLanguage==="en"?"League":"Liga"}</small><b>${esc(archive.league || "–")}</b></span><span><small>${currentLanguage==="en"?"Team points":"Lagpoeng"}</small><b>${historyNumber(archive.neighborhood_points)}</b></span><span><small>${currentLanguage==="en"?"Participants":"Deltakere"}</small><b>${historyNumber(archive.participant_count)}</b></span><span><small>${currentLanguage==="en"?"Lost tasks":"Tapte oppgaver"}</small><b>${historyNumber(archive.trashed_tasks)}</b></span></div>
+          <footer>${totalNote}${changeCount?`<small>${changeCount} ${currentLanguage==="en"?"logged correction(s)":"loggført(e) korreksjon(er)"}</small>`:""}${canManage?`<button type="button" class="table-action" data-correct-result="${archive.event_id}">${currentLanguage==="en"?"Correct":"Korriger"}</button>`:""}</footer>
+        </article>`;
+      }).join("") : `<p class="empty-state">${currentLanguage==="en"?"No Derby results have been registered yet.":"Ingen derbyresultater er registrert ennå."}</p>`;
+    }
+
+    const myHistory = $("myDerbyHistory");
+    const ownRows = allResults.filter(row=>String(row.user_id)===String(current()?.id)).sort((a,b)=>{
+      const aa=archives.find(x=>String(x.id)===String(a.archive_id));
+      const bb=archives.find(x=>String(x.id)===String(b.archive_id));
+      return new Date(bb?.started_at||0)-new Date(aa?.started_at||0);
+    });
+    if (myHistory) {
+      myHistory.innerHTML = ownRows.length ? ownRows.map(row=>{
+        const archive=archives.find(item=>String(item.id)===String(row.archive_id))||{};
+        const status=resultStatusModel(row);
+        return `<article class="member-history-card history-tone-${status.tone}">
+          <div><span>${historyDate(archive.started_at || archive.ended_at)}</span><h3>${esc(tText(archive.derby_name || "Derby"))}</h3><small>${esc(archive.league || "")}${archive.placement?` · #${archive.placement}`:""}</small></div>
+          <div class="member-history-score"><strong>${historyNumber(row.points_earned)} / ${historyNumber(row.possible_points)}</strong><span class="history-status history-status-${status.tone}">${status.label}</span></div>
+          <div class="member-history-details"><span>${historyNumber(row.tasks_completed)} / ${historyNumber(row.tasks_used)} ${currentLanguage==="en"?"tasks completed":"oppgaver fullført"}</span>${status.extra?`<b>${currentLanguage==="en"?"Extra task used":"Ekstraoppgave brukt"}</b>`:""}${status.incomplete?`<b class="history-warning">${status.incomplete} ${currentLanguage==="en"?"task(s) not completed":"oppgave(r) ikke fullført"}</b>`:`<b class="history-complete">${currentLanguage==="en"?"All available tasks completed":"Alle tilgjengelige oppgaver fullført"}</b>`}</div>
+        </article>`;
+      }).join("") : `<p class="empty-state">${currentLanguage==="en"?"Your personal Derby history will appear here after the first result is registered.":"Din personlige derbyhistorikk vises her etter at første resultat er registrert."}</p>`;
+    }
+
+    const myAverage = ownRows.length ? ownRows.reduce((sum,row)=>sum+Math.min(100,Number(row.result_percent||0)),0)/ownRows.length : 0;
+    setText("myHistoryDerbies",historyNumber(ownRows.length));
+    setText("myHistoryAverage",ownRows.length?historyPercent(myAverage):"–");
+    setText("myHistoryPerfect",historyNumber(ownRows.filter(row=>Number(row.result_percent||0)>=100).length));
+    setText("myHistoryBelow",historyNumber(ownRows.filter(row=>Number(row.result_percent||0)<80).length));
+
+    if (canViewLeadership) {
+      const groups = new Map();
+      allResults.forEach(row=>{
+        const key=String(row.user_id || row.display_name_snapshot);
+        if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push(row);
+      });
+      const leaders=[...groups.values()].map(rows=>{
+        rows.sort((a,b)=>{
+          const aa=archives.find(x=>String(x.id)===String(a.archive_id));
+          const bb=archives.find(x=>String(x.id)===String(b.archive_id));
+          return new Date(bb?.started_at||0)-new Date(aa?.started_at||0);
+        });
+        const capped=rows.map(row=>Math.min(100,Number(row.result_percent||0)));
+        return {
+          name:rows[0]?.display_name_snapshot||"WGANG-medlem",count:rows.length,
+          average:capped.reduce((a,b)=>a+b,0)/Math.max(1,capped.length),
+          perfect:rows.filter(row=>Number(row.result_percent||0)>=100).length,
+          below:rows.filter(row=>Number(row.result_percent||0)<80).length,
+          incomplete:rows.reduce((sum,row)=>sum+incompleteTaskCount(row),0),
+          trend:rows.length>1?capped[0]-capped[1]:null
+        };
+      }).sort((a,b)=>b.average-a.average||a.name.localeCompare(b.name,"nb"));
+      const cappedAll=allResults.map(row=>Math.min(100,Number(row.result_percent||0)));
+      const teamAverage=cappedAll.length?cappedAll.reduce((a,b)=>a+b,0)/cappedAll.length:0;
+      const leaderMetrics=$("leaderHistoryMetrics");
+      if(leaderMetrics)leaderMetrics.innerHTML=`<article><span>${currentLanguage==="en"?"Average":"Gjennomsnitt"}</span><strong>${cappedAll.length?historyPercent(teamAverage):"–"}</strong><small>${currentLanguage==="en"?"extra capped at 100%":"ekstra begrenset til 100 %"}</small></article><article><span>100 %</span><strong>${historyNumber(allResults.filter(row=>Number(row.result_percent||0)>=100).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Below 80%":"Under 80 %"}</span><strong>${historyNumber(allResults.filter(row=>Number(row.result_percent||0)<80).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Incomplete":"Ikke fullført"}</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+incompleteTaskCount(row),0))}</strong><small>${currentLanguage==="en"?"tasks":"oppgaver"}</small></article>`;
+      const leaderTable=$("leaderHistoryTable");
+      if(leaderTable)leaderTable.innerHTML=leaders.length?leaders.map(item=>{
+        const trend=item.trend===null?"–":`${item.trend>0?"↑":item.trend<0?"↓":"→"} ${item.trend===0?"":historyPercent(Math.abs(item.trend))}`.trim();
+        return `<tr><td><strong>${esc(item.name)}</strong></td><td>${item.count}</td><td>${historyPercent(item.average)}</td><td>${item.perfect}</td><td>${item.below}</td><td>${item.incomplete}</td><td><span class="history-trend ${item.trend>0?"up":item.trend<0?"down":"flat"}">${trend}</span></td></tr>`;
+      }).join(""):`<tr><td colspan="7" class="empty-state">${currentLanguage==="en"?"No member results registered.":"Ingen medlemsresultater er registrert."}</td></tr>`;
+    }
+    $$('[data-correct-result]').forEach(button=>button.onclick=()=>openDerbyResultEditor(button.dataset.correctResult));
+  }
+
+  function resultEligibleEvents() {
+    const now=Date.now();
+    return (state.derbyManagement?.events || []).filter(event=>event.status==="completed" || (event.end_at && new Date(event.end_at).getTime()<=now));
+  }
+
+  function resultParticipants(eventId) {
+    const event=(state.derbyManagement?.events || []).find(item=>String(item.id)===String(eventId));
+    const rows=(state.derbyManagement?.participations || []).filter(row=>
+      String(row.event_id)===String(eventId)
+      && row.choice==="joined"
+      && !!row.rules_acknowledged_at
+      && row.rules_acknowledgement_version==="WGANG-DERBY-RULES-v1"
+      && Number(row.acknowledged_max_points)===Number(event?.max_points)
+    );
+    return rows.map(row=>({row,account:state.accounts.find(a=>String(a.id)===String(row.user_id))})).sort((a,b)=>String(a.account?.name||"").localeCompare(String(b.account?.name||""),"nb"));
+  }
+
+  function renderResultManagement() {
+    const box=$("resultRegistrationSummary"), button=$("openDerbyResultButton");
+    if(!box||!button||!canManageDerbyResults())return;
+    const eligible=resultEligibleEvents(), archives=derbyHistoryData().archives||[];
+    const missing=eligible.filter(event=>!archives.some(archive=>String(archive.event_id)===String(event.id)));
+    box.innerHTML=`<span><strong>${historyNumber(archives.length)}</strong><small>${currentLanguage==="en"?"registered results":"registrerte resultater"}</small></span><span><strong>${historyNumber(missing.length)}</strong><small>${currentLanguage==="en"?"completed Derbies missing results":"avsluttede derby mangler resultat"}</small></span>`;
+    button.disabled=!eligible.length;
+  }
+
+  function openDerbyResultEditor(eventId=null) {
+    if(!canManageDerbyResults())return;
+    const events=resultEligibleEvents();
+    if(!events.length){alert(currentLanguage==="en"?"No completed Derby is ready for result registration.":"Ingen avsluttede derby er klare for resultatregistrering ennå.");return;}
+    const select=$("resultEventSelect");
+    select.innerHTML=events.map(event=>{
+      const archived=(derbyHistoryData().archives||[]).some(item=>String(item.event_id)===String(event.id));
+      return `<option value="${event.id}">${esc(tText(event.name))} · ${historyDate(event.start_at)}${archived?` · ${currentLanguage==="en"?"registered":"registrert"}`:""}</option>`;
+    }).join("");
+    const firstMissing=events.find(event=>!(derbyHistoryData().archives||[]).some(item=>String(item.event_id)===String(event.id)));
+    select.value=String(eventId || firstMissing?.id || events[0].id);
+    populateDerbyResultEditor();
+    showDialog(derbyResultDialog);
+  }
+
+  function populateDerbyResultEditor() {
+    const event=(state.derbyManagement?.events||[]).find(item=>String(item.id)===String($("resultEventSelect")?.value));
+    if(!event)return;
+    const archive=(derbyHistoryData().archives||[]).find(item=>String(item.event_id)===String(event.id));
+    const previous=archive?archiveResults(archive.id):[];
+    const participants=resultParticipants(event.id);
+    const previousParticipantIds=previous.map(item=>String(item.user_id||"")).sort();
+    const currentParticipantIds=participants.map(item=>String(item.row.user_id||"")).sort();
+    const participantBasisChanged=!!archive&&(
+      previousParticipantIds.length!==currentParticipantIds.length
+      || previousParticipantIds.some((id,index)=>!id||id!==currentParticipantIds[index])
+    );
+    setText("resultDialogTitle",archive?(currentLanguage==="en"?"Correct final result":"Korriger sluttresultat"):(currentLanguage==="en"?"Register final result":"Registrer sluttresultat"));
+    $("resultLeague").value=archive?.league||"";
+    $("resultPlacement").value=archive?.placement??"";
+    $("resultNeighborhoodPoints").value=archive?.neighborhood_points??"";
+    $("resultTrashedTasks").value=archive?.trashed_tasks??0;
+    $("resultNotes").value=archive?.notes||"";
+    const correctionWrap=$("resultCorrectionWrap"), correction=$("resultCorrectionReason");
+    correctionWrap.classList.toggle("hidden",!archive);
+    correction.required=!!archive; correction.value="";
+    const memberBox=$("resultMemberRows");
+    memberBox.innerHTML=participants.length?participants.map(({row,account})=>{
+      const old=previous.find(item=>String(item.user_id)===String(row.user_id));
+      const included=Number(event.task_total||0), maxExtra=Number(event.extra_tasks||0), points=Number(event.max_points||0);
+      const extra=Number(old?.extra_tasks||0);
+      const options=Array.from({length:maxExtra+1},(_,i)=>`<option value="${i}" ${i===extra?"selected":""}>${i}</option>`).join("");
+      return `<article class="result-member-editor" data-result-user="${row.user_id}" data-included="${included}" data-points="${points}">
+        <div class="result-member-heading"><div><strong>${esc(account?.name||old?.display_name_snapshot||"WGANG-medlem")}</strong><small>${historyNumber(included)} × ${historyNumber(points)} = ${historyNumber(included*points)} ${currentLanguage==="en"?"ordinary maximum":"ordinært maksimum"}</small></div><span class="result-member-preview">${currentLanguage==="en"?"Enter result":"Fyll inn resultat"}</span></div>
+        <div class="result-member-fields"><label>${currentLanguage==="en"?"Extra tasks used":"Ekstraoppgaver brukt"}<select data-result-extra>${options}</select></label><label>${currentLanguage==="en"?"Completed tasks":"Fullførte oppgaver"}<input data-result-completed type="number" min="0" max="${included+extra}" value="${old?old.tasks_completed:""}" required></label><label>${currentLanguage==="en"?"Earned points":"Oppnådde poeng"}<input data-result-points type="number" min="0" value="${old?old.points_earned:""}" required></label></div>
+        <p class="result-available-tasks"></p>
+      </article>`;
+    }).join(""):`<p class="empty-state">${currentLanguage==="en"?"No members confirmed participation for this Derby.":"Ingen medlemmer har bekreftet deltakelse i dette derbyet."}</p>`;
+    const resultStatus=$("derbyResultStatus");
+    if(resultStatus){
+      resultStatus.classList.remove("success");
+      resultStatus.textContent=participantBasisChanged
+        ? (currentLanguage==="en"?"The participant list has changed since the result was registered. The history is locked and has not been changed.":"Deltakerlisten har endret seg etter registreringen. Historikken er låst og er ikke endret.")
+        : "";
+    }
+    $("saveDerbyResult").disabled=!participants.length||participantBasisChanged;
+    memberBox.querySelectorAll("input,select").forEach(input=>input.addEventListener("input",updateResultEditorCalculations));
+    updateResultEditorCalculations();
+  }
+
+  function updateResultEditorCalculations() {
+    let sum=0, complete=true;
+    $$(".result-member-editor").forEach(card=>{
+      const included=Number(card.dataset.included||0), pointsPerTask=Number(card.dataset.points||0);
+      const extra=Number(card.querySelector("[data-result-extra]")?.value||0), available=included+extra;
+      const completedInput=card.querySelector("[data-result-completed]"), pointsInput=card.querySelector("[data-result-points]");
+      completedInput.max=String(available);
+      const completed=completedInput.value===""?null:Number(completedInput.value), points=pointsInput.value===""?null:Number(pointsInput.value);
+      pointsInput.max=String(Math.max(0,(completed||0)*pointsPerTask));
+      if(points===null||completed===null)complete=false; else sum+=points;
+      const possible=included*pointsPerTask, percent=possible&&points!==null?points*100/possible:0, incomplete=completed===null?0:Math.max(0,available-completed);
+      const preview=card.querySelector(".result-member-preview");
+      preview.textContent=points===null||completed===null?(currentLanguage==="en"?"Enter result":"Fyll inn resultat"):(percent>100?(currentLanguage==="en"?"100% + extra":"100 % + ekstra"):historyPercent(percent));
+      preview.className=`result-member-preview ${points!==null&&percent>=100?"perfect":points!==null&&percent>=80?"minimum":points!==null?"below":""}`;
+      card.querySelector(".result-available-tasks").textContent=`${currentLanguage==="en"?"Available":"Tilgjengelig"}: ${available} ${currentLanguage==="en"?"tasks":"oppgaver"}${incomplete?` · ${incomplete} ${currentLanguage==="en"?"not completed":"ikke fullført"}`:""}`;
+    });
+    setText("resultMemberPointSum",complete?historyNumber(sum):"–");
+    const teamRaw=$("resultNeighborhoodPoints")?.value, difference=teamRaw===""?null:Number(teamRaw)-sum;
+    const status=$("resultPointDifference");
+    if(status){
+      status.className="result-point-difference";
+      if(!complete||difference===null)status.textContent=currentLanguage==="en"?"Enter every member result and the team total.":"Fyll inn alle medlemsresultater og lagets totalpoeng.";
+      else if(difference===0){status.classList.add("match");status.textContent=currentLanguage==="en"?"The member total matches the team total.":"Medlemssummen stemmer med lagets totalpoeng.";}
+      else {status.classList.add("mismatch");status.textContent=`${currentLanguage==="en"?"Difference":"Avvik"}: ${historyNumber(difference)} ${currentLanguage==="en"?"points":"poeng"}. ${currentLanguage==="en"?"Check the final screen before saving.":"Kontroller sluttbildet før du lagrer."}`;}
+    }
+  }
+
+  function derbyResultPayload() {
+    const event=(state.derbyManagement?.events||[]).find(item=>String(item.id)===String($("resultEventSelect")?.value));
+    if(!event)throw new Error("Fant ikke derbyet.");
+    const results=[...$$('.result-member-editor')].map(card=>{
+      const included=Number(card.dataset.included||0), pointsPerTask=Number(card.dataset.points||0), extra=Number(card.querySelector("[data-result-extra]").value||0);
+      const available=included+extra, completed=Number(card.querySelector("[data-result-completed]").value), points=Number(card.querySelector("[data-result-points]").value);
+      if(!Number.isInteger(completed)||completed<0||completed>available)throw new Error(`Ugyldig antall fullførte oppgaver for ${card.querySelector("strong")?.textContent||"medlem"}.`);
+      if(!Number.isInteger(points)||points<0||points>completed*pointsPerTask)throw new Error(`Ugyldig poengsum for ${card.querySelector("strong")?.textContent||"medlem"}.`);
+      return {user_id:card.dataset.resultUser,extra_tasks_used:extra,tasks_completed:completed,points_earned:points};
+    });
+    return {eventId:event.id,league:$("resultLeague").value.trim(),placement:Number($("resultPlacement").value),neighborhoodPoints:Number($("resultNeighborhoodPoints").value),trashedTasks:Number($("resultTrashedTasks").value||0),notes:$("resultNotes").value.trim(),correctionReason:$("resultCorrectionReason").value.trim(),results};
   }
 
   const translationRequests = new Set();
@@ -2356,6 +2642,37 @@
     setBusy(false);
   };
 
+  if ($("openDerbyResultButton")) $("openDerbyResultButton").onclick = () => openDerbyResultEditor();
+  if ($("resultEventSelect")) $("resultEventSelect").onchange = populateDerbyResultEditor;
+  if ($("resultNeighborhoodPoints")) $("resultNeighborhoodPoints").addEventListener("input",updateResultEditorCalculations);
+  if ($("derbyResultForm")) $("derbyResultForm").onsubmit = async event => {
+    event.preventDefault();
+    if(busy||!canManageDerbyResults())return;
+    const status=$("derbyResultStatus"); status.textContent=""; status.classList.remove("success");
+    try {
+      const payload=derbyResultPayload();
+      if(!payload.league)throw new Error("Fyll inn liga.");
+      if(!Number.isInteger(payload.placement)||payload.placement<1)throw new Error("Fyll inn en gyldig plassering.");
+      if(!Number.isInteger(payload.neighborhoodPoints)||payload.neighborhoodPoints<0)throw new Error("Fyll inn lagets totalpoeng.");
+      if(!Number.isInteger(payload.trashedTasks)||payload.trashedTasks<0)throw new Error("Antall tapte oppgaver kan ikke være negativt.");
+      const archive=(derbyHistoryData().archives||[]).find(item=>String(item.event_id)===String(payload.eventId));
+      if(archive&&payload.correctionReason.length<5)throw new Error("Skriv en kort begrunnelse for korreksjonen.");
+      const memberTotal=payload.results.reduce((sum,row)=>sum+row.points_earned,0);
+      if(memberTotal!==payload.neighborhoodPoints&&!confirm(`Medlemssummen er ${historyNumber(memberTotal)} poeng, mens lagets total er ${historyNumber(payload.neighborhoodPoints)} poeng. Vil du lagre det kontrollerte avviket?`))return;
+      setBusy(true); status.textContent=currentLanguage==="en"?"Saving the complete result …":"Lagrer hele resultatet …";
+      await backend.saveDerbyResult(payload);
+      await refreshState();
+      closeDialog(derbyResultDialog);
+      $("derbyResultForm").reset();
+      navigate("history");
+      alert(archive?(currentLanguage==="en"?"The correction was saved and logged.":"Korreksjonen er lagret og loggført."):(currentLanguage==="en"?"The Derby result was saved.":"Derbyresultatet er lagret."));
+    } catch(error) {
+      status.textContent=humanError(error,currentLanguage==="en"?"Could not save the Derby result.":"Kunne ikke lagre derbyresultatet.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   $$('[data-close-dialog]').forEach(button => button.onclick = () => closeDialog($(button.dataset.closeDialog)));
   if($("bunnyAmountMinus")) $("bunnyAmountMinus").onclick=()=>{$("bunnyEditAmount").value=Math.max(1,(Number($("bunnyEditAmount").value)||1)-1);updateBunnyEditorPreview();};
   if($("bunnyAmountPlus")) $("bunnyAmountPlus").onclick=()=>{$("bunnyEditAmount").value=(Number($("bunnyEditAmount").value)||1)+1;updateBunnyEditorPreview();};
@@ -2425,7 +2742,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.59").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.60").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

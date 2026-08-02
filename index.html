@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.59">
+  <link rel="stylesheet" href="main.css?v=0.18.0.60">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -99,6 +99,7 @@
         <nav class="main-nav">
           <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span>Oversikt</a>
           <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Derby</a>
+          <a href="#history" data-permission-any="derby.view" data-route="history"><span>◷</span>Derbyhistorikk</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
           <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgaver</a>
           <a href="#discussions" data-permission-any="chat.community.view" data-route="discussions"><span>□</span>Diskusjoner</a>
@@ -117,7 +118,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.59</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.60</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -134,7 +135,7 @@
               <div class="bunny-manual-controls"><input id="bunnyManualNextAt" type="datetime-local" aria-label="Tidspunkt for neste harepust"><button class="button" id="bunnyManualSave" type="button">Sett tidspunkt</button><button class="button button-ghost hidden" id="bunnyManualClear" type="button">Bruk automatikk</button></div>
               <small class="bunny-manual-status" id="bunnyManualStatus"></small>
             </div>
-          </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Fremdrift og poengstatistikk kobles på når vi har nok reelle derbydata.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne derby-senter</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
+          </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne derby-senter</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
           <div class="metric-grid"><article><span>Din status</span><strong id="myStatusMetric">Deltar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>godkjente medlemmer</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">
             <article class="portal-card development-card"><div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>Beskjeder fra WGANG</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Her kommer viktige beskjeder og oppdateringer fra lederne. Funksjonen bygges videre når vi har testet hvilke meldinger nabolaget faktisk ønsker å samle i portalen.</p></article>
@@ -143,7 +144,7 @@
 
         <section class="page" data-page="derby">
           <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegg deltakelsen og følg fremdriften.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
-          <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk oppgavefremdrift, poeng og scoreboard er ikke koblet til reelle derbydata ennå. Dette bygges senere på grunnlag av hvordan WGANG faktisk bruker portalen.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
+          <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk livefremdrift og scoreboard er ikke koblet til reelle data ennå. Kontrollerte sluttresultater og personlig historikk er tilgjengelig i Derbyhistorikk.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
           <article class="portal-card participation-card">
             <div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div>
             <p class="card-kicker">DELTAR DU?</p>
@@ -196,6 +197,19 @@
           </div>
 
           <article class="portal-card" data-permission-any="derby.preferences.view"><div class="card-header"><div><p class="card-kicker">ADMINOVERSIKT</p><h2>Status per medlem</h2></div></div><div class="table-wrap"><table><thead><tr><th>Medlem</th><th>Deltakelse</th><th>Oppgaver</th><th>Status</th><th></th></tr></thead><tbody id="derbyAdminTable"></tbody></table></div></article>
+        </section>
+
+        <section class="page" data-page="history">
+          <div class="page-heading"><div><p class="eyebrow">DERBYHISTORIKK</p><h1>Resultater over tid</h1><p>Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.</p></div></div>
+          <div class="history-personal-metrics">
+            <article><span>Mine derby</span><strong id="myHistoryDerbies">0</strong><small>registrerte resultater</small></article>
+            <article><span>Mitt gjennomsnitt</span><strong id="myHistoryAverage">–</strong><small>ekstra begrenset til 100 %</small></article>
+            <article><span>100 %</span><strong id="myHistoryPerfect">0</strong><small>resultater</small></article>
+            <article><span>Under 80 %</span><strong id="myHistoryBelow">0</strong><small>resultater</small></article>
+          </div>
+          <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">DERBYARKIV</p><h2>WGANGs sluttresultater</h2><p class="helper-text">Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.</p></div></div><div class="derby-archive-list" id="derbyArchiveList"></div></article>
+          <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">MIN HISTORIKK</p><h2>Mine derbyresultater</h2><p class="helper-text">Poengprosenten beregnes mot ordinært makspoeng. Ekstraoppgaver vises separat.</p></div></div><div class="member-history-list" id="myDerbyHistory"></div></article>
+          <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Gjennomsnitt begrenses til 100 %, slik at ekstraoppgaver ikke løfter resultatet kunstig.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>Under 80 %</th><th>Ikke fullført</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
         <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se hvem som deltar og hvordan laget ligger an.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
@@ -251,6 +265,7 @@
 <article class="portal-card admin-action-card admin-module" data-permission-any="content.pending.view,members.approve,members.reject" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">🔔 KREVER HANDLING</p><h2>Adminvarsler</h2><p class="helper-text">Nye medlemsforespørsler og tips til godkjenning vises her.</p></div></div><div id="adminActionList" class="admin-action-list"></div></article>
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
+<article class="portal-card derby-result-admin-card admin-module" data-permission-any="derby.settings.publish" data-result-manager-only data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">SLUTTRESULTAT</p><h2>Registrer derbyresultat</h2><p class="helper-text">Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.</p></div><button class="button button-primary" id="openDerbyResultButton">Registrer eller korriger</button></div><div class="result-registration-summary" id="resultRegistrationSummary"></div></article>
 <article class="portal-card admin-summary admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div></article>
 <article class="portal-card admin-module" data-permission-any="members.approve,members.reject" data-admin-module="applications"><div class="card-header"><div><p class="card-kicker">VENTER PÅ GODKJENNING</p><h2>Medlemssøknader</h2></div></div><div id="pendingMembers" class="approval-list"></div></article>
 <article class="portal-card admin-preference-card admin-module" data-permission-any="derby.preferences.view" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Hva passer WGANG best?</h2><p class="helper-text">Bruk preferansene som støtte når du vurderer hvilke oppgaver som bør stå, og hvem som liker hva.</p><p class="helper-text" id="adminPreferenceScope"></p></div></div><div class="preference-summary-grid" id="adminPreferenceSummary"></div><div class="table-wrap"><table><thead><tr><th>Oppgavetype</th><th>❤️ Liker</th><th>👍 Kan ta</th><th>😐 Helst ikke</th><th>🚫 Kan ikke</th><th>Anbefaling</th></tr></thead><tbody id="adminPreferenceTable"></tbody></table></div><div class="preference-member-detail"><h3>Hvem foretrekker hva?</h3><div id="adminPreferenceMembers"></div></div></article>
@@ -337,6 +352,21 @@
   <label>WGANG-strategi <small>Én linje per punkt</small><textarea id="editStrategy" rows="5"></textarea></label>
   <p class="helper-text" id="templateAudit"></p>
   <div class="derby-editor-actions"><button type="button" class="button owner-only" id="saveDerbyTemplate">Lagre som standard</button><button type="button" class="button button-primary" id="saveDerby">Publiser kun dette derbyet</button></div></form></dialog>
+
+  <dialog id="derbyResultDialog" class="derby-result-dialog">
+    <form id="derbyResultForm" class="dialog-card derby-result-dialog-card">
+      <div class="card-header"><div><p class="card-kicker">DERBYHISTORIKK</p><h2 id="resultDialogTitle">Registrer sluttresultat</h2></div><button type="button" class="icon-button" data-close-dialog="derbyResultDialog" aria-label="Lukk">×</button></div>
+      <p class="helper-text">Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet.</p>
+      <label>Avsluttet derby<select id="resultEventSelect" required></select></label>
+      <div class="form-grid"><label>Liga<input id="resultLeague" maxlength="80" placeholder="f.eks. Champions League" required></label><label>Plassering<input id="resultPlacement" type="number" min="1" max="100" required></label></div>
+      <div class="form-grid"><label>Lagets totalpoeng<input id="resultNeighborhoodPoints" type="number" min="0" required></label><label>Tapte / slettede oppgaver totalt<input id="resultTrashedTasks" type="number" min="0" value="0" required></label></div>
+      <label>Merknad <small>valgfritt</small><textarea id="resultNotes" rows="2" maxlength="2000" placeholder="Relevant forklaring til sluttresultatet"></textarea></label>
+      <div class="result-member-section"><div class="result-member-section-heading"><div><p class="card-kicker">RESULTAT PER MEDLEM</p><h3>Bekreftede deltakere</h3></div><span>Sum: <strong id="resultMemberPointSum">–</strong></span></div><div id="resultMemberRows" class="result-member-rows"></div><p id="resultPointDifference" class="result-point-difference"></p></div>
+      <label id="resultCorrectionWrap" class="result-correction-wrap hidden">Begrunnelse for korreksjon <small>obligatorisk og lagres i endringsloggen</small><textarea id="resultCorrectionReason" rows="3" minlength="5" maxlength="500"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="derbyResultDialog">Avbryt</button><button type="submit" class="button button-primary" id="saveDerbyResult">Lagre hele resultatet</button></div>
+      <p class="form-message" id="derbyResultStatus"></p>
+    </form>
+  </dialog>
 
   <dialog id="derbyParticipationDialog" class="derby-participation-dialog">
     <form id="derbyParticipationForm" class="dialog-card participation-confirm-card">
@@ -505,6 +535,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.59"></script><script src="backend.js?v=0.18.0.59"></script><script src="app.js?v=0.18.0.59"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.60"></script><script src="app.js?v=0.18.0.60"></script>
 </body>
 </html>

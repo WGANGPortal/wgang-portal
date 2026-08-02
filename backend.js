@@ -1,4 +1,4 @@
-/* v0.18.0.59 – Derby Rule Confirmation på v0.18.0.58-motoren */
+/* v0.18.0.60 – Derbyhistorikk og resultater */
 (function () {
   "use strict";
 
@@ -18,7 +18,8 @@
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
-    derbyManagement: { templates: [], events: [], next: null },
+    derbyManagement: { templates: [], events: [], participations: [], next: null },
+    derbyHistory: { archives: [], results: [], changeLog: [] },
     legalAcceptance: null,
     currentUserId: null
   };
@@ -49,6 +50,9 @@
       const blocked = new Set(["admin@wgang.no","nabo@wgang.no","sol@wgang.no"]);
       if (Array.isArray(parsed.accounts)) parsed.accounts = parsed.accounts.filter(a => !blocked.has(String(a.email || "").toLowerCase()));
       if (parsed.currentUserId && !parsed.accounts?.some(a => a.id === parsed.currentUserId)) parsed.currentUserId = null;
+      parsed.derbyManagement = parsed.derbyManagement || { templates: [], events: [], next: null };
+      parsed.derbyManagement.participations = parsed.derbyManagement.participations || [];
+      parsed.derbyHistory = parsed.derbyHistory || { archives: [], results: [], changeLog: [] };
       return parsed;
     } catch (_) { return clone(EMPTY_LOCAL_STATE); }
   }
@@ -188,13 +192,13 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],next:null}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance, currentUserId: own.id };
     }
     // Søndag 18:00 -> tirsdag 10:00: sørg for at neste derby finnes.
     // Funksjonen er idempotent og oppretter bare en Normal-standard dersom ledelsen
@@ -207,14 +211,14 @@
     } catch (weeklyDerbyError) {
       console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
     }
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
-      client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(20),
+      client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
@@ -223,9 +227,12 @@
       client.from("social_likes").select("user_id,target_type,target_id,created_at"),
       client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at").order("created_at", {ascending:true}),
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
-      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100)
+      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
+      client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
+      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
+      client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200)
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -281,7 +288,12 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,next},
+      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next},
+      derbyHistory:{
+        archives:archivesRes.data || [],
+        results:memberResultsRes.data || [],
+        changeLog:resultChangeLogRes.data || []
+      },
       legalAcceptance,
       notifications:{
         preferences: notificationPrefsRes.data || null,
@@ -692,6 +704,80 @@
       const { data, error } = await client.from("derby_events").insert(payload).select().single();
       if (error) throw error;
       await client.from("derby_settings").upsert({id:1,type:data.name,task_total:data.task_total || 9,max_points:data.max_points || 320,strategy:data.strategy || [],updated_at:new Date().toISOString()},{onConflict:"id"});
+      return data;
+    },
+    async saveDerbyResult(payload) {
+      if (!payload || !payload.eventId || !Array.isArray(payload.results) || !payload.results.length) {
+        throw new Error("Resultatet mangler derby eller medlemsrader.");
+      }
+      if (!configured) {
+        const actor = localState.accounts.find(item => String(item.id) === String(localState.currentUserId));
+        if (!actor || !["owner","admin"].includes(actor.role)) {
+          throw new Error("Bare Eier og Admin kan registrere derbyresultater.");
+        }
+        localState.derbyHistory = localState.derbyHistory || {archives:[],results:[],changeLog:[]};
+        const event = (localState.derbyManagement?.events || []).find(item => String(item.id) === String(payload.eventId));
+        if (!event) throw new Error("Fant ikke derbyet.");
+        let archive = localState.derbyHistory.archives.find(item => String(item.event_id) === String(payload.eventId));
+        const correcting = !!archive;
+        if (correcting && String(payload.correctionReason || "").trim().length < 5) throw new Error("Skriv en kort begrunnelse for korreksjonen.");
+        if (correcting) {
+          const previousIds = localState.derbyHistory.results
+            .filter(item => String(item.archive_id) === String(archive.id))
+            .map(item => String(item.user_id || ""))
+            .sort();
+          const submittedIds = payload.results
+            .map(item => String(item.user_id || ""))
+            .sort();
+          const participantBasisChanged = previousIds.length !== submittedIds.length
+            || previousIds.some((id, index) => !id || id !== submittedIds[index]);
+          if (participantBasisChanged) {
+            throw new Error("Deltakerlisten har endret seg etter registreringen. Historikken er låst og er ikke endret.");
+          }
+        }
+        const archiveId = archive?.id || Date.now();
+        archive = Object.assign({}, archive || {}, {
+          id:archiveId,event_id:event.id,derby_name:event.name,derby_type:event.name,
+          league:payload.league,placement:payload.placement,neighborhood_points:payload.neighborhoodPoints,
+          participant_count:payload.results.length,trashed_tasks:payload.trashedTasks || 0,
+          started_at:event.start_at,ended_at:event.end_at,notes:payload.notes || null,
+          created_at:archive?.created_at || new Date().toISOString(),updated_at:new Date().toISOString()
+        });
+        localState.derbyHistory.archives = localState.derbyHistory.archives.filter(item => String(item.id) !== String(archiveId));
+        localState.derbyHistory.archives.unshift(archive);
+        localState.derbyHistory.results = localState.derbyHistory.results.filter(item => String(item.archive_id) !== String(archiveId));
+        payload.results.forEach((item,index) => {
+          const included = Number(event.task_total || 0), extra = Number(item.extra_tasks_used || 0), used = included + extra;
+          const points = Number(item.points_earned || 0), possible = included * Number(event.max_points || 0);
+          localState.derbyHistory.results.push({
+            id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,
+            display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || "WGANG-medlem",
+            included_tasks:included,extra_tasks:extra,tasks_used:used,tasks_completed:Number(item.tasks_completed || 0),
+            points_per_task:Number(event.max_points || 0),points_earned:points,possible_points:possible,
+            result_percent:possible ? Math.round(points * 10000 / possible) / 100 : 0,
+            minimum_met:possible ? points >= possible * .8 : false,perfect_result:possible ? points >= possible : false,
+            notes:item.notes || null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
+          });
+        });
+        localState.derbyHistory.changeLog.unshift({
+          id:Date.now(),archive_id:archiveId,action:correcting?"corrected":"created",
+          reason:correcting?String(payload.correctionReason || "").trim():null,
+          changed_by:localState.currentUserId,changed_at:new Date().toISOString()
+        });
+        localSave(localState);
+        return archiveId;
+      }
+      const { data, error } = await client.rpc("wgang_save_derby_result_v60", {
+        p_event_id:Number(payload.eventId),
+        p_league:String(payload.league || "").trim(),
+        p_placement:Number(payload.placement),
+        p_neighborhood_points:Number(payload.neighborhoodPoints),
+        p_trashed_tasks:Number(payload.trashedTasks || 0),
+        p_notes:String(payload.notes || "").trim() || null,
+        p_results:payload.results,
+        p_correction_reason:String(payload.correctionReason || "").trim() || null
+      });
+      if (error) throw error;
       return data;
     },
     async createContent(kind, title, body, category="", publishNow=false) {
