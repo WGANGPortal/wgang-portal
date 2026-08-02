@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.57">
+  <link rel="stylesheet" href="main.css?v=0.18.0.58">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -55,7 +55,7 @@
       </section>
 
       <section class="section derby-story" id="derby-info">
-        <div class="rule-card"><p class="eyebrow light">VÅR DERBYREGEL</p><strong>90%</strong><h2>Når du deltar, gjør du ditt beste.</h2><p>Målet er å fullføre minst 90 % av oppgavene med høyest mulig poengsum for derbytypen.</p></div>
+        <div class="rule-card"><p class="eyebrow light">VÅR DERBYREGEL</p><strong>80%</strong><h2>Når du deltar, gjør du ditt beste.</h2><p>Minimumskravet er 80 % av mulig makspoeng. Målet er at alle henter 100 %.</p></div>
         <div class="rule-copy"><p class="eyebrow">ROM FOR PAUSE</p><h2>Det skal være gøy å være med.</h2><p>WGANG er ambisiøst, men menneskelig. Du kan velge pause, delta eller markere at du er usikker. Det gir lederne oversikt og laget forutsigbarhet.</p><button class="text-link" id="openPortalRule">Se hvordan det fungerer <span>→</span></button></div>
       </section>
 
@@ -117,7 +117,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.57</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.58</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -146,6 +146,31 @@
           <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk oppgavefremdrift, poeng og scoreboard er ikke koblet til reelle derbydata ennå. Dette bygges senere på grunnlag av hvordan WGANG faktisk bruker portalen.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
           <article class="portal-card"><div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div><p class="card-kicker">DELTAR DU?</p><h2>Velg status for uken</h2><div class="choice-grid"><button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Jeg gjør mitt beste</small></button><button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button><button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button></div><p class="helper-text" id="participationStatus">Velg status for neste derby.</p><p class="helper-text"><strong>Svar gjerne innen mandag kl. 23:00.</strong></p><div id="nextDerbyInfo" class="derby-published-info"></div><hr><p class="card-kicker">STRATEGI</p><ul class="strategy-list" id="derbyStrategy"><li>Ta kun oppgaver med 320 poeng i Standard Derby.</li><li>Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.</li><li>Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.</li></ul></article></div>
           
+          <div class="derby-rule-grid">
+            <article class="portal-card derby-target-card">
+              <p class="card-kicker">DITT MÅL I DETTE DERBYET</p>
+              <h2 id="derbyTargetTitle">Maksimalt mulig resultat</h2>
+              <div class="derby-target-facts">
+                <div><span>Inkluderte oppgaver</span><strong id="derbyIncludedTasks">9</strong></div>
+                <div><span>Maks per oppgave</span><strong id="derbyPointsPerTask">320</strong></div>
+                <div><span>Maks uten ekstra</span><strong id="derbyBaseMaximum">2 880</strong></div>
+                <div><span>Maks med ekstra</span><strong id="derbyExtraMaximum">3 200</strong></div>
+              </div>
+              <p class="helper-text" id="derbyTargetExplanation">Målet er 100 %. WGANGs minimum er 80 % av mulig makspoeng.</p>
+            </article>
+            <article class="portal-card derby-warning-card">
+              <p class="card-kicker">VIKTIG FØR DU VELGER OPPGAVE</p>
+              <h2>Kontroller oppgaven og tidsfristen</h2>
+              <ul class="strategy-list">
+                <li>Velg bare oppgaver du kan fullføre innen oppgavens egen tidsfrist.</li>
+                <li>Ikke la en valgt oppgave gå ut på tid.</li>
+                <li>Ikke slett eller avbryt en oppgave etter at den er valgt.</li>
+                <li>Gi beskjed til en leder så tidlig som mulig dersom det oppstår problemer.</li>
+              </ul>
+              <p class="derby-warning-note"><strong>En tapt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.</strong></p>
+            </article>
+          </div>
+
           <article class="portal-card" data-permission-any="derby.preferences.view"><div class="card-header"><div><p class="card-kicker">ADMINOVERSIKT</p><h2>Status per medlem</h2></div></div><div class="table-wrap"><table><thead><tr><th>Medlem</th><th>Deltakelse</th><th>Oppgaver</th><th>Status</th><th></th></tr></thead><tbody id="derbyAdminTable"></tbody></table></div></article>
         </section>
 
@@ -428,6 +453,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.57"></script><script src="backend.js?v=0.18.0.57"></script><script src="app.js?v=0.18.0.57"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.58"></script><script src="backend.js?v=0.18.0.58"></script><script src="app.js?v=0.18.0.58"></script>
 </body>
 </html>

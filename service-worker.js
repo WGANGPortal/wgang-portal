@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.57-senior-role";
+const CACHE_NAME = "wgang-v0.18.0.58-dynamic-derby-engine";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.57",
-  "/app.js?v=0.18.0.57", "/backend.js?v=0.18.0.57", "/config.js?v=0.18.0.57",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.58",
+  "/app.js?v=0.18.0.58", "/backend.js?v=0.18.0.58", "/config.js?v=0.18.0.58",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",

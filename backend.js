@@ -1,4 +1,4 @@
-/* v0.18.0.57 – Seniorrolle på databasehåndhevet rettighetsmodell */
+/* v0.18.0.58 – Dynamic Derby Engine på v0.18.0.57-rettighetsmodellen */
 (function () {
   "use strict";
 

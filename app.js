@@ -1,4 +1,4 @@
-/* v0.18.0.57 – Seniorrolle på databasehåndhevet rettighetsmodell */
+/* v0.18.0.58 – Dynamic Derby Engine på v0.18.0.57-rettighetsmodellen */
 (function () {
   "use strict";
 
@@ -68,7 +68,10 @@
     "Velg status for uken":"Choose your status for the week","Velg status for neste derby.":"Choose your status for the next Derby.",
     "Regler":"Rules","WGANG-strategi":"WGANG strategy","Oppgaver":"Tasks","Maks poeng":"Max points","Status":"Status",
     "Publiser kun dette derbyet":"Publish this Derby only","Lagre som standard":"Save as default","Velg grunnmal":"Choose template","Velg derbytype":"Choose Derby type",
-    "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description"
+    "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description",
+    "VÅR DERBYREGEL":"OUR DERBY RULE","Når du deltar, gjør du ditt beste.":"When you participate, you do your best.","Minimumskravet er 80 % av mulig makspoeng. Målet er at alle henter 100 %.":"The minimum requirement is 80% of the maximum possible score. Our goal is for everyone to reach 100%.",
+    "DITT MÅL I DETTE DERBYET":"YOUR GOAL IN THIS DERBY","Maksimalt mulig resultat":"Maximum possible result","Inkluderte oppgaver":"Included tasks","Maks per oppgave":"Maximum per task","Maks uten ekstra":"Maximum without extra","Maks med ekstra":"Maximum with extra","Målet er 100 %. WGANGs minimum er 80 % av mulig makspoeng.":"The goal is 100%. WGANG's minimum is 80% of the maximum possible score.",
+    "VIKTIG FØR DU VELGER OPPGAVE":"IMPORTANT BEFORE CHOOSING A TASK","Kontroller oppgaven og tidsfristen":"Check the task and its time limit","Velg bare oppgaver du kan fullføre innen oppgavens egen tidsfrist.":"Only choose tasks you can complete within the task's own time limit.","Ikke la en valgt oppgave gå ut på tid.":"Do not let a selected task expire.","Ikke slett eller avbryt en oppgave etter at den er valgt.":"Do not delete or abandon a task after selecting it.","Gi beskjed til en leder så tidlig som mulig dersom det oppstår problemer.":"Tell a leader as early as possible if a problem occurs.","En tapt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.":"A lost task gives 0 points and uses one of your available tasks."
     ,"OVERSIKT":"OVERVIEW","OPPGAVER":"TASKS","MEDLEMMER":"MEMBERS","ADMINISTRASJON":"ADMINISTRATION",
     "Fortell laget hvilke oppgaver som passer deg best.":"Tell the team which tasks suit you best.",
     "Innhøstingsoppgaver":"Harvesting Tasks","Hvete":"Wheat","Mais":"Corn","Gulrot":"Carrot","Bønner":"Soybeans","Sukkererter":"Sugarcane","Jordbær":"Strawberries","Potet":"Potatoes","Tomat":"Tomatoes","Annen høsting":"Other harvesting",
@@ -125,7 +128,17 @@
     "Det kan kjøpes 1 ekstra oppgave per dag.":"You can buy 1 extra task per day.",
     "Hver fullførte oppgave gir 50 poeng.":"Each completed task gives 50 points.",
     "Chill Derby kombineres med Harepus Derby.":"Chill Derby is combined with Bunny Derby.",
-    "Klargjør oppgaver på forhånd slik at du kan gjennomføre dem mens harepusen er aktiv. Harepusoppgavene vises som rosa oppgaver.":"Prepare tasks in advance so you can complete them while the Bunny is active. Bunny tasks are shown as pink tasks."
+    "Klargjør oppgaver på forhånd slik at du kan gjennomføre dem mens harepusen er aktiv. Harepusoppgavene vises som rosa oppgaver.":"Prepare tasks in advance so you can complete them while the Bunny is active. Bunny tasks are shown as pink tasks.",
+    "Power Derby har enklere oppgavekrav enn et vanlig derby, men samme maksimale poeng per oppgave. I Champions League har hvert medlem 18 inkluderte oppgaver.":"Power Derby tasks have easier requirements than regular Derby tasks, but the same maximum points per task. In the Champions League, each member has 18 included tasks.",
+    "Kontroller alltid oppgavens egen tidsfrist før du velger den.":"Always check the task's own time limit before selecting it.",
+    "En valgt oppgave skal fullføres og skal ikke slettes eller avbrytes.":"A selected task must be completed and must not be deleted or abandoned.",
+    "En oppgave som går ut på tid gir ingen poeng og bruker én tilgjengelig oppgave.":"A task that expires gives no points and uses one available task.",
+    "WGANGs minimum er 80 prosent av mulig makspoeng. Målet er 100 prosent.":"WGANG's minimum is 80% of the maximum possible score. The goal is 100%.",
+    "Prioriter oppgaver med 320 poeng.":"Prioritize 320-point tasks.",
+    "Utnytt de reduserte oppgavekravene til å fullføre tidlig og sikkert.":"Use the reduced task requirements to finish early and safely.",
+    "Ha produksjon, by, båt, gruveverktøy og hjelpeoppgaver forberedt.":"Prepare production, town, boat, mining-tool and help tasks.",
+    "Gi beskjed tidlig dersom en valgt oppgave står i fare for ikke å bli fullført.":"Let the team know early if a selected task may not be completed.",
+    "Strategi publiseres av admin før derbyet starter.":"The strategy will be published by an admin before the Derby starts."
     ,"Innhøstingsoppgaver":"Harvesting Tasks","Hvete":"Wheat","Mais":"Corn","Gulrot":"Carrot","Bønner":"Soybeans","Sukkererter":"Sugarcane","Jordbær":"Strawberries","Potet":"Potatoes","Tomat":"Tomatoes","Annen høsting":"Other harvesting",
     "Dyreoppgaver":"Animal Tasks","Melk":"Milk","Bacon":"Bacon","Egg":"Eggs","Ull":"Wool","Geitemelk":"Goat Milk","Mate dyr":"Feed Animals",
     "Produksjonsoppgaver":"Production Tasks","Lastebiloppgaver":"Truck Tasks","Båtoppgaver":"Boat Tasks","Byoppgaver":"Town Tasks","Besøkende":"Visitors","Spesifikke personer":"Specific Visitors","Spesifikke hus":"Specific Buildings",
@@ -1776,11 +1789,30 @@
     const phase = derbyDashboardPhase(next);
     const startText = $("nextDerbyStart"); if (startText) startText.textContent = phase === "active" ? "Pågår nå" : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00");
     $("derbyTaskTotalLabel").textContent = d.taskTotal || "–"; $("derbyMaxPoints").textContent = d.maxPoints || "–";
-    $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(x)}</li>`).join("") || `<li>Strategi publiseres av admin før derbyet starter.</li>`;
+    const includedTasks = Number(d.taskTotal || 0);
+    const extraTasks = Number(d.extraTasks || 0);
+    const pointsPerTask = Number(d.maxPoints || 0);
+    const baseMaximum = includedTasks * pointsPerTask;
+    const extraMaximum = (includedTasks + extraTasks) * pointsPerTask;
+    const number = value => new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO").format(value || 0);
+    setText("derbyIncludedTasks", number(includedTasks));
+    setText("derbyPointsPerTask", number(pointsPerTask));
+    setText("derbyBaseMaximum", number(baseMaximum));
+    setText("derbyExtraMaximum", number(extraMaximum));
+    setText("derbyTargetTitle", currentLanguage === "en" ? `${number(baseMaximum)} points without an extra task` : `${number(baseMaximum)} poeng uten ekstraoppgave`);
+    setText("derbyTargetExplanation", currentLanguage === "en"
+      ? `The goal is 100% (${number(baseMaximum)} points). WGANG's minimum is 80% (${number(Math.ceil(baseMaximum * 0.8))} points).${extraTasks ? ` With ${extraTasks} extra task${extraTasks === 1 ? "" : "s"}, the maximum possible score is ${number(extraMaximum)} points.` : ""}`
+      : `Målet er 100 % (${number(baseMaximum)} poeng). WGANGs minimum er 80 % (${number(Math.ceil(baseMaximum * 0.8))} poeng).${extraTasks ? ` Med ${extraTasks} ekstraoppgave${extraTasks === 1 ? "" : "r"} er mulig maksimum ${number(extraMaximum)} poeng.` : ""}`);
+    $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(tText(x))}</li>`).join("") || `<li>${esc(tText("Strategi publiseres av admin før derbyet starter."))}</li>`;
     const info = $("nextDerbyInfo");
     if (info) {
-      const rules = (d.rules || []).map(x=>`<li>${esc(x)}</li>`).join("");
-      info.innerHTML = `${d.description ? `<p>${esc(d.description)}</p>` : ""}${d.dailyTaskLimit ? `<p><strong>Daglig kvote:</strong> ${d.dailyTaskLimit} oppgaver${d.extraTasks ? ` + ${d.extraTasks} ekstra` : ""}</p>` : ""}${rules ? `<ul class="strategy-list">${rules}</ul>` : ""}`;
+      const rules = (d.rules || []).map(x=>`<li>${esc(tText(x))}</li>`).join("");
+      const dailyQuota = d.dailyTaskLimit
+        ? (currentLanguage === "en"
+          ? `<p><strong>Daily quota:</strong> ${d.dailyTaskLimit} tasks${d.extraTasks ? ` + ${d.extraTasks} extra` : ""}</p>`
+          : `<p><strong>Daglig kvote:</strong> ${d.dailyTaskLimit} oppgaver${d.extraTasks ? ` + ${d.extraTasks} ekstra` : ""}</p>`)
+        : "";
+      info.innerHTML = `${d.description ? `<p>${esc(tText(d.description))}</p>` : ""}${dailyQuota}${rules ? `<ul class="strategy-list">${rules}</ul>` : ""}`;
     }
     taskRange.max = d.taskTotal || 9;
     if (+taskRange.value > taskRange.max) taskRange.value = taskRange.max;
@@ -2289,7 +2321,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.57").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.58").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

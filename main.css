@@ -523,3 +523,16 @@ body:not(.admin-mode) .admin-only {
 .normal-derby-completion .button{margin-top:.5rem}
 .preferences-inactive{opacity:.58;pointer-events:none}
 @media(max-width:520px){.dashboard-derby-actions{align-items:stretch}.dashboard-derby-actions #dashboardDerbyAction{flex:1 1 58%}.dashboard-derby-actions #dashboardDerbyComplete{flex:0 1 auto;margin-left:auto}}
+
+
+/* v0.18.0.58 – Dynamic Derby Engine */
+.derby-rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}
+.derby-target-card,.derby-warning-card{height:100%}
+.derby-target-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.derby-target-facts>div{padding:14px;border:1px solid rgba(90,52,70,.14);border-radius:16px;background:rgba(255,250,246,.75)}
+.derby-target-facts span{display:block;font-size:.78rem;opacity:.72;margin-bottom:4px}
+.derby-target-facts strong{font-size:1.35rem}
+.derby-warning-card{border-color:rgba(184,112,37,.28);background:linear-gradient(180deg,#fffaf2,#fff)}
+.derby-warning-note{margin:16px 0 0;padding:12px 14px;border-radius:14px;background:rgba(184,112,37,.10)}
+@media(max-width:760px){.derby-rule-grid{grid-template-columns:1fr}.derby-target-facts{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.derby-target-facts{grid-template-columns:1fr}}
