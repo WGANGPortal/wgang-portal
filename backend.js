@@ -1,4 +1,4 @@
-/* v0.18.0.60 – Derbyhistorikk og resultater */
+/* v0.18.0.63 – Resultatprosent og ekstraoppgave-stjerne */
 (function () {
   "use strict";
 
@@ -229,7 +229,7 @@
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
-      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
+      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200)
     ]);
     for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes]) {
@@ -748,14 +748,15 @@
         localState.derbyHistory.results = localState.derbyHistory.results.filter(item => String(item.archive_id) !== String(archiveId));
         payload.results.forEach((item,index) => {
           const included = Number(event.task_total || 0), extra = Number(item.extra_tasks_used || 0), used = included + extra;
-          const points = Number(item.points_earned || 0), possible = included * Number(event.max_points || 0);
+          const pointsPerTask = Number(event.max_points || 0), points = Number(item.points_earned || 0), possible = included * pointsPerTask;
           localState.derbyHistory.results.push({
             id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,
             display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || "WGANG-medlem",
             included_tasks:included,extra_tasks:extra,tasks_used:used,tasks_completed:Number(item.tasks_completed || 0),
-            points_per_task:Number(event.max_points || 0),points_earned:points,possible_points:possible,
-            result_percent:possible ? Math.round(points * 10000 / possible) / 100 : 0,
+            points_per_task:pointsPerTask,points_earned:points,possible_points:possible,
+            result_percent:possible ? Math.min(100, Math.round(points * 10000 / possible) / 100) : 0,
             minimum_met:possible ? points >= possible * .8 : false,perfect_result:possible ? points >= possible : false,
+            extra_star_earned:extra > 0 && pointsPerTask > 0 && points >= possible + pointsPerTask,
             notes:item.notes || null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
           });
         });

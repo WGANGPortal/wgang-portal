@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.60">
+  <link rel="stylesheet" href="main.css?v=0.18.0.63">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -118,7 +118,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.62</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.63</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -203,13 +203,14 @@
           <div class="page-heading"><div><p class="eyebrow">DERBYHISTORIKK</p><h1>Resultater over tid</h1><p>Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.</p></div></div>
           <div class="history-personal-metrics">
             <article><span>Mine derby</span><strong id="myHistoryDerbies">0</strong><small>registrerte resultater</small></article>
-            <article><span>Mitt gjennomsnitt</span><strong id="myHistoryAverage">–</strong><small>ekstra begrenset til 100 %</small></article>
+            <article><span>Mitt gjennomsnitt</span><strong id="myHistoryAverage">–</strong><small>prosent maksimalt 100 %</small></article>
             <article><span>100 %</span><strong id="myHistoryPerfect">0</strong><small>resultater</small></article>
+            <article><span>⭐</span><strong id="myHistoryStars">0</strong><small>full ekstraoppgave med makspoeng</small></article>
             <article><span>Under 80 %</span><strong id="myHistoryBelow">0</strong><small>resultater</small></article>
           </div>
           <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">DERBYARKIV</p><h2>WGANGs sluttresultater</h2><p class="helper-text">Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.</p></div></div><div class="derby-archive-list" id="derbyArchiveList"></div></article>
-          <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">MIN HISTORIKK</p><h2>Mine derbyresultater</h2><p class="helper-text">Poengprosenten beregnes mot ordinært makspoeng. Ekstraoppgaver vises separat.</p></div></div><div class="member-history-list" id="myDerbyHistory"></div></article>
-          <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Gjennomsnitt begrenses til 100 %, slik at ekstraoppgaver ikke løfter resultatet kunstig.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>Under 80 %</th><th>Ikke fullført</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
+          <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">MIN HISTORIKK</p><h2>Mine derbyresultater</h2><p class="helper-text">Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. En hel ekstraoppgave med makspoeng gir ⭐.</p></div></div><div class="member-history-list" id="myDerbyHistory"></div></article>
+          <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. ⭐ vises separat når en hel ekstraoppgave er levert med makspoeng.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 80 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
         <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se hvem som deltar og hvordan laget ligger an.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
@@ -356,7 +357,7 @@
   <dialog id="derbyResultDialog" class="derby-result-dialog">
     <form id="derbyResultForm" class="dialog-card derby-result-dialog-card">
       <div class="card-header"><div><p class="card-kicker">DERBYHISTORIKK</p><h2 id="resultDialogTitle">Registrer sluttresultat</h2></div><button type="button" class="icon-button" data-close-dialog="derbyResultDialog" aria-label="Lukk">×</button></div>
-      <p class="helper-text">Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet.</p>
+      <p class="helper-text">Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet. Oppgaver brukt er tallet i kolonnen «Oppgaver»; poengene avgjør prosent og ⭐.</p>
       <label>Avsluttet derby<select id="resultEventSelect" required></select></label>
       <div class="form-grid"><label>Liga<input id="resultLeague" maxlength="80" placeholder="f.eks. Champions League" required></label><label>Plassering<input id="resultPlacement" type="number" min="1" max="100" required></label></div>
       <div class="form-grid"><label>Lagets totalpoeng<input id="resultNeighborhoodPoints" type="number" min="0" required></label><label>Tapte / slettede oppgaver totalt<input id="resultTrashedTasks" type="number" min="0" value="0" required></label></div>
@@ -535,6 +536,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.60"></script><script src="app.js?v=0.18.0.62"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.63"></script><script src="app.js?v=0.18.0.63"></script>
 </body>
 </html>
