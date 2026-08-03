@@ -1,4 +1,4 @@
-/* v0.18.0.60 – Derbyhistorikk og resultater */
+/* v0.18.0.61 – Power Derby-oppgaver */
 (function () {
   "use strict";
 
@@ -39,6 +39,9 @@
     "Derby-senter":"Derby Center","Planlegg deltakelsen og følg fremdriften.":"Plan your participation and follow progress.",
     "Medlemsoversikt":"Member overview","Finn naboene dine og se derby-status.":"Find your neighbors and see their Derby status.",
     "Oppgavepreferanser":"Task preferences","Velg hva som passer deg best.":"Choose what suits you best.",
+    "NORMAL DERBY":"NORMAL DERBY","POWER DERBY":"POWER DERBY",
+    "Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.":"Task preferences help leaders decide what should remain on or be removed from the board.",
+    "Marker hvilke oppgaver som passer deg. Lederne bruker oversikten til å vurdere hva som bør beholdes eller slettes fra tavla.":"Mark which tasks suit you. Leaders use the overview to decide what should remain on or be removed from the board.",
     "KUNNGJØRINGER":"ANNOUNCEMENTS","Viktige beskjeder":"Important messages","DERBYPRAT":"DERBY TALK",
     "Send inn tips":"Submit a tip","Medlemmenes tips":"Members' tips","Dette er bare starten":"This is just the beginning",
     "Administrasjon":"Administration","Godkjenn medlemmer og få oversikt over neste derby.":"Approve members and get an overview of the next Derby.",
@@ -1104,15 +1107,16 @@
     });
   }
 
-  function isNormalDerbyPreferenceScope() {
-    const name=String(state.derbyManagement?.next?.name||state.derby?.type||"");
-    // Legacy-navnet Standard behandles som Normal. Andre derbytyper beholder dagens logikk.
-    return /normal|standard/i.test(name);
+  function preferenceDerbyScope(nameOverride) {
+    const name=String(nameOverride ?? state.derbyManagement?.next?.name ?? state.derby?.type ?? "");
+    if (/power|styrke/i.test(name)) return {label:"Power Derby",eyebrow:"POWER DERBY"};
+    if (/normal|standard/i.test(name)) return {label:"Normal Derby",eyebrow:"NORMAL DERBY"};
+    return null;
   }
 
   function adminPreferenceAccounts() {
     const members=approved();
-    return isNormalDerbyPreferenceScope() ? members.filter(a=>a.choice==="joined" && !a.derbyCompleted) : members;
+    return preferenceDerbyScope() ? members.filter(a=>a.choice==="joined" && !a.derbyCompleted) : members;
   }
 
   function preferenceStats() {
@@ -1136,17 +1140,20 @@
   function renderAdminPreferences() {
     if (!hasPermission("derby.preferences.view")) return;
     const scopedMembers=adminPreferenceAccounts();
-    const normalScope=isNormalDerbyPreferenceScope();
+    const derbyScope=preferenceDerbyScope();
+    const participantScope=!!derbyScope;
     const stats = preferenceStats();
     const rows = TASK_TYPES.map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
     const scopeText=$("adminPreferenceScope");
-    if(scopeText) scopeText.textContent=normalScope
-      ? `Viser de ${scopedMembers.length} medlem${scopedMembers.length===1?"met":"mene"} som deltar og fortsatt har oppgaver igjen i dette Normal derbyet.`
-      : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.";
+    if(scopeText) scopeText.textContent=participantScope
+      ? (currentLanguage === "en"
+        ? `Showing ${scopedMembers.length} participating member${scopedMembers.length===1?"":"s"} who still have tasks remaining in this ${derbyScope.label}.`
+        : `Viser ${scopedMembers.length===1?"det ene medlemmet":`de ${scopedMembers.length} medlemmene`} som deltar og fortsatt har oppgaver igjen i ${derbyScope.label}.`)
+      : (currentLanguage === "en" ? "Showing approved members according to the current setup for this Derby type." : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.");
     $("adminPreferenceTable").innerHTML = rows.map(x => `<tr><td><strong>${esc(x.t)}</strong></td><td>${x.s.like}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td>${x.s.no}</td><td><span class="recommendation ${x.r.cls}">${x.r.label}</span></td></tr>`).join("");
     const most = rows.slice().sort((a,b) => (b.s.like*2+b.s.can)-(a.s.like*2+a.s.can)).slice(0,3);
     const clear = rows.slice().sort((a,b) => (b.s.no*2+b.s.avoid)-(a.s.no*2+a.s.avoid)).filter(x => x.s.no+x.s.avoid>0).slice(0,3);
-    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>${normalScope?`Basert på ${scopedMembers.length} påmeldte derbydeltakere`:"Basert på medlemmenes valg"}</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
+    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>${participantScope?`Basert på ${scopedMembers.length} påmeldte derbydeltakere`:"Basert på medlemmenes valg"}</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
     const memberBox = $("adminPreferenceMembers");
     if (memberBox) {
       memberBox.className = "preference-member-grid";
@@ -1154,7 +1161,7 @@
         const likes = TASK_TYPES.filter(t => a.preferences?.[t] === "like");
         const can = TASK_TYPES.filter(t => a.preferences?.[t] === "can");
         return `<article class="preference-member-card"><h4>${esc(a.name)}</h4><p><strong>❤️ Liker:</strong> ${likes.map(esc).join(", ") || "Ikke registrert"}</p><p><strong>👍 Kan ta:</strong> ${can.map(esc).join(", ") || "Ikke registrert"}</p></article>`;
-      }).join("") || `<p class="empty-state">${normalScope?"Ingen deltakere med oppgaver igjen er med i statistikken akkurat nå.":"Ingen preferanser registrert ennå."}</p>`;
+      }).join("") || `<p class="empty-state">${participantScope?"Ingen deltakere med oppgaver igjen er med i statistikken akkurat nå.":"Ingen preferanser registrert ennå."}</p>`;
     }
   }
 
@@ -2029,12 +2036,12 @@
   function renderTaskHubContext(){
     const event=state.derbyManagement?.next;
     const type=String(event?.name||state.derby?.type||"Normal Derby");
-    const bunny=/bunny|harepus/i.test(type), standard=/standard|normal/i.test(type);
-    $("standardTaskHub")?.classList.toggle("hidden",!standard);
+    const bunny=/bunny|harepus/i.test(type), derbyScope=preferenceDerbyScope(type), preferenceBased=!!derbyScope;
+    $("standardTaskHub")?.classList.toggle("hidden",!preferenceBased);
     $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
-    $("genericTaskHub")?.classList.toggle("hidden",standard||bunny);
+    $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
     if(bunny){setText("taskHubEyebrow","HAREPUS DERBY");setText("taskHubTitle","Oppgaver i neste harepus");setText("taskHubIntro","Planlegg oppgavene sammen og se felles interesse før neste harepus.");}
-    else if(standard){setText("taskHubEyebrow","NORMAL DERBY");setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");}
+    else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
 
@@ -2742,7 +2749,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.60").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.61").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

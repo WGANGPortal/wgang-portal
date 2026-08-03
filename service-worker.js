@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.60-derby-history-results";
+const CACHE_NAME = "wgang-v0.18.0.61-power-derby-tasks";
 const APP_SHELL = [
   "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.60",
-  "/app.js?v=0.18.0.60", "/backend.js?v=0.18.0.60", "/config.js?v=0.18.0.60",
+  "/app.js?v=0.18.0.61", "/backend.js?v=0.18.0.60", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
