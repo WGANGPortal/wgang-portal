@@ -1,4 +1,4 @@
-/* v0.18.0.61 – Power Derby-oppgaver */
+/* v0.18.0.62 – Deltakere i fullførte derby */
 (function () {
   "use strict";
 
@@ -1321,14 +1321,29 @@
     return (state.derbyManagement?.events || []).filter(event=>event.status==="completed" || (event.end_at && new Date(event.end_at).getTime()<=now));
   }
 
+  // Regelbekreftelsen ble innført etter at de eldre derbyene allerede var
+  // startet og svarfristen var utløpt. For resultatregistrering beholder disse
+  // derbyene derfor sine faktiske, eventspesifikke «Jeg deltar»-svar. Derbyer
+  // fra og med 4. august 2026 krever fortsatt full WGANG-DERBY-RULES-v1-
+  // bekreftelse. Denne overgangen påvirker ikke påmelding til aktive/fremtidige
+  // derbyer.
+  const RESULT_RULE_CONFIRMATION_START_AT=Date.parse("2026-08-04T08:00:00Z");
+
+  function validResultParticipation(event,row) {
+    if(!event||!row||row.choice!=="joined")return false;
+    const eventStart=event.start_at?new Date(event.start_at).getTime():Number.NaN;
+    const legacyEvent=Number.isFinite(eventStart)&&eventStart<RESULT_RULE_CONFIRMATION_START_AT;
+    const confirmedRules=!!row.rules_acknowledged_at
+      && row.rules_acknowledgement_version==="WGANG-DERBY-RULES-v1"
+      && Number(row.acknowledged_max_points)===Number(event.max_points);
+    return legacyEvent||confirmedRules;
+  }
+
   function resultParticipants(eventId) {
     const event=(state.derbyManagement?.events || []).find(item=>String(item.id)===String(eventId));
     const rows=(state.derbyManagement?.participations || []).filter(row=>
       String(row.event_id)===String(eventId)
-      && row.choice==="joined"
-      && !!row.rules_acknowledged_at
-      && row.rules_acknowledgement_version==="WGANG-DERBY-RULES-v1"
-      && Number(row.acknowledged_max_points)===Number(event?.max_points)
+      && validResultParticipation(event,row)
     );
     return rows.map(row=>({row,account:state.accounts.find(a=>String(a.id)===String(row.user_id))})).sort((a,b)=>String(a.account?.name||"").localeCompare(String(b.account?.name||""),"nb"));
   }
@@ -2749,7 +2764,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.61").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.62").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
