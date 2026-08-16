@@ -1,4 +1,4 @@
-/* v0.18.0.63 – Resultatprosent og ekstraoppgave-stjerne */
+/* v0.18.0.65 – Chill Bunny-påmelding og trygg Normal-konvertering */
 (function () {
   "use strict";
 
@@ -102,10 +102,10 @@
     "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
     "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings",
     "Derbyhistorikk":"Derby history","DERBYHISTORIKK":"DERBY HISTORY","Resultater over tid":"Results over time","Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.":"View the team's Derby archive, your own results and development across multiple Derbies.",
-    "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 80 %":"Below 80%","Stjerner":"Stars","full ekstraoppgave med makspoeng":"full extra task at maximum points",
+    "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 80 %":"Below 80%","Stjerner":"Stars","fulle ekstraoppgaver med makspoeng":"full extra tasks at maximum points",
     "DERBYARKIV":"DERBY ARCHIVE","WGANGs sluttresultater":"WGANG final results","Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.":"All approved members can view Derby type, date, league, placement, total points and participant count.",
-    "MIN HISTORIKK":"MY HISTORY","Mine derbyresultater":"My Derby results","Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. En hel ekstraoppgave med makspoeng gir ⭐.":"The score percentage is calculated against the regular maximum and stops at 100%. One full extra task at maximum points earns ⭐.",
-    "LEDEROVERSIKT":"LEADERSHIP OVERVIEW","Gjennomsnitt og utvikling":"Average and development","Prosenten stopper ved 100 %. ⭐ vises separat når en hel ekstraoppgave er levert med makspoeng.":"The percentage stops at 100%. ⭐ is shown separately when one full extra task is completed at maximum points.",
+    "MIN HISTORIKK":"MY HISTORY","Mine derbyresultater":"My Derby results","Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. Hver hel ekstraoppgave med makspoeng gir én ⭐.":"The score percentage is calculated against the regular maximum and stops at 100%. Every full extra task at maximum points earns one ⭐.",
+    "LEDEROVERSIKT":"LEADERSHIP OVERVIEW","Gjennomsnitt og utvikling":"Average and development","Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.":"The percentage stops at 100%. Every completed extra task at maximum points counts as one ⭐.",
     "Snitt":"Average","Ikke brukt":"Not used","Utvikling":"Development","SLUTTRESULTAT":"FINAL RESULT","Registrer derbyresultat":"Register Derby result","Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.":"Use the final screen from Hay Day. The result is saved as one transaction, and later corrections require a reason.","Registrer eller korriger":"Register or correct",
     "Registrer sluttresultat":"Register final result","Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet. Oppgaver brukt er tallet i kolonnen «Oppgaver»; poengene avgjør prosent og ⭐.":"Choose the completed Derby and enter the details exactly as shown on the final screen. Tasks used is the number in the Tasks column; points determine the percentage and ⭐.","Avsluttet derby":"Completed Derby","Liga":"League","Plassering":"Placement","Lagets totalpoeng":"Team total points","Tapte / slettede oppgaver totalt":"Total lost / deleted tasks","Merknad":"Note","valgfritt":"optional","Relevant forklaring til sluttresultatet":"Relevant explanation for the final result","RESULTAT PER MEDLEM":"RESULT BY MEMBER","Bekreftede deltakere":"Confirmed participants","Begrunnelse for korreksjon":"Reason for correction","obligatorisk og lagres i endringsloggen":"required and saved in the change log","Lagre hele resultatet":"Save complete result"
 
@@ -1235,23 +1235,33 @@
     const percent = resultPercentValue(result);
     const unused = unusedTaskCount(result);
     const extra = Math.max(0, Number(result?.extra_tasks || 0));
-    const starTarget = baseMaximum + pointsPerTask;
-    const calculatedStar = extra > 0 && pointsPerTask > 0 && pointsEarned >= starTarget;
-    const star = typeof result?.extra_star_earned === "boolean" ? result.extra_star_earned : calculatedStar;
+    const calculatedStars = extra > 0 && pointsPerTask > 0
+      ? Math.min(extra,Math.max(0,Math.floor((pointsEarned-baseMaximum)/pointsPerTask)))
+      : 0;
+    const storedStars=Number(result?.extra_stars_earned);
+    const starCount=Number.isFinite(storedStars)
+      ? Math.min(extra,Math.max(0,Math.floor(storedStars)))
+      : calculatedStars;
+    const star=starCount>0;
+    const starBadge=starCount===1?"⭐":`⭐×${starCount}`;
+    const nextStarNumber=Math.min(extra,starCount+1);
+    const starTarget=baseMaximum+pointsPerTask;
+    const nextStarTarget=nextStarNumber>0?baseMaximum+nextStarNumber*pointsPerTask:0;
     const missingToMaximum = Math.max(0, baseMaximum - pointsEarned);
     const missingToStar = extra > 0 && pointsPerTask > 0 ? Math.max(0, starTarget - pointsEarned) : 0;
+    const missingToNextStar = starCount<extra&&pointsPerTask>0?Math.max(0,nextStarTarget-pointsEarned):0;
     let tone = "below";
     let label = currentLanguage === "en"
       ? `${historyPercent(percent)} · Below 80%`
       : `${historyPercent(percent)} · Under 80 %`;
     if (percent >= 100) {
       tone = star ? "star" : "perfect";
-      label = star ? "100 % ⭐" : "100 %";
+      label = star ? `100 % ${starBadge}` : "100 %";
     } else if (percent >= 80) {
       tone = "minimum";
       label = historyPercent(percent);
     }
-    return {baseMaximum,pointsEarned,percent,unused,extra,star,starTarget,missingToMaximum,missingToStar,tone,label};
+    return {baseMaximum,pointsEarned,percent,unused,extra,star,starCount,starBadge,starTarget,nextStarTarget,missingToMaximum,missingToStar,missingToNextStar,tone,label};
   }
 
   function archiveResults(archiveId) {
@@ -1295,7 +1305,7 @@
         return `<article class="member-history-card history-tone-${status.tone}">
           <div><span>${historyDate(archive.started_at || archive.ended_at)}</span><h3>${esc(tText(archive.derby_name || "Derby"))}</h3><small>${esc(archive.league || "")}${archive.placement?` · #${archive.placement}`:""}</small></div>
           <div class="member-history-score"><strong>${historyNumber(row.points_earned)} ${currentLanguage==="en"?"points":"poeng"}</strong><span class="history-status history-status-${status.tone}">${status.label}</span></div>
-          <div class="member-history-details"><span>${historyNumber(row.tasks_completed)} / ${historyNumber(row.tasks_used)} ${currentLanguage==="en"?"tasks used":"oppgaver brukt"}</span><span>100 % = ${historyNumber(status.baseMaximum)} ${currentLanguage==="en"?"points":"poeng"}</span>${status.extra?`<b>${currentLanguage==="en"?"Extra task used":"Ekstraoppgave brukt"}</b>`:""}${status.unused?`<b class="history-warning">${status.unused} ${currentLanguage==="en"?"task(s) not used":"oppgave(r) ikke brukt"}</b>`:""}${status.star?`<b class="history-star">⭐ ${currentLanguage==="en"?"Full extra task at maximum points":"Full ekstraoppgave med makspoeng"}</b>`:status.percent>=100&&status.extra?`<b class="history-warning">${historyNumber(status.missingToStar)} ${currentLanguage==="en"?"points missing for ⭐":"poeng mangler til ⭐"}</b>`:status.percent<100?`<b class="history-warning">${historyNumber(status.missingToMaximum)} ${currentLanguage==="en"?"points missing for 100%":"poeng mangler til 100 %"}</b>`:`<b class="history-complete">${currentLanguage==="en"?"100% achieved":"100 % oppnådd"}</b>`}</div>
+          <div class="member-history-details"><span>${historyNumber(row.tasks_completed)} / ${historyNumber(row.tasks_used)} ${currentLanguage==="en"?"tasks used":"oppgaver brukt"}</span><span>100 % = ${historyNumber(status.baseMaximum)} ${currentLanguage==="en"?"points":"poeng"}</span>${status.extra?`<b>${historyNumber(status.extra)} ${currentLanguage==="en"?(status.extra===1?"extra task used":"extra tasks used"):(status.extra===1?"ekstraoppgave brukt":"ekstraoppgaver brukt")}</b>`:""}${status.unused?`<b class="history-warning">${status.unused} ${currentLanguage==="en"?"task(s) not used":"oppgave(r) ikke brukt"}</b>`:""}${status.star?`<b class="history-star">${status.starBadge} · ${currentLanguage==="en"?`${historyNumber(status.starCount)} full extra task${status.starCount===1?"":"s"} at maximum points`:(status.starCount===1?"Én full ekstraoppgave med makspoeng":`${historyNumber(status.starCount)} fulle ekstraoppgaver med makspoeng`)}</b>`:status.percent>=100&&status.extra?`<b class="history-warning">${historyNumber(status.missingToStar)} ${currentLanguage==="en"?"points missing for ⭐":"poeng mangler til ⭐"}</b>`:status.percent<100?`<b class="history-warning">${historyNumber(status.missingToMaximum)} ${currentLanguage==="en"?"points missing for 100%":"poeng mangler til 100 %"}</b>`:`<b class="history-complete">${currentLanguage==="en"?"100% achieved":"100 % oppnådd"}</b>`}</div>
         </article>`;
       }).join("") : `<p class="empty-state">${currentLanguage==="en"?"Your personal Derby history will appear here after the first result is registered.":"Din personlige derbyhistorikk vises her etter at første resultat er registrert."}</p>`;
     }
@@ -1304,7 +1314,7 @@
     setText("myHistoryDerbies",historyNumber(ownRows.length));
     setText("myHistoryAverage",ownRows.length?historyPercent(myAverage):"–");
     setText("myHistoryPerfect",historyNumber(ownRows.filter(row=>resultPercentValue(row)>=100).length));
-    setText("myHistoryStars",historyNumber(ownRows.filter(row=>resultStatusModel(row).star).length));
+    setText("myHistoryStars",historyNumber(ownRows.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0)));
     setText("myHistoryBelow",historyNumber(ownRows.filter(row=>resultPercentValue(row)<80).length));
 
     if (canViewLeadership) {
@@ -1325,7 +1335,7 @@
           name:rows[0]?.display_name_snapshot||"WGANG-medlem",count:rows.length,
           average:capped.reduce((a,b)=>a+b,0)/Math.max(1,capped.length),
           perfect:rows.filter(row=>resultPercentValue(row)>=100).length,
-          stars:rows.filter(row=>resultStatusModel(row).star).length,
+          stars:rows.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0),
           below:rows.filter(row=>resultPercentValue(row)<80).length,
           unused:rows.reduce((sum,row)=>sum+unusedTaskCount(row),0),
           trend:rows.length>1?capped[0]-capped[1]:null
@@ -1334,7 +1344,7 @@
       const cappedAll=allResults.map(resultPercentValue);
       const teamAverage=cappedAll.length?cappedAll.reduce((a,b)=>a+b,0)/cappedAll.length:0;
       const leaderMetrics=$("leaderHistoryMetrics");
-      if(leaderMetrics)leaderMetrics.innerHTML=`<article><span>${currentLanguage==="en"?"Average":"Gjennomsnitt"}</span><strong>${cappedAll.length?historyPercent(teamAverage):"–"}</strong><small>${currentLanguage==="en"?"percentage capped at 100%":"prosent maksimalt 100 %"}</small></article><article><span>100 %</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)>=100).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>⭐</span><strong>${historyNumber(allResults.filter(row=>resultStatusModel(row).star).length)}</strong><small>${currentLanguage==="en"?"full extra tasks":"fulle ekstraoppgaver"}</small></article><article><span>${currentLanguage==="en"?"Below 80%":"Under 80 %"}</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)<80).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Not used":"Ikke brukt"}</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+unusedTaskCount(row),0))}</strong><small>${currentLanguage==="en"?"tasks":"oppgaver"}</small></article>`;
+      if(leaderMetrics)leaderMetrics.innerHTML=`<article><span>${currentLanguage==="en"?"Average":"Gjennomsnitt"}</span><strong>${cappedAll.length?historyPercent(teamAverage):"–"}</strong><small>${currentLanguage==="en"?"percentage capped at 100%":"prosent maksimalt 100 %"}</small></article><article><span>100 %</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)>=100).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>⭐</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0))}</strong><small>${currentLanguage==="en"?"full extra tasks":"fulle ekstraoppgaver"}</small></article><article><span>${currentLanguage==="en"?"Below 80%":"Under 80 %"}</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)<80).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Not used":"Ikke brukt"}</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+unusedTaskCount(row),0))}</strong><small>${currentLanguage==="en"?"tasks":"oppgaver"}</small></article>`;
       const leaderTable=$("leaderHistoryTable");
       if(leaderTable)leaderTable.innerHTML=leaders.length?leaders.map(item=>{
         const trend=item.trend===null?"–":`${item.trend>0?"↑":item.trend<0?"↓":"→"} ${item.trend===0?"":historyPercent(Math.abs(item.trend))}`.trim();
@@ -1462,7 +1472,7 @@
       preview.textContent=!result||completed===null?(currentLanguage==="en"?"Enter result":"Fyll inn resultat"):result.label;
       preview.className=`result-member-preview ${result?.tone||""}`;
       const targetNote=!result||completed===null?"":result.star
-        ? (currentLanguage==="en"?" · ⭐ full extra task at maximum points":" · ⭐ full ekstraoppgave med makspoeng")
+        ? ` · ${result.starBadge} · ${currentLanguage==="en"?`${historyNumber(result.starCount)} full extra task${result.starCount===1?"":"s"} at maximum points`:(result.starCount===1?"én full ekstraoppgave med makspoeng":`${historyNumber(result.starCount)} fulle ekstraoppgaver med makspoeng`)}${result.starCount<extra?` · ${historyNumber(result.missingToNextStar)} ${currentLanguage==="en"?"points to the next ⭐":"poeng til neste ⭐"}`:""}`
         : result.percent>=100&&extra>0
           ? ` · ${historyNumber(result.missingToStar)} ${currentLanguage==="en"?"points missing for ⭐":"poeng mangler til ⭐"}`
           : result.percent<100
@@ -1869,7 +1879,7 @@
     if (!wrap || !value || !label || !visible) { if (wrap) wrap.classList.add("hidden"); return; }
     const target = dashboardCountdownTarget(event);
     wrap.classList.remove("hidden");
-    label.textContent = bunny ? "Neste harepus starter om" : "Derbyet starter om";
+    label.textContent = "Derbyet starter om";
     const paint=()=>{ value.textContent = formatDashboardCountdown(target.getTime() - Date.now()); };
     paint();
     dashboardCountdownTimer = setInterval(paint, 30000);
@@ -1995,21 +2005,24 @@
     const spotlight=$("dashboardDerbySpotlight");
     if (spotlight) spotlight.classList.toggle("bunny-focus", bunny);
     setText("dashboardDerbyIcon", bunny ? "🐰" : "◇");
-    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY DERBY" : "NESTE DERBY"));
-    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Gjør deg klar til neste harepus." : `Her er det viktigste i planleggingen mot ${type}.`));
-    if (bunny && !active) setText("dashboardDerbyType", "Planlegg neste harepus");
+    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY – PÅMELDING" : "NESTE DERBY"));
+    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Påmeldingen til neste ukes Chill Bunny er åpen." : `Her er det viktigste i planleggingen mot ${type}.`));
     setText("dashboardDerbyFocusText", active
       ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Gjør oppgavene klare på forhånd og se hvilke oppgaver flest planlegger å ta." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
-    setText("dashboardDerbyAction", bunny ? "Åpne oppslagstavla" : "Åpne derby-senter");
+      : (bunny ? "Bekreft om du deltar, tar pause eller er usikker før svarfristen. Oppgavetavla er klar for felles Bunny-planlegging." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
+    setText("dashboardDerbyAction", bunny && active ? "Åpne oppslagstavla" : (bunny ? "Åpne påmelding" : "Åpne derby-senter"));
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
-    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny ? "preferences" : "derby";
+    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
     renderNormalDerbyCompletion();
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
     setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
-    setText("dashboardDeadline", active ? "Pågår nå" : "Mandag kl. 23:00");
+    const deadline=event?.signup_deadline?new Date(event.signup_deadline):null;
+    const deadlineText=deadline&&!Number.isNaN(deadline.getTime())
+      ? new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(deadline)
+      : "Mandag kl. 23:00";
+    setText("dashboardDeadline", active ? "Pågår nå" : deadlineText);
     setText("dashboardDeadlineHint", active ? type : "svar gjerne innen fristen");
     setText("dashboardDerbyMetricLabel", active ? "Pågående derby" : "Neste derby");
     setText("dashboardNextDerbyName", shortType);
@@ -2017,6 +2030,8 @@
   }
 
   function currentActiveDerbyEvent() {
+    const explicit=state.derbyManagement?.current;
+    if(explicit)return explicit;
     const events=Array.isArray(state.derbyManagement?.events)?state.derbyManagement.events:[];
     const now=Date.now();
     const currentByTime=events
@@ -2037,12 +2052,19 @@
 
   function activeNormalDerby() {
     const event=currentActiveDerbyEvent();
-    return !!(event && derbyDashboardPhase(event)==="active" && /normal|standard/i.test(String(event.name||"")));
+    return !!(event && /normal|standard/i.test(String(event.name||"")));
+  }
+
+  function activeDerbyParticipationChoice(user) {
+    if(!user)return "waiting";
+    if(typeof user.activeDerbyChoice==="string")return user.activeDerbyChoice;
+    const currentEvent=currentActiveDerbyEvent(), contextEvent=state.derbyManagement?.next;
+    return currentEvent&&contextEvent&&String(currentEvent.id)===String(contextEvent.id)?user.choice:"waiting";
   }
 
   function renderNormalDerbyCompletion() {
     const user=current();
-    const visible=!!(user && user.choice==="joined" && activeNormalDerby());
+    const visible=!!(user && activeDerbyParticipationChoice(user)==="joined" && activeNormalDerby());
     const completed=!!user?.derbyCompleted;
     const dashboardButton=$("dashboardDerbyComplete");
     const derbyCard=$("normalDerbyCompletionCard");
@@ -2070,7 +2092,7 @@
   }
 
   async function toggleNormalDerbyCompletion() {
-    if(busy||!current()||!activeNormalDerby()||current().choice!=="joined") return;
+    if(busy||!current()||!activeNormalDerby()||activeDerbyParticipationChoice(current())!=="joined") return;
     const user=current(), next=!user.derbyCompleted;
     const message=next
       ? "Registrere at du er ferdig med ukens oppgaver? Oppgavepreferansene dine tas da ut av den aktive statistikken."
@@ -2092,7 +2114,7 @@
     $("standardTaskHub")?.classList.toggle("hidden",!preferenceBased);
     $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
     $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
-    if(bunny){setText("taskHubEyebrow","HAREPUS DERBY");setText("taskHubTitle","Oppgaver i neste harepus");setText("taskHubIntro","Planlegg oppgavene sammen og se felles interesse før neste harepus.");}
+    if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgaver i neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg oppgavene sammen og se felles interesse før neste harepus.":"Påmeldingen er åpen. Dere kan samtidig klargjøre oppgaver og se felles interesse før derbyet starter.");}
     else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
@@ -2108,6 +2130,8 @@
       eventName: /^Standard Derby$/i.test(eventName) ? "Normal Derby" : eventName,
       includedTasks,
       extraTasks,
+      dailyTaskLimit: Math.max(0, Number(event?.daily_task_limit || 0)),
+      bunny: /bunny|harepus/i.test(eventName),
       pointsPerTask,
       baseMaximum,
       minimumPoints: Math.ceil(baseMaximum * 0.8)
@@ -2124,7 +2148,7 @@
   }
 
   function updateParticipationConfirmationState() {
-    const checks = [...document.querySelectorAll("[data-participation-rule]")];
+    const checks = [...document.querySelectorAll("[data-participation-rule]:not(:disabled)")];
     const confirmButton = $("confirmDerbyParticipation");
     if (confirmButton) confirmButton.disabled = busy || !checks.length || !checks.every(input => input.checked);
   }
@@ -2149,6 +2173,13 @@
     setText("participationRuleTarget", currentLanguage === "en"
       ? `I understand that WGANG's goal is 100% (${number(details.baseMaximum)} points) and the minimum is 80% (${number(details.minimumPoints)} points).`
       : `Jeg forstår at WGANGs mål er 100 % (${number(details.baseMaximum)} poeng) og minimum er 80 % (${number(details.minimumPoints)} poeng).`);
+    const dailyWrap=$("participationRuleDailyWrap"), dailyInput=$("participationRuleDaily");
+    const showDaily=details.dailyTaskLimit>0;
+    dailyWrap?.classList.toggle("hidden",!showDaily);
+    if(dailyInput){dailyInput.disabled=!showDaily;dailyInput.required=showDaily;}
+    if(showDaily)setText("participationRuleDailyText",currentLanguage === "en"
+      ? `I follow the daily quota of ${number(details.dailyTaskLimit)} included tasks and complete it before the quota resets.${details.extraTasks ? " A daily extra task is purchased separately." : ""}`
+      : `Jeg følger den daglige kvoten på ${number(details.dailyTaskLimit)} inkluderte oppgaver og fullfører den før kvoten nullstilles.${details.extraTasks ? " En eventuell ekstraoppgave kjøpes separat for dagen." : ""}`);
     setText("participationDialogStatus", "");
     updateParticipationConfirmationState();
     showDialog(derbyParticipationDialog);
@@ -2210,18 +2241,20 @@
     setText("derbyPointsPerTask", number(pointsPerTask));
     setText("derbyBaseMaximum", number(baseMaximum));
     setText("derbyExtraMaximum", number(extraMaximum));
-    setText("derbyTargetTitle", currentLanguage === "en" ? `${number(baseMaximum)} points without an extra task` : `${number(baseMaximum)} poeng uten ekstraoppgave`);
+    setText("derbyTargetTitle", currentLanguage === "en" ? `${number(baseMaximum)} points without extra tasks` : `${number(baseMaximum)} poeng uten ekstraoppgaver`);
     setText("derbyTargetExplanation", currentLanguage === "en"
-      ? `The goal is 100% (${number(baseMaximum)} points). WGANG's minimum is 80% (${number(Math.ceil(baseMaximum * 0.8))} points).${extraTasks ? ` With ${extraTasks} extra task${extraTasks === 1 ? "" : "s"}, the maximum possible score is ${number(extraMaximum)} points. One full extra task at maximum points earns ⭐.` : ""}`
-      : `Målet er 100 % (${number(baseMaximum)} poeng). WGANGs minimum er 80 % (${number(Math.ceil(baseMaximum * 0.8))} poeng).${extraTasks ? ` Med ${extraTasks} ekstraoppgave${extraTasks === 1 ? "" : "r"} er mulig maksimum ${number(extraMaximum)} poeng. En hel ekstraoppgave med makspoeng gir ⭐.` : ""}`);
+      ? `The goal is 100% (${number(baseMaximum)} points). WGANG's minimum is 80% (${number(Math.ceil(baseMaximum * 0.8))} points).${extraTasks ? ` With ${extraTasks} extra task${extraTasks === 1 ? "" : "s"}, the maximum possible score is ${number(extraMaximum)} points. Every full extra task at maximum points earns one ⭐, up to ${extraTasks}.` : ""}`
+      : `Målet er 100 % (${number(baseMaximum)} poeng). WGANGs minimum er 80 % (${number(Math.ceil(baseMaximum * 0.8))} poeng).${extraTasks ? ` Med ${extraTasks} ekstraoppgave${extraTasks === 1 ? "" : "r"} er mulig maksimum ${number(extraMaximum)} poeng. Hver hel ekstraoppgave med makspoeng gir én ⭐, opptil ${extraTasks}.` : ""}`);
     $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(tText(x))}</li>`).join("") || `<li>${esc(tText("Strategi publiseres av admin før derbyet starter."))}</li>`;
     const info = $("nextDerbyInfo");
     if (info) {
       const rules = (d.rules || []).map(x=>`<li>${esc(tText(x))}</li>`).join("");
+      const derbyDays=d.dailyTaskLimit?Math.max(1,Math.ceil(includedTasks/Number(d.dailyTaskLimit))):0;
+      const dailyExtra=derbyDays&&extraTasks?Math.max(1,Math.ceil(extraTasks/derbyDays)):0;
       const dailyQuota = d.dailyTaskLimit
         ? (currentLanguage === "en"
-          ? `<p><strong>Daily quota:</strong> ${d.dailyTaskLimit} tasks${d.extraTasks ? ` + ${d.extraTasks} extra` : ""}</p>`
-          : `<p><strong>Daglig kvote:</strong> ${d.dailyTaskLimit} oppgaver${d.extraTasks ? ` + ${d.extraTasks} ekstra` : ""}</p>`)
+          ? `<p><strong>Daily quota:</strong> ${d.dailyTaskLimit} included tasks${dailyExtra ? ` + up to ${dailyExtra} purchasable extra per day` : ""}. ${includedTasks} included tasks in total.</p>`
+          : `<p><strong>Daglig kvote:</strong> ${d.dailyTaskLimit} inkluderte oppgaver${dailyExtra ? ` + opptil ${dailyExtra} kjøpbar ekstra per dag` : ""}. Totalt ${includedTasks} inkluderte oppgaver.</p>`)
         : "";
       info.innerHTML = `${d.description ? `<p>${esc(tText(d.description))}</p>` : ""}${dailyQuota}${rules ? `<ul class="strategy-list">${rules}</ul>` : ""}`;
     }
@@ -2801,7 +2834,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.63").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.65").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -2809,68 +2842,6 @@
     });
   }
 })();
-
-
-/* v0.18.0.11 Chill Bunny planner */
-function wgangInitBunnyPlanner(){
-  if(document.getElementById("wgangBunnyPlanner")) return;
-  const headings=[...document.querySelectorAll("h1,h2,h3,h4")];
-  const mine=headings.find(h=>(h.textContent||"").trim().toLowerCase().includes("mine klargjorte oppgaver"));
-  if(!mine)return;
-
-  const panel=document.createElement("section");
-  panel.id="wgangBunnyPlanner";
-  panel.className="bunny-planner-panel";
-  panel.innerHTML=`
-    <div class="bunny-planner-head">
-      <div><span class="bunny-planner-kicker">🐰 Harepusstatus</span><h3>Chill Bunny</h3></div>
-      <strong>30 / 90</strong>
-    </div>
-    <div class="bunny-rounds">
-      <div class="bunny-round done"><strong>Harepus 1</strong><span>30 / 30 ✓</span></div>
-      <div class="bunny-round"><strong>Harepus 2</strong><span>0 / 30</span></div>
-      <div class="bunny-round"><strong>Harepus 3</strong><span>0 / 30</span></div>
-    </div>
-    <div class="bunny-advice bunny-advice-go">
-      <strong>✓ Første harepus er fanget</strong>
-      <span>Har du daglige oppgaver igjen, kan du gjøre dem når det passer. Du trenger ikke vente på harepustid nå.</span>
-    </div>
-    <div class="bunny-next-attendance">
-      <strong>Kan du delta på neste harepus?</strong>
-      <div class="bunny-attendance-buttons">
-        <button type="button" data-bunny-attendance="yes">🟢 Ja</button>
-        <button type="button" data-bunny-attendance="maybe">🟡 Usikker</button>
-        <button type="button" data-bunny-attendance="no">🔴 Kan ikke</button>
-      </div>
-      <small>Registrer om du kan delta, slik at nabolaget ser om det trengs ekstra innsats.</small>
-    </div>
-    <button type="button" class="button button-secondary bunny-done-today" id="bunnyDoneToday">✓ Jeg er ferdig for i dag</button>`;
-  mine.parentNode.insertBefore(panel,mine);
-
-  // Derby day follows 10:00–09:59 Europe/Oslo.
-  const now=new Date();
-  const oslo=new Date(now.toLocaleString("en-US",{timeZone:"Europe/Oslo"}));
-  if(oslo.getHours()<10) oslo.setDate(oslo.getDate()-1);
-  const day=`${oslo.getFullYear()}-${String(oslo.getMonth()+1).padStart(2,"0")}-${String(oslo.getDate()).padStart(2,"0")}`;
-
-  const doneKey=`wgang-bunny-done-${day}`, doneBtn=document.getElementById("bunnyDoneToday");
-  function paintDone(){
-    const done=localStorage.getItem(doneKey)==="1";
-    doneBtn.classList.toggle("is-done",done);
-    doneBtn.textContent=done?"✓ Ferdig for i dag – trykk for å angre":"✓ Jeg er ferdig for i dag";
-  }
-  doneBtn.onclick=()=>{localStorage.setItem(doneKey,localStorage.getItem(doneKey)==="1"?"0":"1");paintDone();};
-  paintDone();
-
-  const attKey="wgang-bunny-next-attendance";
-  const btns=[...panel.querySelectorAll("[data-bunny-attendance]")];
-  function paintAtt(){const v=localStorage.getItem(attKey)||"";btns.forEach(b=>b.classList.toggle("selected",b.dataset.bunnyAttendance===v));}
-  btns.forEach(b=>b.onclick=()=>{localStorage.setItem(attKey,b.dataset.bunnyAttendance);paintAtt();});
-  paintAtt();
-}
-document.addEventListener("click",()=>setTimeout(wgangInitBunnyPlanner,50));
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(wgangInitBunnyPlanner,100));
-else setTimeout(wgangInitBunnyPlanner,100);
 
 
 

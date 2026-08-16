@@ -1,4 +1,4 @@
-/* v0.18.0.63 – Resultatprosent og ekstraoppgave-stjerne */
+/* v0.18.0.65 – Chill Bunny-påmelding og trygg Normal-konvertering */
 (function () {
   "use strict";
 
@@ -18,7 +18,7 @@
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
-    derbyManagement: { templates: [], events: [], participations: [], next: null },
+    derbyManagement: { templates: [], events: [], participations: [], next: null, current: null, upcoming: null },
     derbyHistory: { archives: [], results: [], changeLog: [] },
     legalAcceptance: null,
     currentUserId: null
@@ -41,6 +41,43 @@
   }) : null;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+  function derbyOsloClock(now=new Date()) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+      timeZone:"Europe/Oslo", weekday:"short", hour:"2-digit", minute:"2-digit", hourCycle:"h23"
+    }).formatToParts(now).filter(part => part.type !== "literal").map(part => [part.type,part.value]));
+    return {
+      weekday:{Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[parts.weekday],
+      minutes:Number(parts.hour || 0) * 60 + Number(parts.minute || 0)
+    };
+  }
+
+  function selectDerbyContexts(events, now=new Date()) {
+    const rows = Array.isArray(events) ? events : [];
+    const nowMs = now.getTime();
+    const byNewest = (a,b) => new Date(b.start_at || 0) - new Date(a.start_at || 0);
+    const bySoonest = (a,b) => new Date(a.start_at || 0) - new Date(b.start_at || 0);
+    const currentByTime = rows.filter(event => {
+      const start = event?.start_at ? new Date(event.start_at).getTime() : NaN;
+      const end = event?.end_at ? new Date(event.end_at).getTime() : NaN;
+      return Number.isFinite(start) && nowMs >= start && (!Number.isFinite(end) || nowMs < end);
+    }).sort(byNewest)[0] || null;
+    const current = currentByTime || rows.filter(event => {
+      if(event?.status !== "active")return false;
+      const start=event?.start_at?new Date(event.start_at).getTime():NaN;
+      const end=event?.end_at?new Date(event.end_at).getTime():NaN;
+      return (!Number.isFinite(start)||nowMs>=start)&&(!Number.isFinite(end)||nowMs<end);
+    }).sort(byNewest)[0] || null;
+    const upcoming = rows.filter(event => {
+      const start = event?.start_at ? new Date(event.start_at).getTime() : NaN;
+      return event?.status === "published" && Number.isFinite(start) && start > nowMs;
+    }).sort(bySoonest)[0] || null;
+    const clock = derbyOsloClock(now);
+    const planning = (clock.weekday === 0 && clock.minutes >= 18 * 60)
+      || clock.weekday === 1
+      || (clock.weekday === 2 && clock.minutes < 10 * 60);
+    return {current,upcoming,next:planning ? (upcoming || current) : (current || upcoming),planning};
+  }
   function localLoad() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -50,8 +87,9 @@
       const blocked = new Set(["admin@wgang.no","nabo@wgang.no","sol@wgang.no"]);
       if (Array.isArray(parsed.accounts)) parsed.accounts = parsed.accounts.filter(a => !blocked.has(String(a.email || "").toLowerCase()));
       if (parsed.currentUserId && !parsed.accounts?.some(a => a.id === parsed.currentUserId)) parsed.currentUserId = null;
-      parsed.derbyManagement = parsed.derbyManagement || { templates: [], events: [], next: null };
+      parsed.derbyManagement = parsed.derbyManagement || { templates: [], events: [], next: null, current: null, upcoming: null };
       parsed.derbyManagement.participations = parsed.derbyManagement.participations || [];
+      Object.assign(parsed.derbyManagement,selectDerbyContexts(parsed.derbyManagement.events || []));
       parsed.derbyHistory = parsed.derbyHistory || { archives: [], results: [], changeLog: [] };
       return parsed;
     } catch (_) { return clone(EMPTY_LOCAL_STATE); }
@@ -192,13 +230,13 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance, currentUserId: own.id };
     }
     // Søndag 18:00 -> tirsdag 10:00: sørg for at neste derby finnes.
     // Funksjonen er idempotent og oppretter bare en Normal-standard dersom ledelsen
@@ -229,7 +267,7 @@
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
-      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
+      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200)
     ]);
     for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes]) {
@@ -239,18 +277,24 @@
     const derby = d ? { type:d.type, taskTotal:d.task_total, maxPoints:d.max_points, strategy:Array.isArray(d.strategy)?d.strategy:clone(DEFAULT_DERBY.strategy) } : clone(DEFAULT_DERBY);
     const templates = templatesRes.data || [];
     const events = eventsRes.data || [];
-    // Bruk aktivt derby som portalens arbeidskontekst. Et fremtidig publisert derby
-    // må ikke overskygge derbyet som faktisk pågår.
-    const activeEvent = events.find(e => e.status === "active") || null;
-    const publishedEvent = events.find(e => e.status === "published") || null;
-    const next = activeEvent || publishedEvent;
+    // Søndag 18:00 til tirsdag 10:00 er neste publiserte derby portalens
+    // påmeldingskontekst. Samtidig beholdes derbyet som faktisk pågår som en
+    // separat kontekst for ferdigstatus og historikk.
+    const contexts = selectDerbyContexts(events);
+    const {current,upcoming,next} = contexts;
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
-    const completionForView = next ? (completionRes.data || []).filter(row => String(row.event_id) === String(next.id)) : [];
+    const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
+    const completionForView = current ? (completionRes.data || []).filter(row => String(row.event_id) === String(current.id)) : [];
     const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
     const accounts = (profilesRes.data || []).map(row => {
       const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
+      const activeAccount = current
+        ? mapProfile(row, currentParticipation, [], Number(current.max_points || DEFAULT_DERBY.maxPoints))
+        : null;
       const completion = completionForView.find(item => String(item.user_id) === String(row.id));
+      account.activeDerbyChoice = activeAccount?.choice || "waiting";
+      account.activeDerbyEventId = current?.id || null;
       account.derbyCompleted = !!completion;
       account.derbyCompletedAt = completion?.completed_at || null;
       return account;
@@ -288,7 +332,7 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next},
+      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next,current,upcoming},
       derbyHistory:{
         archives:archivesRes.data || [],
         results:memberResultsRes.data || [],
@@ -444,8 +488,9 @@
       }
       const authUser = await getAuthUser();
       if (!authUser?.id || String(authUser.id) !== String(userId)) throw new Error("Du kan bare registrere ditt eget derby-svar.");
-      const { data:event, error:eventError } = await client.from("derby_events").select("id,name,status,start_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(1).maybeSingle();
+      const { data:events, error:eventError } = await client.from("derby_events").select("id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(20);
       if (eventError) throw eventError;
+      const event = selectDerbyContexts(events).next;
       if (event) {
         const now = Date.now();
         const deadline = event.signup_deadline ? new Date(event.signup_deadline).getTime() : NaN;
@@ -488,13 +533,7 @@
         .order("start_at",{ascending:false})
         .limit(20);
       if (eventError) throw eventError;
-      const now=Date.now();
-      const candidates=Array.isArray(events)?events:[];
-      const event=candidates.find(item=>item?.status==="active") || candidates.find(item=>{
-        const start=item?.start_at?new Date(item.start_at).getTime():NaN;
-        const end=item?.end_at?new Date(item.end_at).getTime():NaN;
-        return Number.isFinite(start) && now>=start && (!Number.isFinite(end)||now<end);
-      });
+      const event=selectDerbyContexts(events).current;
       if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal derby. Oppdater siden og prøv igjen.");
       if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
       if (completed) {
@@ -691,9 +730,10 @@
     },
     async publishDerbyEvent(event) {
       if (!configured) {
-        localState.derbyManagement = localState.derbyManagement || {templates:[],events:[],next:null};
+        localState.derbyManagement = localState.derbyManagement || {templates:[],events:[],next:null,current:null,upcoming:null};
         event.id = Date.now(); event.status = "published"; event.published_at = new Date().toISOString();
-        localState.derbyManagement.events.unshift(event); localState.derbyManagement.next = event;
+        localState.derbyManagement.events.unshift(event);
+        Object.assign(localState.derbyManagement,selectDerbyContexts(localState.derbyManagement.events));
         localState.derby = {type:event.name,taskTotal:event.task_total || 9,maxPoints:event.max_points || 320,strategy:event.strategy || []};
         localSave(localState); return event;
       }
@@ -749,6 +789,9 @@
         payload.results.forEach((item,index) => {
           const included = Number(event.task_total || 0), extra = Number(item.extra_tasks_used || 0), used = included + extra;
           const pointsPerTask = Number(event.max_points || 0), points = Number(item.points_earned || 0), possible = included * pointsPerTask;
+          const extraStars = pointsPerTask > 0
+            ? Math.min(extra,Math.max(0,Math.floor((points - possible) / pointsPerTask)))
+            : 0;
           localState.derbyHistory.results.push({
             id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,
             display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || "WGANG-medlem",
@@ -756,7 +799,7 @@
             points_per_task:pointsPerTask,points_earned:points,possible_points:possible,
             result_percent:possible ? Math.min(100, Math.round(points * 10000 / possible) / 100) : 0,
             minimum_met:possible ? points >= possible * .8 : false,perfect_result:possible ? points >= possible : false,
-            extra_star_earned:extra > 0 && pointsPerTask > 0 && points >= possible + pointsPerTask,
+            extra_star_earned:extraStars > 0,extra_stars_earned:extraStars,
             notes:item.notes || null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
           });
         });
