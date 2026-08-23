@@ -1,4 +1,4 @@
-/* v0.18.0.65 – Chill Bunny-påmelding og trygg Normal-konvertering */
+/* v0.18.0.66 – trygg påmelding, Normal-ferdigstatus og teknisk fristmargin */
 (function () {
   "use strict";
 
@@ -1116,7 +1116,16 @@
 
   function adminPreferenceAccounts() {
     const members=approved();
-    return preferenceDerbyScope() ? members.filter(a=>a.choice==="joined" && !a.derbyCompleted) : members;
+    const scope=preferenceDerbyScope();
+    if(!scope)return members;
+    const currentEvent=currentActiveDerbyEvent();
+    const contextEvent=state.derbyManagement?.next;
+    const contextIsCurrent=!!(currentEvent&&contextEvent&&String(currentEvent.id)===String(contextEvent.id));
+    return members.filter(account=>{
+      const choice=contextIsCurrent?activeDerbyParticipationChoice(account):account.choice;
+      const completed=contextIsCurrent?!!account.derbyCompleted:false;
+      return choice==="joined"&&!completed;
+    });
   }
 
   function preferenceStats() {
@@ -2185,14 +2194,26 @@
     showDialog(derbyParticipationDialog);
   }
 
+  function derbyParticipationLockAt(event) {
+    if(!event)return null;
+    const visibleDeadline=event.signup_deadline?new Date(event.signup_deadline).getTime():NaN;
+    const start=event.start_at?new Date(event.start_at).getTime():NaN;
+    if(Number.isFinite(start)){
+      const tuesdayGraceLock=start-(2*60*60*1000);
+      const requestedLock=Number.isFinite(visibleDeadline)?Math.max(visibleDeadline,tuesdayGraceLock):tuesdayGraceLock;
+      return new Date(Math.min(requestedLock,start));
+    }
+    return Number.isFinite(visibleDeadline)?new Date(visibleDeadline):null;
+  }
+
   function participationDeadlineState() {
     const event = state.derbyManagement?.next;
-    if (!event) return { locked:false, deadline:null };
+    if (!event) return { locked:false, deadline:null, lockAt:null };
     const deadline = event.signup_deadline ? new Date(event.signup_deadline) : null;
-    const start = event.start_at ? new Date(event.start_at) : null;
+    const lockAt=derbyParticipationLockAt(event);
     const now = new Date();
-    const locked = event.status === "active" || (deadline && !Number.isNaN(deadline.getTime()) && now >= deadline) || (start && !Number.isNaN(start.getTime()) && now >= start);
-    return { locked:!!locked, deadline };
+    const locked=!!(lockAt&&!Number.isNaN(lockAt.getTime())&&now>=lockAt);
+    return { locked, deadline, lockAt };
   }
 
   function renderParticipationLock() {
@@ -2614,7 +2635,7 @@
   if ($("derbyParticipationForm")) $("derbyParticipationForm").onsubmit = async event => {
     event.preventDefault();
     if (busy || !current() || !hasPermission("derby.plan")) return;
-    const checks = [...document.querySelectorAll("[data-participation-rule]")];
+    const checks = [...document.querySelectorAll("[data-participation-rule]:not(:disabled)")];
     if (!checks.length || !checks.every(input => input.checked)) {
       setText("participationDialogStatus", currentLanguage === "en" ? "Tick every item before confirming." : "Kryss av alle punktene før du bekrefter.");
       updateParticipationConfirmationState();
@@ -2834,7 +2855,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.65").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.66").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

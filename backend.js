@@ -1,4 +1,4 @@
-/* v0.18.0.65 – Chill Bunny-påmelding og trygg Normal-konvertering */
+/* v0.18.0.66 – trygg påmelding, Normal-ferdigstatus og teknisk fristmargin */
 (function () {
   "use strict";
 
@@ -77,6 +77,18 @@
       || clock.weekday === 1
       || (clock.weekday === 2 && clock.minutes < 10 * 60);
     return {current,upcoming,next:planning ? (upcoming || current) : (current || upcoming),planning};
+  }
+
+  function derbyParticipationLockAt(event) {
+    if (!event) return null;
+    const visibleDeadline = event.signup_deadline ? new Date(event.signup_deadline).getTime() : NaN;
+    const start = event.start_at ? new Date(event.start_at).getTime() : NaN;
+    if (Number.isFinite(start)) {
+      const tuesdayGraceLock = start - (2 * 60 * 60 * 1000);
+      const requestedLock = Number.isFinite(visibleDeadline) ? Math.max(visibleDeadline,tuesdayGraceLock) : tuesdayGraceLock;
+      return new Date(Math.min(requestedLock,start));
+    }
+    return Number.isFinite(visibleDeadline) ? new Date(visibleDeadline) : null;
   }
   function localLoad() {
     try {
@@ -493,9 +505,8 @@
       const event = selectDerbyContexts(events).next;
       if (event) {
         const now = Date.now();
-        const deadline = event.signup_deadline ? new Date(event.signup_deadline).getTime() : NaN;
-        const start = event.start_at ? new Date(event.start_at).getTime() : NaN;
-        if (event.status === "active" || (Number.isFinite(deadline) && now >= deadline) || (Number.isFinite(start) && now >= start)) {
+        const lockAt = derbyParticipationLockAt(event)?.getTime();
+        if (Number.isFinite(lockAt) && now >= lockAt) {
           throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
         }
         const acknowledgedAt = choice === "joined" ? new Date().toISOString() : null;
@@ -537,6 +548,13 @@
       if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal derby. Oppdater siden og prøv igjen.");
       if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
       if (completed) {
+        const { data:participation, error:participationError } = await client.from("derby_event_participation")
+          .select("choice")
+          .eq("event_id",event.id)
+          .eq("user_id",userId)
+          .maybeSingle();
+        if (participationError) throw participationError;
+        if (participation?.choice !== "joined") throw new Error("Du må være påmeldt det pågående Normal-derbyet før du kan registrere deg som ferdig.");
         const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
         if (error) throw error;
       } else {
