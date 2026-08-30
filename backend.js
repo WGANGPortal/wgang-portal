@@ -1,4 +1,4 @@
-/* v0.18.0.66 – trygg påmelding, Normal-ferdigstatus og teknisk fristmargin */
+/* v0.18.0.67 – Power-påmelding, felles ferdigstatus og teknisk fristmargin */
 (function () {
   "use strict";
 
@@ -539,22 +539,27 @@
         const a=localState.accounts.find(x=>x.id===userId); if(a){a.derbyCompleted=!!completed;a.derbyCompletedAt=completed?new Date().toISOString():null;} localSave(localState); return;
       }
       const { data:events, error:eventError } = await client.from("derby_events")
-        .select("id,name,status,start_at,end_at")
+        .select("id,name,status,start_at,end_at,max_points")
         .in("status",["published","active"])
         .order("start_at",{ascending:false})
         .limit(20);
       if (eventError) throw eventError;
       const event=selectDerbyContexts(events).current;
-      if (!event || !/normal|standard/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal derby. Oppdater siden og prøv igjen.");
+      if (!event || !/normal|standard|power|styrke/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal- eller Power-derby. Oppdater siden og prøv igjen.");
+      const derbyLabel=/power|styrke/i.test(String(event.name||"")) ? "Power Derby" : "Normal Derby";
       if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
       if (completed) {
         const { data:participation, error:participationError } = await client.from("derby_event_participation")
-          .select("choice")
+          .select("choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points")
           .eq("event_id",event.id)
           .eq("user_id",userId)
           .maybeSingle();
         if (participationError) throw participationError;
-        if (participation?.choice !== "joined") throw new Error("Du må være påmeldt det pågående Normal-derbyet før du kan registrere deg som ferdig.");
+        const confirmedParticipation=participation?.choice === "joined"
+          && !!participation?.rules_acknowledged_at
+          && participation?.rules_acknowledgement_version === DERBY_RULES_ACK_VERSION
+          && Number(participation?.acknowledged_max_points) === Number(event.max_points || DEFAULT_DERBY.maxPoints);
+        if (!confirmedParticipation) throw new Error(`Du må ha bekreftet påmeldingen og reglene for det pågående ${derbyLabel} før du kan registrere deg som ferdig.`);
         const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
         if (error) throw error;
       } else {

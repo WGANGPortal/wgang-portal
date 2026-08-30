@@ -1,4 +1,4 @@
-/* v0.18.0.66 – trygg påmelding, Normal-ferdigstatus og teknisk fristmargin */
+/* v0.18.0.67 – Power-påmelding, felles ferdigstatus og teknisk fristmargin */
 (function () {
   "use strict";
 
@@ -769,7 +769,7 @@
       : (currentLanguage === "en" ? "You have not responded about participation yet." : "Du har ikke svart på deltakelse ennå.");
     $("myStatusMetric").textContent = choiceLabel(user.choice);
     renderDerbyConfig();
-    renderNormalDerbyCompletion();
+    renderDerbyCompletion();
     renderMetrics();
     renderMembers();
     renderPreferences();
@@ -2024,7 +2024,7 @@
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
-    renderNormalDerbyCompletion();
+    renderDerbyCompletion();
     setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
     setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
     const deadline=event?.signup_deadline?new Date(event.signup_deadline):null;
@@ -2059,9 +2059,14 @@
     return fallback && derbyDashboardPhase(fallback)==="active" ? fallback : null;
   }
 
-  function activeNormalDerby() {
+  function activeCompletionDerby() {
     const event=currentActiveDerbyEvent();
-    return !!(event && /normal|standard/i.test(String(event.name||"")));
+    return !!(event && /normal|standard|power|styrke/i.test(String(event.name||"")));
+  }
+
+  function activeCompletionDerbyLabel() {
+    const event=currentActiveDerbyEvent();
+    return /power|styrke/i.test(String(event?.name||"")) ? "Power Derby" : "Normal Derby";
   }
 
   function activeDerbyParticipationChoice(user) {
@@ -2071,10 +2076,11 @@
     return currentEvent&&contextEvent&&String(currentEvent.id)===String(contextEvent.id)?user.choice:"waiting";
   }
 
-  function renderNormalDerbyCompletion() {
+  function renderDerbyCompletion() {
     const user=current();
-    const visible=!!(user && activeDerbyParticipationChoice(user)==="joined" && activeNormalDerby());
+    const visible=!!(user && activeDerbyParticipationChoice(user)==="joined" && activeCompletionDerby());
     const completed=!!user?.derbyCompleted;
+    const derbyLabel=activeCompletionDerbyLabel();
     const dashboardButton=$("dashboardDerbyComplete");
     const derbyCard=$("normalDerbyCompletionCard");
     if(dashboardButton){
@@ -2085,7 +2091,7 @@
         : 'Jeg er ferdig';
     }
     derbyCard?.classList.toggle("hidden",!visible);
-    setText("normalDerbyCompletionTitle",completed?"Du er registrert som ferdig":"Har du fullført ukens oppgaver?");
+    setText("normalDerbyCompletionTitle",completed?`Du er registrert som ferdig i ${derbyLabel}`:`Har du fullført oppgavene i ${derbyLabel}?`);
     setText("normalDerbyCompletionText",completed?"Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.":"Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.");
     const button=$("derbyCompleteButton");
     if(button){
@@ -2100,18 +2106,19 @@
     if(preferenceList) preferenceList.classList.toggle("preferences-inactive",visible&&completed);
   }
 
-  async function toggleNormalDerbyCompletion() {
-    if(busy||!current()||!activeNormalDerby()||activeDerbyParticipationChoice(current())!=="joined") return;
+  async function toggleDerbyCompletion() {
+    if(busy||!current()||!activeCompletionDerby()||activeDerbyParticipationChoice(current())!=="joined") return;
     const user=current(), next=!user.derbyCompleted;
+    const derbyLabel=activeCompletionDerbyLabel();
     const message=next
-      ? "Registrere at du er ferdig med ukens oppgaver? Oppgavepreferansene dine tas da ut av den aktive statistikken."
-      : "Angre ferdigstatus? Oppgavepreferansene dine tas da med i den aktive statistikken igjen.";
+      ? `Registrere at du er ferdig med oppgavene i ${derbyLabel}? Oppgavepreferansene dine tas da ut av den aktive statistikken.`
+      : `Angre ferdigstatus for ${derbyLabel}? Oppgavepreferansene dine tas da med i den aktive statistikken igjen.`;
     if(!confirm(message)) return;
     setBusy(true);
     try{
       await backend.setDerbyCompleted(user.id,next);
       user.derbyCompleted=next;user.derbyCompletedAt=next?new Date().toISOString():null;
-      renderNormalDerbyCompletion();renderAdminPreferences();renderMembers();
+      renderDerbyCompletion();renderAdminPreferences();renderMembers();
     }catch(e){alert(humanError(e,"Kunne ikke oppdatere ferdigstatus."));}
     setBusy(false);
   }
@@ -2452,8 +2459,8 @@
     closeMenu();
   }));
   const dashboardDerbyAction=$("dashboardDerbyAction");
-  if($("dashboardDerbyComplete")) $("dashboardDerbyComplete").onclick=toggleNormalDerbyCompletion;
-  if($("derbyCompleteButton")) $("derbyCompleteButton").onclick=toggleNormalDerbyCompletion;
+  if($("dashboardDerbyComplete")) $("dashboardDerbyComplete").onclick=toggleDerbyCompletion;
+  if($("derbyCompleteButton")) $("derbyCompleteButton").onclick=toggleDerbyCompletion;
   // Route is set dynamically in renderDashboard(): Harepus -> Oppgaver, otherwise -> Derby.
 
   $("menuToggle").onclick = () => sidebar.classList.toggle("open");
@@ -2855,7 +2862,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.66").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.67").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
