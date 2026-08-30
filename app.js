@@ -1,4 +1,4 @@
-/* v0.18.0.67 – Power-påmelding, felles ferdigstatus og teknisk fristmargin */
+/* v0.18.0.68 – ulest-fokus, kommentarlikes og derbyisolert ferdigstatus */
 (function () {
   "use strict";
 
@@ -24,6 +24,7 @@
   const PREF_LABELS = { like:"Liker", can:"Kan ta", avoid:"Helst ikke", no:"Kan ikke" };
   const $ = id => document.getElementById(id);
   const $$ = selector => document.querySelectorAll(selector);
+  const lastOf = values => values && values.length ? values[values.length-1] : null;
   const esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
 
@@ -194,6 +195,11 @@
 
   let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
+  let activePortalRoute = "";
+  let chatFocusToken = 0;
+  const openSocialThreads = new Set();
+  const chatReadTimers = new Map();
+  const chatReadWrites = new Map();
 
   const landing = $("landing");
   const portal = $("portal");
@@ -367,12 +373,15 @@
       return;
     }
     if (route === "admin") { const first=firstAccessibleAdminModule(); if(first) showAdminModule(first,useHash); else navigate("dashboard",useHash); return; }
+    const previousRoute=activePortalRoute;
+    activePortalRoute=route;
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
     sidebar.classList.remove("open");
     if (useHash) location.hash = route;
     portalMain.focus();
-    window.scrollTo({top:0, behavior:"smooth"});
+    if(route==="leadership"||route==="discussions") scheduleChatEntryFocus(route,previousRoute!==route);
+    else window.scrollTo({top:0, behavior:"smooth"});
   }
 
   const ADMIN_MODULE_META = {
@@ -385,6 +394,8 @@
 
   function showAdminModule(name, useHash=true) {
     if(!canAccessAdminModule(name)){ const fallback=firstAccessibleAdminModule(); if(fallback && fallback!==name){showAdminModule(fallback,useHash);} else {navigate("dashboard",useHash);} return;}
+    activePortalRoute=`admin-${name}`;
+    chatFocusToken++;
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === "admin"));
     document.querySelectorAll(".admin-module").forEach(el => el.classList.toggle("admin-module-active", el.dataset.adminModule === name));
     const meta = ADMIN_MODULE_META[name] || ["Admin", ""];
@@ -435,6 +446,8 @@
     document.body.classList.remove("modal-open");
     sidebar.classList.remove("open");
     location.hash = "landing";
+    activePortalRoute="landing";
+    chatFocusToken++;
     window.scrollTo(0, 0);
     setBusy(false);
   }
@@ -489,11 +502,12 @@
 
     // If the target is a comment, open its comment area before positioning.
     const comments=el.closest("[data-comments-for]");
-    if(comments) comments.classList.remove("hidden");
+    if(comments){comments.classList.remove("hidden");openSocialThreads.add(comments.dataset.commentsFor);}
 
     el.scrollIntoView({behavior:"smooth",block:"center"});
     el.classList.add("notification-focus-target");
     setTimeout(()=>el.classList.remove("notification-focus-target"),2200);
+    setTimeout(()=>queueChatRead(),1200);
     return true;
   }
 
@@ -503,7 +517,7 @@
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       if(!focusNotificationTargetOnce()){
         // One fallback after rendering only. No repeating auto-scroll.
-        setTimeout(()=>focusNotificationTargetOnce(),220);
+        setTimeout(()=>{if(!focusNotificationTargetOnce()){pendingNotificationFocus=null;scheduleChatEntryFocus(activePortalRoute);}},220);
       }
     }));
   }
@@ -531,15 +545,17 @@
     const activityTime=x=>x?.createdAt||x?.created_at||x?.publishedAt||x?.published_at;
     const activityUser=x=>x?.userId||x?.user_id||x?.authorId||x?.author_id;
     const activityText=x=>x?.text||x?.body||x?.comment||x?.title||"";
-    const commentsOf=x=>x?.comments||x?.replies||[];
+    const commentsOf=(entry,targetType)=>(socialData().comments||[]).filter(comment=>
+      comment.target_type===targetType && String(comment.target_id)===String(entry?.id)
+    );
 
-    const newestUnreadActivity=(entries,seenAt)=>{
+    const newestUnreadActivity=(entries,seenAt,targetType)=>{
       const found=[];
       (entries||[]).forEach(entry=>{
         const et=activityTime(entry);
         if(et && String(activityUser(entry)||"")!==String(current()?.id||"") && newerThan(et,seenAt))
           found.push({kind:"post",time:et,text:activityText(entry),entryId:entry.id});
-        commentsOf(entry).forEach(comment=>{
+        commentsOf(entry,targetType).forEach(comment=>{
           const ct=activityTime(comment);
           if(ct && String(activityUser(comment)||"")!==String(current()?.id||"") && newerThan(ct,seenAt))
             found.push({kind:"comment",time:ct,text:activityText(comment),entryId:entry.id,commentId:comment.id});
@@ -548,7 +564,8 @@
       return found.sort((a,b)=>new Date(b.time)-new Date(a.time))[0]||null;
     };
 
-    const latestPost=newestUnreadActivity(posts,read.derby_chat_seen_at);
+    const derbyReadAt=[chatReadRow("derby")?.last_read_at,read.derby_chat_seen_at].filter(Boolean).sort((a,b)=>new Date(b)-new Date(a))[0];
+    const latestPost=newestUnreadActivity(posts,derbyReadAt,"community");
     if(hasPermission("chat.community.view") && prefs.in_app_derby_chat && latestPost) items.push({
       group:"common",category:"derby_chat",
       title:latestPost.kind==="comment"?"Ny kommentar i Derbyprat":"Nytt innlegg i Derbyprat",
@@ -556,7 +573,8 @@
       focusEntryId:latestPost.entryId,focusCommentId:latestPost.commentId||null
     });
 
-    const latestMsg=newestUnreadActivity(msgs,read.leadership_chat_seen_at);
+    const leadershipReadAt=[chatReadRow("leadership")?.last_read_at,read.leadership_chat_seen_at].filter(Boolean).sort((a,b)=>new Date(b)-new Date(a))[0];
+    const latestMsg=newestUnreadActivity(msgs,leadershipReadAt,"leadership");
     if(hasPermission("chat.leadership.view") && hasPermission("notifications.leadership_chat") && prefs.in_app_leadership_chat && latestMsg) items.push({
       group:"leadership",category:"leadership_chat",
       title:latestMsg.kind==="comment"?"Ny kommentar i Lederprat":"Nytt i Lederprat",
@@ -567,12 +585,26 @@
     if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({group:"leadership",category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
     if(prefs.in_app_social_activity){
       const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
-      activity.filter(n=>n.target_type==="leadership" ? hasPermission("chat.leadership.view") : hasPermission("chat.community.view")).forEach(n=>{
+      activity.forEach(n=>{
         const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
+        const likedComment=n.target_type==="comment"
+          ? (socialData().comments||[]).find(c=>String(c.id)===String(n.target_id))
+          : null;
+        const parentType=likedComment?.target_type||n.target_type;
+        if(parentType==="leadership"&&!hasPermission("chat.leadership.view"))return;
+        if(parentType!=="leadership"&&!hasPermission("chat.community.view"))return;
         const matchingComment=n.activity_type==="comment"
           ? (socialData().comments||[]).filter(c=>String(c.target_type)===String(n.target_type)&&String(c.target_id)===String(n.target_id)&&String(c.user_id)===String(n.actor_id)).sort((x,y)=>Math.abs(new Date(x.created_at)-new Date(n.created_at))-Math.abs(new Date(y.created_at)-new Date(n.created_at)))[0]
-          : null;
-        items.push({group:"personal",category:"social_activity",activityId:n.id,title:n.activity_type==="comment"?"Ny kommentar":"Ny likerklikk",text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte":"likte"} innlegget ditt`,route:n.target_type==="leadership"?"leadership":"discussions",time:n.created_at,focusEntryId:n.target_id||null,focusCommentId:matchingComment?.id||null});
+          : likedComment;
+        const commentLike=n.target_type==="comment";
+        items.push({
+          group:"personal",category:"social_activity",activityId:n.id,
+          title:n.activity_type==="comment"?"Ny kommentar":commentLike?"Noen likte kommentaren din":"Ny likerklikk",
+          text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte innlegget ditt":commentLike?"likte kommentaren din":"likte innlegget ditt"}`,
+          route:parentType==="leadership"?"leadership":"discussions",time:n.created_at,
+          focusEntryId:commentLike?likedComment?.target_id||null:n.target_id||null,
+          focusCommentId:matchingComment?.id||null
+        });
       });
     }
 
@@ -610,7 +642,7 @@
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
-    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
+    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);const activity=(socialData().activityNotifications||[]).find(row=>String(row.id)===String(item.activityId));if(activity)activity.read_at=new Date().toISOString();} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
     if(item.admin) showAdminModule(item.admin);
     else if(item.focusEntryId||item.focusCommentId) openNotificationTarget(item.route||"dashboard",item.focusEntryId,item.focusCommentId);
@@ -1517,6 +1549,17 @@
   function socialData() { return state.social || {likes:[],comments:[],translations:[],activityNotifications:[]}; }
   function targetLikes(type,id) { return socialData().likes.filter(x=>x.target_type===type && String(x.target_id)===String(id)); }
   function targetComments(type,id) { return socialData().comments.filter(x=>x.target_type===type && String(x.target_id)===String(id)); }
+  function memberName(userId) { return state.accounts.find(a=>String(a.id)===String(userId))?.name || "WGANG-medlem"; }
+  function socialPermission(channel,action="post") {
+    return channel==="leadership" ? hasPermission(`chat.leadership.${action}`) : hasPermission(`chat.community.${action}`);
+  }
+  function likerDetails(likes,label="innlegget") {
+    const names=[...new Set((likes||[]).map(like=>memberName(like.user_id)))].sort((a,b)=>a.localeCompare(b,"nb"));
+    if(!names.length)return "";
+    const preview=names.length===1?names[0]:names.length===2?`${names[0]} og ${names[1]}`:`${names[0]} og ${names.length-1} andre`;
+    const summary=currentLanguage==="en"?`Liked by ${esc(preview)}`:`Liktes av ${esc(preview)}`;
+    return `<details class="social-like-details"><summary aria-label="${currentLanguage==="en"?`See who liked the ${label}`:`Se hvem som likte ${label}`}">${summary}</summary><ul>${names.map(name=>`<li>${esc(name)}</li>`).join("")}</ul></details>`;
+  }
   function translationFor(type,id) { return socialData().translations.find(x=>x.target_type===type && String(x.target_id)===String(id) && x.language==="en") || null; }
   function translatedContent(type,item) {
     const original={title:item.title||"",body:item.body||item.message||""};
@@ -1524,31 +1567,50 @@
     const tr=translationFor(type,item.id);
     return tr ? {title:tr.title||original.title,body:tr.body||original.body,translated:true} : {...original,translated:false};
   }
-  function socialBlock(type,item) {
+  function socialBlock(type,item,chatChannel="") {
     const likes=targetLikes(type,item.id), comments=targetComments(type,item.id);
     const liked=likes.some(x=>String(x.user_id)===String(current()?.id));
-    const canPost=type==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
+    const canPost=socialPermission(type);
+    const threadKey=`${type}:${item.id}`;
+    const threadOpen=openSocialThreads.has(threadKey);
     const commentsHtml=comments.map(cm=>{
       const author=state.accounts.find(a=>String(a.id)===String(cm.user_id));
       const tr=currentLanguage==="en"?translationFor("comment",cm.id):null;
       const canDelete=String(cm.user_id)===String(current()?.id) || hasPermission("chat.moderate");
-      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p>${canDelete?`<button class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>`;
+      const commentLikes=targetLikes("comment",cm.id);
+      const commentLiked=commentLikes.some(x=>String(x.user_id)===String(current()?.id));
+      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p><div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
     }).join("");
     const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
-    return `<div class="social-bar"><button class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"}>👍🏼 <span>${likes.length}</span></button><button class="social-comment-toggle" data-comment-toggle="${type}:${item.id}">💬 <span>${comments.length}</span></button></div><div class="social-comments hidden" data-comments-for="${type}:${item.id}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
+    return `<div class="social-bar"><button type="button" class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-channel="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like post":"Lik innlegg"}">👍🏼 <span>${likes.length}</span></button><button type="button" class="social-comment-toggle" data-comment-toggle="${threadKey}" aria-expanded="${threadOpen}">💬 <span>${comments.length}</span><span class="social-action-label">${currentLanguage==="en"?"Comments":"Kommentarer"}</span></button>${likerDetails(likes,currentLanguage==="en"?"post":"innlegget")}</div><div class="social-comments ${threadOpen?"":"hidden"}" data-comments-for="${threadKey}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
   }
   function bindSocialActions(root=document) {
     root.querySelectorAll("[data-like-type]").forEach(btn=>btn.onclick=async()=>{
-      const canReact=btn.dataset.likeType==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
+      const canReact=socialPermission(btn.dataset.likeChannel||btn.dataset.likeType);
       if(!canReact)return;
+      if(btn.dataset.threadKey)openSocialThreads.add(btn.dataset.threadKey);
+      const wasDisabled=btn.disabled;btn.disabled=true;btn.setAttribute("aria-busy","true");
       try { await backend.toggleLike(btn.dataset.likeType,btn.dataset.likeId,btn.dataset.liked==="true"); await refreshState(); } catch(e) { alert(humanError(e)); }
+      finally { btn.disabled=wasDisabled;btn.removeAttribute("aria-busy"); }
     });
-    root.querySelectorAll("[data-comment-toggle]").forEach(btn=>btn.onclick=()=>root.querySelector(`[data-comments-for="${btn.dataset.commentToggle}"]`)?.classList.toggle("hidden"));
+    root.querySelectorAll("[data-comment-toggle]").forEach(btn=>btn.onclick=()=>{
+      const key=btn.dataset.commentToggle;
+      const comments=root.querySelector(`[data-comments-for="${key}"]`);
+      if(!comments)return;
+      const opening=comments.classList.contains("hidden");
+      comments.classList.toggle("hidden",!opening);
+      btn.setAttribute("aria-expanded",String(opening));
+      if(opening)openSocialThreads.add(key);else openSocialThreads.delete(key);
+      if(opening)setTimeout(()=>comments.querySelector("input")?.focus(),80);
+    });
     root.querySelectorAll("[data-comment-form]").forEach(form=>form.onsubmit=async e=>{
       e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector("input"); if(!input.value.trim()) return;
-      const canPost=type==="leadership" ? hasPermission("chat.leadership.post") : hasPermission("chat.community.post");
+      const canPost=socialPermission(type);
       if(!canPost)return;
-      try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); } catch(err) { alert(humanError(err)); }
+      openSocialThreads.add(`${type}:${id}`);
+      const submit=form.querySelector('button[type="submit"]');if(submit){submit.disabled=true;submit.setAttribute("aria-busy","true");}
+      try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); const latest=lastOf(targetComments(type,id));const target=latest?document.querySelector(`[data-comment-id="${latest.id}"]`):null;if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("chat-focus-target");setTimeout(()=>target.classList.remove("chat-focus-target"),1800);} } catch(err) { alert(humanError(err)); }
+      finally { if(submit){submit.disabled=false;submit.removeAttribute("aria-busy");} }
     });
     root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
       const comment=socialData().comments.find(x=>String(x.id)===String(btn.dataset.deleteComment));
@@ -1573,11 +1635,94 @@
     (socialData().comments||[]).filter(x=>x.target_type!=="leadership" || hasPermission("chat.leadership.view")).forEach(x=>ensureEnglishTranslation("comment",x));
   }
 
+  function chatReadRow(channel) {
+    return (state.chatReadState||[]).find(row=>row.channel===channel)||null;
+  }
+  function chatLastReadAt(channel) {
+    const legacy=channel==="leadership"?notificationRead().leadership_chat_seen_at:notificationRead().derby_chat_seen_at;
+    return [chatReadRow(channel)?.last_read_at,legacy,"1970-01-01"].filter(Boolean).sort((a,b)=>new Date(b)-new Date(a))[0];
+  }
+  function unreadChatActivity(channel,targetType,items) {
+    const seenAt=chatLastReadAt(channel), ownId=String(current()?.id||"");
+    const activities=[];
+    (items||[]).forEach(item=>{
+      const itemTime=item.publishedAt||item.createdAt;
+      const itemUser=item.userId||item.authorId;
+      if(itemTime&&String(itemUser||"")!==ownId&&newerThan(itemTime,seenAt))activities.push({kind:"post",time:itemTime,entryId:item.id});
+    });
+    activities.sort((a,b)=>new Date(a.time)-new Date(b.time));
+    return {first:activities[0]||null,count:activities.length};
+  }
+  function chatRouteChannel(route=activePortalRoute) {
+    return route==="leadership"?"leadership":route==="discussions"?"derby":"";
+  }
+  function chatList(channel) {
+    return channel==="leadership"?$("leadershipMessageList"):$("derbyPostList");
+  }
+  function chatActivityElements(channel) {
+    return [...document.querySelectorAll(`[data-chat-channel="${channel}"][data-chat-time]`)].filter(el=>!el.closest(".social-comments.hidden"));
+  }
+  function updateLocalChatRead(channel,id,time) {
+    state.chatReadState=state.chatReadState||[];
+    let row=chatReadRow(channel);
+    if(!row){row={channel,last_message_id:id,last_read_at:time};state.chatReadState.push(row);}
+    else if(new Date(time)>new Date(row.last_read_at||0)){row.last_message_id=id;row.last_read_at=time;}
+  }
+  function visibleChatProgress(channel) {
+    const list=chatList(channel);if(!list)return null;
+    const listRect=channel==="leadership"?list.getBoundingClientRect():null;
+    const top=channel==="leadership"?listRect.top:0;
+    const bottom=channel==="leadership"?listRect.bottom:window.innerHeight;
+    const readingLine=top+(bottom-top)*.82;
+    return lastOf(chatActivityElements(channel).filter(el=>el.getBoundingClientRect().top<=readingLine).sort((a,b)=>new Date(a.dataset.chatTime)-new Date(b.dataset.chatTime)));
+  }
+  function queueChatRead(channel=chatRouteChannel()) {
+    if(!channel||chatRouteChannel()!==channel)return;
+    clearTimeout(chatReadTimers.get(channel));
+    chatReadTimers.set(channel,setTimeout(()=>{
+      const activity=visibleChatProgress(channel);if(!activity)return;
+      const time=activity.dataset.chatTime,id=activity.dataset.chatId;
+      if(!newerThan(time,chatLastReadAt(channel)))return;
+      const previous=chatReadWrites.get(channel)||Promise.resolve();
+      const next=previous.catch(()=>{}).then(async()=>{
+        if(!newerThan(time,chatLastReadAt(channel)))return;
+        await backend.markChatRead(channel,id,time);
+        updateLocalChatRead(channel,id,time);
+        renderNotifications();
+      }).catch(error=>console.warn("Kunne ikke lagre leseposisjon",error));
+      chatReadWrites.set(channel,next);
+    },900));
+  }
+  function positionChatTarget(channel,target) {
+    if(!target)return;
+    const list=chatList(channel);
+    if(channel==="leadership"&&list){
+      const listRect=list.getBoundingClientRect(),targetRect=target.getBoundingClientRect();
+      list.scrollTo({top:Math.max(0,targetRect.top-listRect.top+list.scrollTop-Math.min(80,list.clientHeight*.18)),behavior:"auto"});
+    }else target.scrollIntoView({behavior:"auto",block:"center"});
+    target.classList.add("chat-focus-target");
+    setTimeout(()=>target.classList.remove("chat-focus-target"),1800);
+  }
+  function scheduleChatEntryFocus(route) {
+    const channel=chatRouteChannel(route);if(!channel)return;
+    const token=++chatFocusToken;
+    const run=()=>{
+      if(token!==chatFocusToken||chatRouteChannel()!==channel||pendingNotificationFocus)return;
+      const list=chatList(channel);if(!list)return;
+      const target=list.querySelector(".chat-unread-divider")||lastOf(chatActivityElements(channel))||list;
+      positionChatTarget(channel,target);
+      setTimeout(()=>queueChatRead(channel),1100);
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(run));
+    setTimeout(run,320);
+  }
+
   function postCard(item, options={}) {
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
-    return `<article class="content-post" data-post-id="${item.id}"><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item)}</article>`;
+    const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   function renderContent() {
@@ -1589,13 +1734,10 @@
     if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
     if (derbyPostList) {
       const posts=content.derbyPosts||[];
-      const seenAt=state.notificationReadState?.derby_chat_seen_at||"1970-01-01";
       const chronological=[...posts].sort((a,b)=>new Date(a.publishedAt||a.createdAt)-new Date(b.publishedAt||b.createdAt));
-      const firstUnread=chronological.findIndex(x=>newerThan(x.publishedAt||x.createdAt,seenAt));
-      derbyPostList.innerHTML=chronological.length?chronological.map((x,i)=>`${i===firstUnread?`<div class="chat-unread-divider" id="derbyChatUnreadStart">Nye innlegg</div>`:""}${postCard(x,{canModerate})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
-      const target=document.getElementById("derbyChatUnreadStart");
-      if(target){const jump=()=>target.scrollIntoView({behavior:"auto",block:"center"});requestAnimationFrame(()=>requestAnimationFrame(jump));setTimeout(jump,350);setTimeout(jump,900);}
-      else if(chronological.length){setTimeout(()=>derbyPostList.lastElementChild?.scrollIntoView({behavior:"auto",block:"end"}),350);}
+      const unread=unreadChatActivity("derby","community",chronological);
+      derbyPostList.innerHTML=chronological.length?chronological.map(x=>`${String(x.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="derbyChatUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:""}${postCard(x,{canModerate,chatChannel:"derby"})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
+      if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("derby",lastOf(chatActivityElements("derby")));derbyPostList.appendChild(jump);}
     }
     if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
 
@@ -1636,48 +1778,24 @@
   function renderLeadershipChat() {
     const list = $("leadershipMessageList");
     if(list && !list.dataset.userScrollBound){
-      const markUserScroll=()=>{ list.dataset.userHasScrolled="1"; };
-      list.addEventListener("touchstart",markUserScroll,{passive:true});
+      const markUserScroll=()=>queueChatRead("leadership");
+      list.addEventListener("scroll",markUserScroll,{passive:true});
+      list.addEventListener("touchend",markUserScroll,{passive:true});
       list.addEventListener("wheel",markUserScroll,{passive:true});
-      list.addEventListener("pointerdown",markUserScroll,{passive:true});
       list.dataset.userScrollBound="1";
     }
     if (!list) return;
     if (!hasPermission("chat.leadership.view")) { list.innerHTML = ""; return; }
     const messages = state.leadershipMessages || [];
-    const readRow=(state.chatReadState||[]).find(x=>x.channel==="leadership");
-    const lastReadAt=readRow?.last_read_at||"1970-01-01";
-    const firstUnreadIndex=messages.findIndex(m=>m.userId!==current()?.id && newerThan(m.createdAt,lastReadAt));
-    list.innerHTML = messages.length ? messages.map((m,i) => {
+    const unread=unreadChatActivity("leadership","leadership",messages);
+    list.innerHTML = messages.length ? messages.map(m => {
       const own = m.userId === current()?.id;
       const canDelete = own || hasPermission("chat.moderate");
-      const view=translatedContent("leadership",m); const unreadMark=i===firstUnreadIndex?`<div class="chat-unread-divider" id="leadershipUnreadStart">Nye innlegg</div>`:""; return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body)}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m)}</article>`;
+      const view=translatedContent("leadership",m);
+      const unreadMark=String(m.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="leadershipUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:"";
+      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
     }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
-    if(firstUnreadIndex>=0){
-      const newerCount=messages.length-firstUnreadIndex;
-      if(newerCount>1){
-        const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=`↓ ${newerCount-1} nyere innlegg`;jump.onclick=()=>list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"end"});list.appendChild(jump);
-      }
-      // Position the first unread message once. Do not keep forcing the
-      // scroll position after the user starts reading a long message.
-      const unreadMessageId=messages[firstUnreadIndex]?.id;
-      const unreadKey=String(unreadMessageId||"");
-      if(unreadKey && list.dataset.positionedUnreadId!==unreadKey && list.dataset.userHasScrolled!=="1"){
-        const jumpToUnreadOnce=()=>{
-          const target=document.getElementById("leadershipUnreadStart");
-          if(!target) return;
-          const listRect=list.getBoundingClientRect();
-          const targetRect=target.getBoundingClientRect();
-          const relativeTop=targetRect.top-listRect.top+list.scrollTop;
-          const desiredTop=Math.max(0,relativeTop-Math.min(90,list.clientHeight*.22));
-          list.scrollTo({top:desiredTop,behavior:"auto"});
-          list.dataset.positionedUnreadId=unreadKey;
-        };
-        requestAnimationFrame(()=>requestAnimationFrame(jumpToUnreadOnce));
-      }
-      const latest=messages[messages.length-1];
-      setTimeout(async()=>{try{await backend.markChatRead("leadership",latest?.id,latest?.createdAt||new Date().toISOString());state.chatReadState=state.chatReadState||[];const r=state.chatReadState.find(x=>x.channel==="leadership");if(r){r.last_read_at=latest?.createdAt;r.last_message_id=latest?.id;}else state.chatReadState.push({channel:"leadership",last_read_at:latest?.createdAt,last_message_id:latest?.id});renderNotifications();}catch(e){console.warn(e);}},1500);
-    }
+    if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));list.appendChild(jump);}
     translateUi(list);
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
       const message=messages.find(x=>String(x.id)===String(button.dataset.leadershipDelete));
@@ -2628,6 +2746,7 @@
       status.textContent = currentLanguage === "en" ? "Message sent." : "Meldingen er sendt.";
       status.classList.add("success");
       await refreshState();
+      if(activePortalRoute==="leadership")positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));
     } catch(e) { status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen."); }
     setBusy(false);
   };
@@ -2815,7 +2934,7 @@
   if ($("derbyPostForm")) $("derbyPostForm").onsubmit = async e => {
     e.preventDefault(); if (busy || !hasPermission("chat.community.post")) return;
     setBusy(true);
-    try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); }
+    try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); if(activePortalRoute==="discussions")positionChatTarget("derby",lastOf(chatActivityElements("derby"))); }
     catch(err) { $("derbyPostMessage").textContent=humanError(err); }
     setBusy(false);
   };
@@ -2862,129 +2981,18 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.67").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.68").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
       openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
     });
   }
-})();
-
-
-
-
-
-
-/* v0.18.0.15 – scroll the chat container itself, not the whole page */
-(function(){
-  const configs = [
-    // Lederprat handles its own one-time unread positioning in renderLeadershipChat().
-    // Keep the stabilizer only for community chat.
-    { route:"community",  listId:"communityMessageList",  unreadId:"communityUnreadStart"  }
-  ];
-
-  function activeRoute(){
-    try{
-      if(typeof currentRoute==="function") return currentRoute();
-    }catch(_){}
-    return (location.hash||"").replace(/^#/,"").split(/[/?]/)[0] || "";
-  }
-
-  function getScrollableAncestor(el){
-    let node = el?.parentElement;
-    while(node && node !== document.body){
-      const style = getComputedStyle(node);
-      const oy = style.overflowY;
-      if((oy==="auto" || oy==="scroll") && node.scrollHeight > node.clientHeight + 2){
-        return node;
-      }
-      node = node.parentElement;
-    }
-    return null;
-  }
-
-  function targetFor(cfg){
-    const list = document.getElementById(cfg.listId);
-    if(!list) return null;
-
-    const unread = document.getElementById(cfg.unreadId);
-    if(unread) return unread;
-
-    const messages = [...list.querySelectorAll(
-      "article,.leadership-message,.chat-message,.message"
-    )];
-
-    return messages.length ? messages[messages.length-1] : list.lastElementChild;
-  }
-
-  function scrollInsideContainer(cfg){
-    const list = document.getElementById(cfg.listId);
-    const target = targetFor(cfg);
-    if(!list || !target) return false;
-
-    // In Lederprat the list itself is the scrollable element.
-    const container =
-      (list.scrollHeight > list.clientHeight + 2 ? list : null) ||
-      getScrollableAncestor(target);
-
-    if(!container) return false;
-
-    // Position "NYE INNLEGG" / latest message near the upper third of the chat viewport.
-    const containerRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const currentTop = container.scrollTop;
-    const relativeTop = targetRect.top - containerRect.top + currentTop;
-    const desiredTop = Math.max(0, relativeTop - Math.min(90, container.clientHeight * 0.22));
-
-    container.scrollTo({ top: desiredTop, behavior:"auto" });
-    return true;
-  }
-
-  function stabilize(cfg){
-    if(activeRoute() !== cfg.route) return;
-
-    let runs = 0;
-    const doScroll = ()=>{
-      if(activeRoute() !== cfg.route) return;
-      const ok = scrollInsideContainer(cfg);
-      runs++;
-      if(ok && runs < 8){
-        // Retry only inside the chat container while layout settles.
-        setTimeout(doScroll, runs < 3 ? 100 : 220);
-      }
-    };
-
-    doScroll();
-    setTimeout(doScroll, 250);
-    setTimeout(doScroll, 650);
-    setTimeout(doScroll, 1200);
-
-    if(document.fonts?.ready){
-      document.fonts.ready.then(()=>setTimeout(doScroll,50)).catch(()=>{});
-    }
-  }
-
-  function run(){
-    configs.forEach(stabilize);
-  }
-
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(run,120));
-  window.addEventListener("load",()=>setTimeout(run,100));
-  window.addEventListener("hashchange",()=>setTimeout(run,180));
-
-  document.addEventListener("click",e=>{
-    const nav=e.target.closest?.("[data-route],a[href^='#']");
-    if(nav) setTimeout(run,220);
+  window.addEventListener("scroll",()=>queueChatRead(),{passive:true});
+  window.addEventListener("hashchange",()=>{
+    const route=(location.hash||"").replace(/^#/,"").split(/[/?]/)[0];
+    if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
-
-  const observer = new MutationObserver(mutations=>{
-    if(!mutations.some(m=>m.addedNodes?.length)) return;
-    const cfg = configs.find(c=>c.route===activeRoute());
-    if(cfg) setTimeout(()=>stabilize(cfg),80);
-  });
-
-  observer.observe(document.body,{childList:true,subtree:true});
 })();
 
 // v0.18.0.39 – push setting controls

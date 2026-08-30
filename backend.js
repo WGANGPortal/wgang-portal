@@ -1,4 +1,4 @@
-/* v0.18.0.67 – Power-påmelding, felles ferdigstatus og teknisk fristmargin */
+/* v0.18.0.68 – ulest-fokus, kommentarlikes og derbyisolert ferdigstatus */
 (function () {
   "use strict";
 
@@ -89,6 +89,10 @@
       return new Date(Math.min(requestedLock,start));
     }
     return Number.isFinite(visibleDeadline) ? new Date(visibleDeadline) : null;
+  }
+  function completionRowsForEvent(rows,event) {
+    if(!event?.id)return [];
+    return (Array.isArray(rows)?rows:[]).filter(row=>String(row.event_id)===String(event.id));
   }
   function localLoad() {
     try {
@@ -297,7 +301,7 @@
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
-    const completionForView = current ? (completionRes.data || []).filter(row => String(row.event_id) === String(current.id)) : [];
+    const completionForView = completionRowsForEvent(completionRes.data,current);
     const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
     const accounts = (profilesRes.data || []).map(row => {
       const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
@@ -953,11 +957,13 @@
       if (error) throw error;
     },
     async markChatRead(channel, lastMessageId, lastReadAt) {
+      if(!["derby","leadership"].includes(channel))throw new Error("Ugyldig chatkanal.");
       if (!configured) {
         localState.chatReadState = localState.chatReadState || [];
         const row={channel,last_message_id:lastMessageId||null,last_read_at:lastReadAt||new Date().toISOString()};
         const i=localState.chatReadState.findIndex(x=>x.channel===channel);
-        if(i>=0)localState.chatReadState[i]=row; else localState.chatReadState.push(row);
+        if(i>=0&&new Date(row.last_read_at)>new Date(localState.chatReadState[i].last_read_at||0))localState.chatReadState[i]=row;
+        else if(i<0)localState.chatReadState.push(row);
         localSave(localState); return row;
       }
       const { data:{user}, error:userError } = await client.auth.getUser();
@@ -968,6 +974,7 @@
     },
 
     async toggleLike(targetType, targetId, currentlyLiked) {
+      if(!["community","leadership","comment"].includes(targetType)||!String(targetId||"").trim())throw new Error("Ugyldig liker-mål.");
       if (!configured) return;
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
@@ -983,6 +990,7 @@
       }
     },
     async addComment(targetType, targetId, body) {
+      if(!["community","leadership"].includes(targetType)||!String(targetId||"").trim())throw new Error("Ugyldig kommentar-mål.");
       if (!configured) return;
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
