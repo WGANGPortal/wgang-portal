@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.69-auth-email-guidance";
+const CACHE_NAME = "wgang-v0.18.0.70-push-ios-android";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.69",
-  "/app.js?v=0.18.0.69", "/backend.js?v=0.18.0.69", "/config.js?v=0.18.0.60",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.70",
+  "/app.js?v=0.18.0.70", "/backend.js?v=0.18.0.70", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -87,7 +87,7 @@ self.addEventListener("fetch", event => {
 });
 
 
-// v0.18.0.39 – Web Push / PWA foundation (iOS + Android)
+// v0.18.0.70 – Web Push / PWA (iOS + Android)
 self.addEventListener("push", event => {
   let data = {};
   try {
@@ -111,7 +111,12 @@ self.addEventListener("push", event => {
     }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title, options),
+    typeof self.registration.setAppBadge === "function"
+      ? self.registration.setAppBadge(1).catch(() => {})
+      : Promise.resolve()
+  ]));
 });
 
 self.addEventListener("notificationclick", event => {
@@ -123,6 +128,9 @@ self.addEventListener("notificationclick", event => {
   if (d.commentId) url.searchParams.set("focusComment", d.commentId);
 
   event.waitUntil((async()=>{
+    if(typeof self.registration.clearAppBadge === "function"){
+      try{await self.registration.clearAppBadge();}catch(_){}
+    }
     const all = await clients.matchAll({type:"window", includeUncontrolled:true});
     for (const client of all) {
       if ("focus" in client) {

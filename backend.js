@@ -1,4 +1,4 @@
-/* v0.18.0.69 – tydelig og trygg Auth-feilhåndtering */
+/* v0.18.0.70 – sikre push-varsler for installert PWA */
 (function () {
   "use strict";
 
@@ -154,6 +154,16 @@
       .eq("endpoint", endpoint);
     if (error) throw error;
     return true;
+  }
+
+  async function sendTestPushNotification() {
+    if (!configured) throw new Error("Push-varsler krever Supabase.");
+    const { data, error } = await client.functions.invoke("wgang-push", {
+      body: { action: "test" }
+    });
+    if (error) throw error;
+    if (!data?.ok) throw new Error("Testvarselet kunne ikke leveres.");
+    return data;
   }
 
   function mapProfile(row, participation, preferences, expectedMaxPoints) {
@@ -385,6 +395,7 @@
     taskTypes: TASK_TYPES,
     savePushSubscription,
     removePushSubscription,
+    sendTestPushNotification,
     async bootstrap() {
       if (!configured) return clone(localState);
       const { data, error } = await client.auth.getSession();

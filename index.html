@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.69">
+  <link rel="stylesheet" href="main.css?v=0.18.0.70">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -118,7 +118,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.69</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.70</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -257,7 +257,7 @@
             <article class="tip-card"><span class="tip-icon">💬</span><div><p class="card-kicker">SAMARBEID</p><h2>Gi beskjed når du klargjør en oppgave</h2><p>Skal du forberede deg på en bestemt derbyoppgave, gi beskjed i chatten i spillet. Da unngår vi at flere klargjør seg til den samme oppgaven, og at oppgaven blir tatt eller forsvinner før du er klar. God kommunikasjon og samarbeid gjør at vi fordeler oppgavene bedre og utnytter potensialet vårt best mulig.</p></div></article>
           </div>
           <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">FRA NABOLAGET</p><h2>Medlemmenes tips</h2><p class="helper-text">Send inn egne tips. Admin gjennomgår dem før de publiseres.</p></div><button class="button button-primary" id="openTipForm">Send inn tips</button></div><div id="communityTipsList" class="post-list"></div></article>
-          <article class="portal-card install-guide-card"><div class="card-header"><div><p class="card-kicker">WGANG SOM APP</p><h2>Legg portalen på hjemskjermen</h2><p class="helper-text">Da åpnes WGANG Portal mer som en egen app på telefonen din.</p></div><button class="button button-primary hidden" id="installAppButton">Installer WGANG Portal</button></div><div class="install-guide-grid"><div><strong>iPhone / iPad</strong><p>Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.</p></div><div><strong>Android</strong><p>Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.</p></div></div></article>
+          <article class="portal-card install-guide-card"><div class="card-header"><div><p class="card-kicker">WGANG SOM APP</p><h2>Legg portalen på hjemskjermen</h2><p class="helper-text">Da åpnes WGANG Portal mer som en egen app på telefonen din.</p></div><button class="button button-primary hidden" id="installAppButton">Installer WGANG Portal</button></div><div class="install-guide-grid"><div><strong>iPhone / iPad</strong><p>Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til. Åpne deretter WGANG-ikonet for å aktivere varsler.</p></div><div><strong>Android</strong><p>Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.</p></div></div><div class="push-quick-panel"><div><p class="card-kicker">VARSLER PÅ TELEFONEN</p><h3>Få beskjed når noe skjer</h3><p class="helper-text">Få beskjed i varslingssenteret selv når portalen er lukket. Du velger selv hvilke typer varsler du vil ha.</p><p class="push-status" data-push-status aria-live="polite">Kontrollerer støtte og tillatelse …</p></div><div class="push-quick-actions"><button type="button" class="button button-primary" data-push-enable>Aktiver varsler</button><button type="button" class="button button-secondary hidden" data-push-test>Send testvarsel</button><button type="button" class="text-btn hidden" data-push-disable>Deaktiver på denne enheten</button></div></div></article>
           <article class="portal-card community-tip-card"><p class="card-kicker">BYGGES SAMMEN</p><h2>Dette er bare starten</h2><p>Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips &amp; triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.</p></article>
         </section>
         <section class="page admin-access-only" data-page="admin">
@@ -456,7 +456,7 @@
         <div class="profile-divider"></div>
         <section class="notification-settings" id="notificationSettings">
           <h3>Varslingsinnstillinger</h3>
-          <p class="helper-text">Velg hvilke tillatte varsler du ønsker. Rolle og rettigheter bestemmer alltid hvilke saker du kan varsles om.</p>
+          <p class="helper-text">Velg hvilke tillatte varsler du ønsker. Valgene gjelder både i portalen og som pushvarsel på aktiverte telefoner. Rolle og rettigheter bestemmer alltid hvilke saker du kan varsles om.</p>
           <div class="notification-setting-groups">
             <div class="notification-setting-group">
               <div class="notification-group-heading"><strong>Fellesvarsler</strong><small>Informasjon som er relevant for hele nabolaget.</small></div>
@@ -489,12 +489,13 @@
           <div class="notification-setting-group" id="pushNotificationSettings">
             <div class="notification-group-heading">
               <strong>Push-varsler på telefonen</strong>
-              <small>Støtter PWA-varsler på iPhone/iOS og Android når enheten støtter Web Push.</small>
+              <small>Vises i varslingssenteret også når portalen er lukket. På iPhone/iPad må WGANG åpnes fra Hjem-skjermen.</small>
             </div>
             <div class="push-notification-controls">
-              <p id="pushNotificationStatus" class="settings-helper">Kontrollerer støtte og tillatelse …</p>
-              <button type="button" class="secondary-btn" id="enablePushNotifications">Aktiver push-varsler</button>
-              <button type="button" class="text-btn hidden" id="disablePushNotifications">Deaktiver på denne enheten</button>
+              <p id="pushNotificationStatus" data-push-status class="settings-helper" aria-live="polite">Kontrollerer støtte og tillatelse …</p>
+              <button type="button" class="secondary-btn" id="enablePushNotifications" data-push-enable>Aktiver varsler</button>
+              <button type="button" class="secondary-btn hidden" id="testPushNotifications" data-push-test>Send testvarsel</button>
+              <button type="button" class="text-btn hidden" id="disablePushNotifications" data-push-disable>Deaktiver på denne enheten</button>
             </div>
           </div>
 <label class="email-notification-master"><input type="checkbox" id="emailNotificationsEnabled"> <strong>Jeg ønsker å kunne motta varsler på e-post</strong></label>
@@ -537,6 +538,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.69"></script><script src="app.js?v=0.18.0.69"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.70"></script><script src="app.js?v=0.18.0.70"></script>
 </body>
 </html>

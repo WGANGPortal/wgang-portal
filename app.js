@@ -1,4 +1,4 @@
-/* v0.18.0.69 – tydelig og trygg Auth-feilhåndtering */
+/* v0.18.0.70 – varsler i varslingssenteret på iPhone og Android */
 (function () {
   "use strict";
 
@@ -132,6 +132,7 @@
     "WGANG SOM APP":"WGANG AS AN APP","Legg portalen på hjemskjermen":"Add the portal to your Home Screen","Da åpnes WGANG Portal mer som en egen app på telefonen din.":"WGANG Portal will then open more like a dedicated app on your phone.",
     "Installer WGANG Portal":"Install WGANG Portal","iPhone / iPad":"iPhone / iPad","Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.":"Open the portal in Safari → tap the Share button → choose “Add to Home Screen” → tap Add.",
     "Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.":"Open the portal in Chrome. Choose “Install app” or “Add to Home screen” when the option appears.",
+    "VARSLER PÅ TELEFONEN":"PHONE NOTIFICATIONS","Få beskjed i varslingssenteret selv når portalen er lukket.":"Get notifications even when the portal is closed.","Aktiver varsler":"Enable notifications","Send testvarsel":"Send test notification","Deaktiver på denne enheten":"Disable on this device",
     "BYGGES SAMMEN":"BUILT TOGETHER","Her kommer det flere tips, strategier og erfaringer etter hvert. WGANG Tips & triks skal utvikles ut fra nabolagets egne tilbakemeldinger og det medlemmene opplever fungerer best i praksis.":"More tips, strategies and experiences will be added over time. WGANG Tips & Tricks will grow from the Neighborhood's own feedback and what members find works best in practice."
   };
   const DYNAMIC_EN = {
@@ -449,6 +450,7 @@
   async function logout() {
     if (busy) return;
     setBusy(true);
+    try { await detachCurrentPushSubscription(); } catch (e) { console.warn(e); }
     try { await backend.signOut(); } catch (e) { console.warn(e); }
     state.currentUserId = null;
     portal.classList.add("hidden");
@@ -673,9 +675,10 @@
     renderList($("profileNotificationList")); renderList($("whatsNewList"));
   }
 
-  // v0.18.0.39 – Web Push foundation.
-  // Offentlig VAPID-nøkkel fylles inn når sikker sender/Edge Function opprettes.
-  const WGANG_VAPID_PUBLIC_KEY = "";
+  // v0.18.0.70 – Web Push. Bare offentlig VAPID-nøkkel ligger i klienten.
+  // Privatnøkkel og kø-token ligger kryptert i Supabase Vault.
+  const WGANG_VAPID_PUBLIC_KEY = "BHIKIZOAtb2RWASC6ns0SmHtreO56Qgmd4EkxWYJDhcVSLj5tmfH8pYgd67XaZ9r_5M-1MLrxJ9BBMjWS0zej0g";
+  let pushSubscriptionSyncedForUser = null;
 
   function isStandalonePWA(){
     return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
@@ -683,9 +686,28 @@
 
   function pushPlatform(){
     const ua=navigator.userAgent||"";
-    if(/iPhone|iPad|iPod/i.test(ua)) return "ios";
+    if(/iPhone|iPad|iPod/i.test(ua) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1)) return "ios";
     if(/Android/i.test(ua)) return "android";
     return "web";
+  }
+
+  function pushCopy(no,en){ return currentLanguage==="en"?en:no; }
+
+  function pushUi(){
+    return {
+      statuses:$$('[data-push-status],#pushNotificationStatus'),
+      enables:$$('[data-push-enable],#enablePushNotifications'),
+      tests:$$('[data-push-test],#testPushNotifications'),
+      disables:$$('[data-push-disable],#disablePushNotifications')
+    };
+  }
+
+  function updatePushUi({status,canEnable=false,active=false,blocked=false}){
+    const ui=pushUi();
+    ui.statuses.forEach(el=>{el.textContent=status;el.dataset.state=active?"active":blocked?"blocked":"inactive";});
+    ui.enables.forEach(el=>{el.classList.toggle("hidden",active);el.disabled=!canEnable;});
+    ui.tests.forEach(el=>{el.classList.toggle("hidden",!active);el.disabled=!active;});
+    ui.disables.forEach(el=>el.classList.toggle("hidden",!active));
   }
 
   function urlBase64ToUint8Array(base64String){
@@ -702,46 +724,55 @@
   }
 
   async function renderPushNotificationSettings(){
-    const status=$("pushNotificationStatus");
-    const enable=$("enablePushNotifications");
-    const disable=$("disablePushNotifications");
-    if(!status||!enable||!disable) return;
+    if(!pushUi().statuses.length) return;
 
     const supported=("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window);
     if(!supported){
-      status.textContent="Denne nettleseren støtter ikke Web Push.";
-      enable.disabled=true;
-      disable.classList.add("hidden");
+      updatePushUi({
+        status:pushCopy("Denne nettleseren støtter ikke varsler fra webapper.","This browser does not support web app notifications."),
+        blocked:true
+      });
       return;
     }
 
     const platform=pushPlatform();
     if(platform==="ios"&&!isStandalonePWA()){
-      status.textContent="På iPhone må WGANG Portal først legges til på Hjem-skjermen og åpnes derfra.";
-      enable.disabled=true;
-      disable.classList.add("hidden");
+      updatePushUi({
+        status:pushCopy("På iPhone/iPad: legg portalen til på Hjem-skjermen, åpne WGANG-ikonet og aktiver varsler der.","On iPhone/iPad: add the portal to your Home Screen, open the WGANG icon and enable notifications there."),
+        blocked:true
+      });
       return;
     }
 
     const sub=await currentPushSubscription();
     if(sub){
-      status.textContent="Push-varsler er aktivert på denne enheten.";
-      enable.classList.add("hidden");
-      disable.classList.remove("hidden");
+      const userId=current()?.id||null;
+      if(userId && pushSubscriptionSyncedForUser!==String(userId)){
+        try{
+          await backend.savePushSubscription(sub,platform);
+          pushSubscriptionSyncedForUser=String(userId);
+        }catch(e){console.warn("Kunne ikke synkronisere push-abonnement",e);}
+      }
+      updatePushUi({
+        status:pushCopy("Varsler er aktivert på denne enheten.","Notifications are enabled on this device."),
+        active:true
+      });
     }else{
-      status.textContent=Notification.permission==="denied"
-        ?"Varsler er blokkert i enhetens/nettleserens innstillinger."
-        :"Push-varsler er ikke aktivert på denne enheten.";
-      enable.classList.remove("hidden");
-      disable.classList.add("hidden");
-      enable.disabled=Notification.permission==="denied";
+      const denied=Notification.permission==="denied";
+      updatePushUi({
+        status:denied
+          ?pushCopy("Varsler er blokkert. Tillat WGANG-varsler i telefonens innstillinger.","Notifications are blocked. Allow WGANG notifications in your phone settings.")
+          :pushCopy("Varsler er ikke aktivert på denne enheten.","Notifications are not enabled on this device."),
+        canEnable:!denied,
+        blocked:denied
+      });
     }
   }
 
   async function enablePushNotifications(){
     try{
-      if(!WGANG_VAPID_PUBLIC_KEY){
-        alert("Push-fundamentet er installert. Offentlig VAPID-nøkkel må legges inn før abonnement kan aktiveres.");
+      if(pushPlatform()==="ios"&&!isStandalonePWA()){
+        alert(pushCopy("Legg først WGANG Portal til på Hjem-skjermen i Safari. Åpne deretter WGANG-ikonet og trykk «Aktiver varsler» på nytt.","First add WGANG Portal to your Home Screen in Safari. Then open the WGANG icon and tap Enable notifications again."));
         return;
       }
       const permission=await Notification.requestPermission();
@@ -750,29 +781,53 @@
         return;
       }
       const reg=await navigator.serviceWorker.ready;
-      const sub=await reg.pushManager.subscribe({
-        userVisibleOnly:true,
-        applicationServerKey:urlBase64ToUint8Array(WGANG_VAPID_PUBLIC_KEY)
-      });
+      const existing=await reg.pushManager.getSubscription();
+      const sub=existing||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(WGANG_VAPID_PUBLIC_KEY)});
       await backend.savePushSubscription(sub,pushPlatform());
+      pushSubscriptionSyncedForUser=String(current()?.id||"");
       await renderPushNotificationSettings();
+      try{
+        await backend.sendTestPushNotification();
+        alert(pushCopy("Varsler er aktivert. Et testvarsel er sendt til telefonen din.","Notifications are enabled. A test notification was sent to your phone."));
+      }catch(testError){
+        console.warn(testError);
+        alert(pushCopy("Varsler er aktivert, men testvarselet kunne ikke leveres akkurat nå. Prøv «Send testvarsel» igjen.","Notifications are enabled, but the test could not be delivered right now. Try Send test notification again."));
+      }
     }catch(e){
       console.error(e);
-      alert("Kunne ikke aktivere push-varsler.");
+      alert(pushCopy("Kunne ikke aktivere varsler på denne enheten.","Could not enable notifications on this device."));
     }
+  }
+
+  async function sendTestPushNotification(){
+    try{
+      const sub=await currentPushSubscription();
+      if(!sub){await renderPushNotificationSettings();return;}
+      await backend.savePushSubscription(sub,pushPlatform());
+      await backend.sendTestPushNotification();
+      alert(pushCopy("Testvarselet er sendt.","The test notification was sent."));
+    }catch(e){
+      console.error(e);
+      alert(pushCopy("Testvarselet kunne ikke leveres. Kontroller at varsler er tillatt og prøv igjen.","The test notification could not be delivered. Check notification permission and try again."));
+    }
+  }
+
+  async function detachCurrentPushSubscription(){
+    const sub=await currentPushSubscription();
+    if(!sub) return false;
+    try{await backend.removePushSubscription(sub.endpoint);}catch(e){console.warn(e);}
+    await sub.unsubscribe();
+    pushSubscriptionSyncedForUser=null;
+    return true;
   }
 
   async function disablePushNotifications(){
     try{
-      const sub=await currentPushSubscription();
-      if(sub){
-        await backend.removePushSubscription(sub.endpoint);
-        await sub.unsubscribe();
-      }
+      await detachCurrentPushSubscription();
       await renderPushNotificationSettings();
     }catch(e){
       console.error(e);
-      alert("Kunne ikke deaktivere push-varsler.");
+      alert(pushCopy("Kunne ikke deaktivere varsler på denne enheten.","Could not disable notifications on this device."));
     }
   }
 
@@ -2994,22 +3049,24 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.69").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.70").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
-      openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
+      if(d.entryId||d.commentId) openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
+      else navigate(d.route||"dashboard");
     });
   }
+  document.addEventListener("click",e=>{
+    const target=e.target?.closest?.("[data-push-enable],[data-push-test],[data-push-disable],#enablePushNotifications,#testPushNotifications,#disablePushNotifications");
+    if(!target)return;
+    if(target.matches("[data-push-enable],#enablePushNotifications"))enablePushNotifications();
+    if(target.matches("[data-push-test],#testPushNotifications"))sendTestPushNotification();
+    if(target.matches("[data-push-disable],#disablePushNotifications"))disablePushNotifications();
+  });
   window.addEventListener("scroll",()=>queueChatRead(),{passive:true});
   window.addEventListener("hashchange",()=>{
     const route=(location.hash||"").replace(/^#/,"").split(/[/?]/)[0];
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
-
-// v0.18.0.39 – push setting controls
-document.addEventListener("click",e=>{
-  if(e.target?.id==="enablePushNotifications") enablePushNotifications();
-  if(e.target?.id==="disablePushNotifications") disablePushNotifications();
-});
