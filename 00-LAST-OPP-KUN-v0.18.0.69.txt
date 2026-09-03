@@ -1,0 +1,11 @@
+WGANG Portal v0.18.0.69
+
+Last opp og overskriv disse fem filene i GitHub-roten:
+- app.js
+- backend.js
+- index.html
+- main.css
+- service-worker.js
+
+Ingen SQL skal kjores for denne oppdateringen.
+Commit: v0.18.0.69 – Norwegian Auth email guidance

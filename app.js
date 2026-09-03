@@ -1,4 +1,4 @@
-/* v0.18.0.68 – ulest-fokus, kommentarlikes og derbyisolert ferdigstatus */
+/* v0.18.0.69 – tydelig og trygg Auth-feilhåndtering */
 (function () {
   "use strict";
 
@@ -345,7 +345,20 @@
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
   function setBusy(value) { busy = value; document.body.classList.toggle("is-busy", value); }
-  function humanError(error, fallback="Noe gikk galt. Prøv igjen.") { return error && error.message ? error.message : fallback; }
+  function humanError(error, fallback="Noe gikk galt. Prøv igjen.") {
+    const code=String(error?.code || "").toLowerCase();
+    const message=String(error?.message || "");
+    if(code === "over_email_send_rate_limit" || /email rate limit exceeded/i.test(message)) {
+      return "E-postgrensen er midlertidig nådd. Søknaden ble ikke opprettet. Vent minst én time før du prøver én gang til.";
+    }
+    if(code === "email_not_confirmed" || /email not confirmed/i.test(message)) {
+      return "E-postadressen er ikke bekreftet. Åpne bekreftelsesmailen før du logger inn.";
+    }
+    if(code === "user_already_exists" || /user already registered/i.test(message)) {
+      return "Det finnes allerede en konto med denne e-postadressen. Prøv å logge inn eller bruk «Glemt passord».";
+    }
+    return message || fallback;
+  }
 
   function setModeHint() {
     const hint = document.querySelector(".auth-hint");
@@ -2981,7 +2994,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.68").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.69").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

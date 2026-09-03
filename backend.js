@@ -1,4 +1,4 @@
-/* v0.18.0.68 – ulest-fokus, kommentarlikes og derbyisolert ferdigstatus */
+/* v0.18.0.69 – tydelig og trygg Auth-feilhåndtering */
 (function () {
   "use strict";
 
@@ -396,7 +396,14 @@
         throw new Error("Innlogging er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
       }
       const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) throw new Error("Feil e-post eller passord.");
+      if (error) {
+        if (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message || "")) {
+          const confirmationError = new Error("E-postadressen er ikke bekreftet. Åpne bekreftelsesmailen før du logger inn.");
+          confirmationError.code = "email_not_confirmed";
+          throw confirmationError;
+        }
+        throw new Error("Feil e-post eller passord.");
+      }
       const profile = await getOwnProfile(data.user.id);
       if (profile.status !== "approved") {
         await client.auth.signOut();
