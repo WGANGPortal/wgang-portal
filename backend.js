@@ -1,4 +1,4 @@
-/* v0.18.0.70 – sikre push-varsler for installert PWA */
+/* v0.18.0.71 – sikre push-varsler med numerisk appmerke */
 (function () {
   "use strict";
 

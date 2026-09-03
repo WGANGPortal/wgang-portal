@@ -1,4 +1,4 @@
-/* v0.18.0.70 – varsler i varslingssenteret på iPhone og Android */
+/* v0.18.0.71 – varsler med numerisk merke på appikonet */
 (function () {
   "use strict";
 
@@ -664,9 +664,30 @@
     else navigate(item.route||"dashboard");
     renderNotifications();
   }
+  async function syncAppIconBadge(count){
+    const safeCount=Math.max(0,Math.min(999,Number(count)||0));
+    try{
+      if(safeCount>0 && typeof navigator.setAppBadge==="function"){
+        await navigator.setAppBadge(safeCount);
+      }else if(safeCount===0 && typeof navigator.clearAppBadge==="function"){
+        await navigator.clearAppBadge();
+      }
+    }catch(e){console.warn("Kunne ikke oppdatere appmerket",e);}
+    try{
+      if("serviceWorker" in navigator){
+        const reg=await navigator.serviceWorker.ready;
+        (reg.active||navigator.serviceWorker.controller)?.postMessage({
+          type:"WGANG_SYNC_APP_BADGE",
+          count:safeCount
+        });
+      }
+    }catch(e){console.warn("Kunne ikke synkronisere appmerket",e);}
+  }
+
   function renderNotifications() {
     const items=buildNotifications(), badge=$("globalNotificationBadge"), card=$("whatsNewCard");
     const notificationCount=items.reduce((sum,x)=>sum+(x.count||1),0);
+    syncAppIconBadge(notificationCount);
     if(badge){badge.textContent=notificationCount;badge.classList.toggle("hidden",!notificationCount);}
     if($("whatsNewCount")) $("whatsNewCount").textContent=notificationCount;
     if(card) card.classList.toggle("hidden",!items.length);
@@ -824,6 +845,7 @@
   async function disablePushNotifications(){
     try{
       await detachCurrentPushSubscription();
+      await syncAppIconBadge(0);
       await renderPushNotificationSettings();
     }catch(e){
       console.error(e);
@@ -3049,7 +3071,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.70").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.71").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

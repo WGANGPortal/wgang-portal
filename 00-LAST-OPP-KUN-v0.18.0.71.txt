@@ -1,0 +1,10 @@
+WGANG Portal v0.18.0.71
+
+Last opp bare disse fem filene til GitHub-roten og overskriv filene med samme navn:
+- app.js
+- backend.js
+- index.html
+- main.css
+- service-worker.js
+
+Ingen SQL skal kjøres for denne oppdateringen.

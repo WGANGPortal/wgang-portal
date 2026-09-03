@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.70-push-ios-android";
+const CACHE_NAME = "wgang-v0.18.0.71-numeric-app-badge";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.70",
-  "/app.js?v=0.18.0.70", "/backend.js?v=0.18.0.70", "/config.js?v=0.18.0.60",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.71",
+  "/app.js?v=0.18.0.71", "/backend.js?v=0.18.0.71", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -87,7 +87,69 @@ self.addEventListener("fetch", event => {
 });
 
 
-// v0.18.0.70 – Web Push / PWA (iOS + Android)
+// v0.18.0.71 – numerisk appmerke for installert PWA (iOS + Android)
+const BADGE_DB_NAME = "wgang-app-badge";
+const BADGE_STORE_NAME = "state";
+
+function openBadgeDatabase(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(BADGE_DB_NAME,1);
+    request.onupgradeneeded=()=>{
+      if(!request.result.objectStoreNames.contains(BADGE_STORE_NAME)){
+        request.result.createObjectStore(BADGE_STORE_NAME);
+      }
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+
+async function storeBadgeCount(nextCount){
+  const safeCount=Math.max(0,Math.min(999,Number(nextCount)||0));
+  const db=await openBadgeDatabase();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(BADGE_STORE_NAME,"readwrite");
+    tx.objectStore(BADGE_STORE_NAME).put(safeCount,"count");
+    tx.oncomplete=()=>{db.close();resolve(safeCount);};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+    tx.onabort=()=>{db.close();reject(tx.error);};
+  });
+}
+
+async function incrementBadgeCount(){
+  const db=await openBadgeDatabase();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(BADGE_STORE_NAME,"readwrite");
+    const store=tx.objectStore(BADGE_STORE_NAME);
+    const request=store.get("count");
+    let count=1;
+    request.onsuccess=()=>{
+      count=Math.max(1,Math.min(999,(Number(request.result)||0)+1));
+      store.put(count,"count");
+    };
+    tx.oncomplete=()=>{db.close();resolve(count);};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+    tx.onabort=()=>{db.close();reject(tx.error);};
+  });
+}
+
+async function showBadgeCount(count){
+  const safeCount=Math.max(0,Math.min(999,Number(count)||0));
+  if(safeCount>0 && typeof self.navigator.setAppBadge==="function"){
+    await self.navigator.setAppBadge(safeCount);
+  }else if(safeCount===0 && typeof self.navigator.clearAppBadge==="function"){
+    await self.navigator.clearAppBadge();
+  }
+}
+
+async function receiveNewBadge(data){
+  const supplied=Number(data?.badgeCount);
+  const count=Number.isFinite(supplied)&&supplied>0
+    ?await storeBadgeCount(supplied)
+    :await incrementBadgeCount();
+  await showBadgeCount(count);
+}
+
 self.addEventListener("push", event => {
   let data = {};
   try {
@@ -113,10 +175,16 @@ self.addEventListener("push", event => {
 
   event.waitUntil(Promise.all([
     self.registration.showNotification(title, options),
-    typeof self.registration.setAppBadge === "function"
-      ? self.registration.setAppBadge(1).catch(() => {})
-      : Promise.resolve()
+    receiveNewBadge(data).catch(() => {})
   ]));
+});
+
+self.addEventListener("message",event=>{
+  if(event.data?.type!=="WGANG_SYNC_APP_BADGE") return;
+  event.waitUntil((async()=>{
+    const count=await storeBadgeCount(event.data.count);
+    await showBadgeCount(count);
+  })().catch(()=>{}));
 });
 
 self.addEventListener("notificationclick", event => {
@@ -128,9 +196,6 @@ self.addEventListener("notificationclick", event => {
   if (d.commentId) url.searchParams.set("focusComment", d.commentId);
 
   event.waitUntil((async()=>{
-    if(typeof self.registration.clearAppBadge === "function"){
-      try{await self.registration.clearAppBadge();}catch(_){}
-    }
     const all = await clients.matchAll({type:"window", includeUncontrolled:true});
     for (const client of all) {
       if ("focus" in client) {
