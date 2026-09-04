@@ -1,4 +1,4 @@
-/* v0.18.0.71 – varsler med numerisk merke på appikonet */
+/* v0.18.0.72 – privat videodeling i Wiki / Tips og triks */
 (function () {
   "use strict";
 
@@ -201,6 +201,7 @@
   const openSocialThreads = new Set();
   const chatReadTimers = new Map();
   const chatReadWrites = new Map();
+  const wikiVideoUrls = new Map();
 
   const landing = $("landing");
   const portal = $("portal");
@@ -221,6 +222,7 @@
   const tipDialog = $("tipDialog");
   const memberProfileDialog = $("memberProfileDialog");
   let adminTipMode = false;
+  let tipVideoPreviewUrl = null;
   let openProfileUserId = null;
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
@@ -1807,12 +1809,45 @@
     setTimeout(run,320);
   }
 
+  function formatFileSize(bytes) {
+    const size=Number(bytes||0);
+    if(!size)return "";
+    return size>=1024*1024?`${(size/(1024*1024)).toFixed(size>=10*1024*1024?0:1)} MB`:`${Math.ceil(size/1024)} kB`;
+  }
+  function wikiVideoBlock(item) {
+    if(!item?.videoPath)return "";
+    const details=[item.videoOriginalName,formatFileSize(item.videoSizeBytes)].filter(Boolean).map(esc).join(" · ");
+    return `<div class="wiki-video"><video controls playsinline preload="metadata" data-wiki-video-path="${esc(item.videoPath)}" aria-label="Film til ${esc(item.title||"tipset")}"></video>${details?`<small>${details}</small>`:""}<p class="wiki-video-error hidden">Filmen kunne ikke åpnes akkurat nå.</p></div>`;
+  }
+  async function hydrateWikiVideos(root=document) {
+    const players=[...root.querySelectorAll("video[data-wiki-video-path]")];
+    await Promise.all(players.map(async player=>{
+      const path=player.dataset.wikiVideoPath;
+      try{
+        if(!wikiVideoUrls.has(path)){
+          const request=backend.getWikiVideoUrl(path).catch(error=>{wikiVideoUrls.delete(path);throw error;});
+          wikiVideoUrls.set(path,request);
+          setTimeout(()=>{if(wikiVideoUrls.get(path)===request)wikiVideoUrls.delete(path);},55*60*1000);
+        }
+        const url=await wikiVideoUrls.get(path);
+        if(url && player.isConnected && player.dataset.wikiVideoPath===path)player.src=url;
+      }catch(error){
+        console.warn("Kunne ikke åpne Wiki-film",error);
+        player.closest(".wiki-video")?.querySelector(".wiki-video-error")?.classList.remove("hidden");
+      }
+    }));
+  }
+  function findContentItem(id) {
+    const content=state.content||{};
+    return [content.announcements,content.derbyPosts,content.tips,content.pendingTips].flatMap(x=>x||[]).find(item=>String(item.id)===String(id))||null;
+  }
+
   function postCard(item, options={}) {
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
-    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p><footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiVideoBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   function renderContent() {
@@ -1841,7 +1876,7 @@
 
     if (hasPermission("content.pending.view")) {
       const pending = $("pendingTips");
-      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p></div><div class="approval-actions">${hasPermission("content.approve")?`<button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button>`:""}${hasPermission("content.reject")?`<button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
+      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p>${wikiVideoBlock(t)}</div><div class="approval-actions">${hasPermission("content.approve")?`<button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button>`:""}${hasPermission("content.reject")?`<button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
       $$('[data-tip-approve]').forEach(b => b.onclick = async () => {
         if(!hasPermission("content.approve")) return alert("Du har ikke rettighet til å godkjenne innhold.");
         if (busy) return; setBusy(true);
@@ -1851,7 +1886,12 @@
       $$('[data-tip-reject]').forEach(b => b.onclick = async () => {
         if(!hasPermission("content.reject")) return alert("Du har ikke rettighet til å avvise innhold.");
         if (busy) return; setBusy(true);
-        try { await backend.moderateContent(b.dataset.tipReject,"rejected"); await refreshState(); } catch(e) { alert(humanError(e)); }
+        try {
+          const item=findContentItem(b.dataset.tipReject);
+          await backend.moderateContent(b.dataset.tipReject,"rejected");
+          if(item?.videoPath)await backend.deleteWikiVideo(item.videoPath).catch(error=>console.warn("Kunne ikke rydde avvist Wiki-film",error));
+          await refreshState();
+        } catch(e) { alert(humanError(e)); }
         setBusy(false);
       });
     }
@@ -1859,10 +1899,16 @@
     $$('[data-delete-content]').forEach(b => b.onclick = async () => {
       if (!hasPermission("chat.moderate") || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
       if (busy) return; setBusy(true);
-      try { await backend.deleteContent(b.dataset.deleteContent); await refreshState(); } catch(e) { alert(humanError(e)); }
+      try {
+        const item=findContentItem(b.dataset.deleteContent);
+        await backend.deleteContent(b.dataset.deleteContent);
+        if(item?.videoPath)await backend.deleteWikiVideo(item.videoPath).catch(error=>console.warn("Kunne ikke rydde slettet Wiki-film",error));
+        await refreshState();
+      } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
     bindSocialActions(document);
+    hydrateWikiVideos(document);
   }
 
   function renderLeadershipChat() {
@@ -3008,10 +3054,56 @@
   if($("bunnyEditAmount")) $("bunnyEditAmount").oninput=updateBunnyEditorPreview;
   if($("bunnyTaskEditorForm")) $("bunnyTaskEditorForm").onsubmit=async e=>{e.preventDefault();if(!hasPermission("derby.task_library.edit"))return;const id=$("bunnyEditTaskId").value,name=$("bunnyEditName").value.trim(),category=$("bunnyEditCategory").value.trim(),description=$("bunnyEditDescription").value.trim(),amount=Number($("bunnyEditAmount").value);if(!name||!category||!description||!amount)return;const status=$("bunnyTaskEditorStatus");status.textContent="Lagrer …";try{await backend.updateBunnyTask(id,{name,category,description,amount});$("bunnyTaskEditorDialog").close();await loadBunny();}catch(err){status.textContent=humanError(err);}};
 
+  function setTipUploadProgress(percent) {
+    const safe=Math.max(0,Math.min(100,Number(percent)||0));
+    $("tipVideoProgress")?.classList.remove("hidden");
+    if($("tipVideoProgressBar"))$("tipVideoProgressBar").style.width=`${safe}%`;
+    setText("tipVideoProgressText",`Laster opp film … ${safe} %`);
+  }
+  function resetTipVideoForm(clearInput=true) {
+    if(tipVideoPreviewUrl){URL.revokeObjectURL(tipVideoPreviewUrl);tipVideoPreviewUrl=null;}
+    if(clearInput && $("tipVideo"))$("tipVideo").value="";
+    $("tipVideoPreview")?.classList.add("hidden");
+    $("tipVideoProgress")?.classList.add("hidden");
+    if($("tipVideoProgressBar"))$("tipVideoProgressBar").style.width="0%";
+    setText("tipVideoProgressText","Laster opp film … 0 %");
+    const player=$("tipVideoPreviewPlayer");
+    if(player){player.removeAttribute("src");player.load();}
+    setText("tipVideoFileName","");
+  }
+  function prepareTipDialog(publishNow) {
+    adminTipMode=publishNow;
+    $("tipForm").reset();
+    resetTipVideoForm();
+    $("tipDialogTitle").textContent=publishNow?"Publiser tips":"Send inn tips";
+    $("tipSubmitButton").textContent=publishNow?"Publiser tips":"Send til godkjenning";
+    $("tipMessage").textContent="";
+    showDialog(tipDialog);
+  }
+
   if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { if(!hasPermission("content.approve"))return; $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
   if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { if(!hasPermission("chat.community.post"))return; $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
-  if ($("openTipForm")) $("openTipForm").onclick = () => { adminTipMode=false; $("tipForm").reset(); $("tipDialogTitle").textContent="Send inn tips"; $("tipSubmitButton").textContent="Send til godkjenning"; $("tipMessage").textContent=""; showDialog(tipDialog); };
-  if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { if(!hasPermission("content.approve"))return; adminTipMode=true; $("tipForm").reset(); $("tipDialogTitle").textContent="Publiser tips"; $("tipSubmitButton").textContent="Publiser tips"; $("tipMessage").textContent=""; showDialog(tipDialog); };
+  if ($("openTipForm")) $("openTipForm").onclick = () => prepareTipDialog(false);
+  if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { if(hasPermission("content.approve"))prepareTipDialog(true); };
+  if ($("tipVideo")) $("tipVideo").onchange = () => {
+    resetTipVideoForm(false);
+    const file=$("tipVideo").files?.[0];
+    if(!file)return;
+    if(!["video/mp4","video/quicktime","video/webm"].includes(file.type)){
+      $("tipMessage").textContent="Filmen må være MP4, MOV eller WebM. MP4 anbefales.";
+      return resetTipVideoForm();
+    }
+    if(!file.size || file.size>50*1024*1024){
+      $("tipMessage").textContent="Filmen kan være maksimalt 50 MB.";
+      return resetTipVideoForm();
+    }
+    $("tipMessage").textContent="";
+    tipVideoPreviewUrl=URL.createObjectURL(file);
+    $("tipVideoPreviewPlayer").src=tipVideoPreviewUrl;
+    setText("tipVideoFileName",`${file.name} · ${formatFileSize(file.size)}`);
+    $("tipVideoPreview")?.classList.remove("hidden");
+  };
+  if ($("removeTipVideo")) $("removeTipVideo").onclick = () => { resetTipVideoForm(); $("tipMessage").textContent=""; };
 
   if ($("announcementForm")) $("announcementForm").onsubmit = async e => {
     e.preventDefault(); if (busy || !hasPermission("content.approve")) return;
@@ -3032,12 +3124,19 @@
   if ($("tipForm")) $("tipForm").onsubmit = async e => {
     e.preventDefault(); if (busy || (adminTipMode && !hasPermission("content.approve"))) return;
     setBusy(true);
+    let uploadedVideo=null;
     try {
       const publishNow=adminTipMode && hasPermission("content.approve");
-      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, publishNow);
-      closeDialog(tipDialog); e.target.reset(); await refreshState();
+      const file=$("tipVideo").files?.[0]||null;
+      if(file)uploadedVideo=await backend.uploadWikiVideo(file,setTipUploadProgress);
+      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, publishNow, uploadedVideo);
+      closeDialog(tipDialog); e.target.reset(); resetTipVideoForm(); await refreshState();
       if (!adminTipMode) alert("Takk! Tipset er sendt til admin for gjennomgang.");
-    } catch(err) { $("tipMessage").textContent=humanError(err); }
+    } catch(err) {
+      if(uploadedVideo?.path)await backend.deleteWikiVideo(uploadedVideo.path).catch(error=>console.warn("Kunne ikke rydde ufullført Wiki-film",error));
+      $("tipMessage").textContent=humanError(err);
+      $("tipVideoProgress")?.classList.add("hidden");
+    }
     setBusy(false);
   };
 
@@ -3071,7 +3170,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.71").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.72").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

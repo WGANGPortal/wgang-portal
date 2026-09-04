@@ -1,4 +1,4 @@
-/* v0.18.0.71 – sikre push-varsler med numerisk appmerke */
+/* v0.18.0.72 – privat videodeling i Wiki / Tips og triks */
 (function () {
   "use strict";
 
@@ -29,6 +29,9 @@
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
   const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
+  const WIKI_VIDEO_BUCKET = "wiki-videos";
+  const WIKI_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+  const WIKI_VIDEO_TYPES = new Set(["video/mp4","video/quicktime","video/webm"]);
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -41,6 +44,21 @@
   }) : null;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+  function wikiVideoExtension(file) {
+    const fromName=String(file?.name||"").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
+    if(["mp4","mov","webm"].includes(fromName))return fromName;
+    return {"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+  }
+
+  function validateWikiVideo(file) {
+    if(!(file instanceof File))throw new Error("Velg en filmfil før opplasting.");
+    if(!WIKI_VIDEO_TYPES.has(file.type))throw new Error("Filmen må være MP4, MOV eller WebM. MP4 anbefales.");
+    if(!file.size || file.size > WIKI_VIDEO_MAX_BYTES)throw new Error("Filmen kan være maksimalt 50 MB.");
+    const extension=wikiVideoExtension(file);
+    if(!extension)throw new Error("Filtypen støttes ikke. Bruk MP4, MOV eller WebM.");
+    return extension;
+  }
 
   function derbyOsloClock(now=new Date()) {
     const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
@@ -210,7 +228,11 @@
       category: row.category || "",
       status: row.status,
       createdAt: row.created_at,
-      publishedAt: row.published_at || row.created_at
+      publishedAt: row.published_at || row.created_at,
+      videoPath: row.video_path || null,
+      videoMimeType: row.video_mime_type || null,
+      videoSizeBytes: Number(row.video_size_bytes || 0),
+      videoOriginalName: row.video_original_name || null
     }));
   }
 
@@ -280,7 +302,7 @@
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
-      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at").order("created_at", {ascending:false}),
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
@@ -869,10 +891,63 @@
       if (error) throw error;
       return data;
     },
-    async createContent(kind, title, body, category="", publishNow=false) {
+    async uploadWikiVideo(file, onProgress) {
+      if (!configured) throw new Error("Filmopplasting krever tilkobling til medlemsportalen.");
+      if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
+      const extension=validateWikiVideo(file);
+      const { data:{session}, error:sessionError }=await client.auth.getSession();
+      if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
+      const objectId=globalThis.crypto?.randomUUID?.();
+      if(!objectId)throw new Error("Denne nettleseren kan ikke opprette en sikker filidentifikator.");
+      const path=`${session.user.id}/${objectId}.${extension}`;
+      const projectId=new URL(cfg.url).hostname.split(".")[0];
+      await new Promise((resolve,reject)=>{
+        const upload=new window.tus.Upload(file,{
+          endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
+          retryDelays:[0,3000,5000,10000,20000],
+          headers:{
+            authorization:`Bearer ${session.access_token}`,
+            apikey:cfg.anonKey
+          },
+          uploadDataDuringCreation:true,
+          removeFingerprintOnSuccess:true,
+          metadata:{
+            bucketName:WIKI_VIDEO_BUCKET,
+            objectName:path,
+            contentType:file.type,
+            cacheControl:"3600"
+          },
+          chunkSize:6 * 1024 * 1024,
+          onError:error=>reject(error),
+          onProgress:(uploaded,total)=>{
+            if(typeof onProgress==="function")onProgress(total?Math.round(uploaded*100/total):0);
+          },
+          onSuccess:()=>resolve()
+        });
+        upload.start();
+      });
+      return {
+        path,
+        mimeType:file.type,
+        sizeBytes:file.size,
+        originalName:String(file.name||`film.${extension}`).slice(0,255)
+      };
+    },
+    async getWikiVideoUrl(path) {
+      if(!configured || !path)return null;
+      const {data,error}=await client.storage.from(WIKI_VIDEO_BUCKET).createSignedUrl(path,3600);
+      if(error)throw error;
+      return data?.signedUrl || null;
+    },
+    async deleteWikiVideo(path) {
+      if(!configured || !path)return;
+      const {error}=await client.storage.from(WIKI_VIDEO_BUCKET).remove([path]);
+      if(error)throw error;
+    },
+    async createContent(kind, title, body, category="", publishNow=false, video=null) {
       if (!configured) {
         const me = localState.accounts.find(x => x.id === localState.currentUserId);
-        const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString()};
+        const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString(),videoPath:video?.path||null,videoMimeType:video?.mimeType||null,videoSizeBytes:Number(video?.sizeBytes||0),videoOriginalName:video?.originalName||null};
         localState.content = localState.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
         if (kind === "announcement") localState.content.announcements.unshift(item);
         else if (kind === "derby") localState.content.derbyPosts.unshift(item);
@@ -883,6 +958,13 @@
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
+      if(video?.path){
+        if(kind!=="tip")throw new Error("Film kan bare knyttes til Tips og triks.");
+        payload.video_path=video.path;
+        payload.video_mime_type=video.mimeType;
+        payload.video_size_bytes=Number(video.sizeBytes);
+        payload.video_original_name=String(video.originalName||"").slice(0,255);
+      }
       const { data, error } = await client.from("community_content").insert(payload).select().single();
       if (error) throw error;
       return data;
