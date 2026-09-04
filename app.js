@@ -1,4 +1,4 @@
-/* v0.18.0.72 – privat videodeling i Wiki / Tips og triks */
+/* v0.18.0.73 – sikkerhet, minste privilegium og låste avhengigheter */
 (function () {
   "use strict";
 
@@ -3170,7 +3170,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.72").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.73").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

@@ -1,4 +1,4 @@
-/* v0.18.0.72 – privat videodeling i Wiki / Tips og triks */
+/* v0.18.0.73 – sikkerhet, minste privilegium og låste avhengigheter */
 (function () {
   "use strict";
 
