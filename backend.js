@@ -1,4 +1,4 @@
-/* v0.18.0.74 – umiddelbar derbypåmelding og automatisk søndagsbytte */
+/* v0.18.0.75 – tydelig skille mellom pågående og neste derby */
 (function () {
   "use strict";
 

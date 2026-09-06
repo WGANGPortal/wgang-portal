@@ -1,4 +1,4 @@
-/* v0.18.0.74 – umiddelbar derbypåmelding og automatisk søndagsbytte */
+/* v0.18.0.75 – tydelig skille mellom pågående og neste derby */
 (function () {
   "use strict";
 
@@ -891,7 +891,10 @@
       : user.choice === "pause" ? (currentLanguage === "en" ? "You are taking a break from the next Derby." : "Du tar pause i neste derby.")
       : user.choice === "unsure" ? (currentLanguage === "en" ? "You are registered as unsure." : "Du er registrert som usikker.")
       : (currentLanguage === "en" ? "You have not responded about participation yet." : "Du har ikke svart på deltakelse ennå.");
-    $("myStatusMetric").textContent = choiceLabel(user.choice);
+    const dashboardChoice = currentActiveDerbyEvent()
+      ? activeDerbyParticipationChoice(user)
+      : user.choice;
+    $("myStatusMetric").textContent = choiceLabel(dashboardChoice);
     renderDerbyConfig();
     renderDerbyCompletion();
     renderMetrics();
@@ -1153,7 +1156,11 @@
 
   function renderMetrics() {
     const all = approved();
-    const answered = all.filter(a => ["joined","pause","unsure"].includes(a.choice)).length;
+    const showCurrent = !!currentActiveDerbyEvent();
+    const answered = all.filter(a => {
+      const choice = showCurrent ? activeDerbyParticipationChoice(a) : a.choice;
+      return ["joined","pause","unsure"].includes(choice);
+    }).length;
     $("respondedMetric").textContent = answered + "/" + all.length;
   }
 
@@ -2257,6 +2264,9 @@
     setText("dashboardDerbyFocusText", active
       ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
       : (bunny ? "Bekreft om du deltar, tar pause eller er usikker før svarfristen. Oppgavetavla er klar for felles Bunny-planlegging." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
+    setText("nextDerbyStart", active
+      ? "Pågår nå"
+      : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00"));
     setText("dashboardDerbyAction", bunny && active ? "Åpne oppslagstavla" : (bunny ? "Åpne påmelding" : "Åpne derby-senter"));
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
@@ -2497,8 +2507,6 @@
     $("dashboardDerbyType").textContent = /^Standard Derby$/i.test(dashboardConfig.type) ? "Normal Derby" : dashboardConfig.type;
     renderDashboardDerbyFocus(dashboardConfig, dashboardEvent);
     renderTaskHubContext();
-    const phase = derbyDashboardPhase(next);
-    const startText = $("nextDerbyStart"); if (startText) startText.textContent = phase === "active" ? "Pågår nå" : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00");
     $("derbyTaskTotalLabel").textContent = d.taskTotal || "–"; $("derbyMaxPoints").textContent = d.maxPoints || "–";
     const includedTasks = Number(d.taskTotal || 0);
     const extraTasks = Number(d.extraTasks || 0);
@@ -3158,7 +3166,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.74").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.75").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
