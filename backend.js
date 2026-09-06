@@ -1,4 +1,4 @@
-/* v0.18.0.73 – sikkerhet, minste privilegium og låste avhengigheter */
+/* v0.18.0.74 – umiddelbar derbypåmelding og automatisk søndagsbytte */
 (function () {
   "use strict";
 
@@ -90,11 +90,10 @@
       const start = event?.start_at ? new Date(event.start_at).getTime() : NaN;
       return event?.status === "published" && Number.isFinite(start) && start > nowMs;
     }).sort(bySoonest)[0] || null;
-    const clock = derbyOsloClock(now);
-    const planning = (clock.weekday === 0 && clock.minutes >= 18 * 60)
-      || clock.weekday === 1
-      || (clock.weekday === 2 && clock.minutes < 10 * 60);
-    return {current,upcoming,next:planning ? (upcoming || current) : (current || upcoming),planning};
+    // Et publisert fremtidig derby blir påmeldingskontekst med én gang.
+    // Derbyet som faktisk pågår beholdes separat i `current`.
+    const planning = Boolean(upcoming);
+    return {current,upcoming,next:upcoming || current,planning};
   }
 
   function derbyParticipationLockAt(event) {
@@ -286,17 +285,8 @@
       ownAccount.email = session.user.email || "";
       return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance, currentUserId: own.id };
     }
-    // Søndag 18:00 -> tirsdag 10:00: sørg for at neste derby finnes.
-    // Funksjonen er idempotent og oppretter bare en Normal-standard dersom ledelsen
-    // ikke allerede har opprettet et derby for neste tirsdag.
-    try {
-      const { error: weeklyDerbyError } = await client.rpc("ensure_weekly_derby_transition");
-      if (weeklyDerbyError && weeklyDerbyError.code !== "PGRST202") {
-        console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
-      }
-    } catch (weeklyDerbyError) {
-      console.warn("Kunne ikke kontrollere ukentlig derbyovergang:", weeklyDerbyError);
-    }
+    // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
+    // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
@@ -325,9 +315,9 @@
     const derby = d ? { type:d.type, taskTotal:d.task_total, maxPoints:d.max_points, strategy:Array.isArray(d.strategy)?d.strategy:clone(DEFAULT_DERBY.strategy) } : clone(DEFAULT_DERBY);
     const templates = templatesRes.data || [];
     const events = eventsRes.data || [];
-    // Søndag 18:00 til tirsdag 10:00 er neste publiserte derby portalens
-    // påmeldingskontekst. Samtidig beholdes derbyet som faktisk pågår som en
-    // separat kontekst for ferdigstatus og historikk.
+    // Et publisert fremtidig derby er straks portalens påmeldingskontekst.
+    // Samtidig beholdes derbyet som faktisk pågår som en separat kontekst for
+    // forsiden, ferdigstatus og historikk.
     const contexts = selectDerbyContexts(events);
     const {current,upcoming,next} = contexts;
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];

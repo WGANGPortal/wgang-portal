@@ -1,4 +1,4 @@
-/* v0.18.0.73 – sikkerhet, minste privilegium og låste avhengigheter */
+/* v0.18.0.74 – umiddelbar derbypåmelding og automatisk søndagsbytte */
 (function () {
   "use strict";
 
@@ -2058,20 +2058,6 @@
   }
 
   function derbyDashboardPhase(event) {
-    const p = bunnyOsloParts();
-    const osloDay = new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
-    const mins = p.h * 60 + (p.mi || 0);
-
-    // Fast WGANG-fokus:
-    // Søndag 18:00 -> tirsdag 10:00 = neste derby/påmelding.
-    // Denne regelen har prioritet selv om forrige derby fortsatt teknisk pågår.
-    const planning =
-      (osloDay === 0 && mins >= 18*60) ||
-      osloDay === 1 ||
-      (osloDay === 2 && mins < 10*60);
-
-    if (planning) return "planning";
-
     const now = new Date();
     if (event?.start_at) {
       const start = new Date(event.start_at);
@@ -2085,11 +2071,9 @@
 
   let derbyPhaseWatcherKey = "";
   function currentDerbyPhaseWatcherKey(){
-    const p=bunnyOsloParts();
-    const day=new Date(Date.UTC(p.y,p.mo-1,p.d)).getUTCDay();
-    const mins=p.h*60+(p.mi||0);
-    const planning=(day===0&&mins>=18*60)||day===1||(day===2&&mins<10*60);
-    return `${p.y}-${p.mo}-${p.d}:${planning?"planning":"active"}`;
+    const current=state.derbyManagement?.current;
+    const upcoming=state.derbyManagement?.upcoming;
+    return `${current?.id||"none"}:${derbyDashboardPhase(current)}:${upcoming?.id||"none"}:${derbyDashboardPhase(upcoming)}`;
   }
   async function checkDerbyPhaseBoundary(){
     const key=currentDerbyPhaseWatcherKey();
@@ -2494,20 +2478,24 @@
 
   function renderDerbyConfig() {
     const next = state.derbyManagement?.next;
-    const d = next ? {
-      type: next.name,
-      taskTotal: next.task_total || state.derby.taskTotal || 9,
-      maxPoints: next.max_points || state.derby.maxPoints || 320,
-      strategy: Array.isArray(next.strategy) ? next.strategy : [],
-      startAt: next.start_at,
-      signupDeadline: next.signup_deadline,
-      dailyTaskLimit: next.daily_task_limit,
-      extraTasks: next.extra_tasks,
-      description: next.description,
-      rules: Array.isArray(next.rules) ? next.rules : []
+    const configFor = event => event ? {
+      type: event.name,
+      taskTotal: event.task_total || state.derby.taskTotal || 9,
+      maxPoints: event.max_points || state.derby.maxPoints || 320,
+      strategy: Array.isArray(event.strategy) ? event.strategy : [],
+      startAt: event.start_at,
+      signupDeadline: event.signup_deadline,
+      dailyTaskLimit: event.daily_task_limit,
+      extraTasks: event.extra_tasks,
+      description: event.description,
+      rules: Array.isArray(event.rules) ? event.rules : []
     } : state.derby;
-    $("derbyType").textContent = /^Standard Derby$/i.test(d.type) ? "Normal Derby" : d.type; $("dashboardDerbyType").textContent = /^Standard Derby$/i.test(d.type) ? "Normal Derby" : d.type;
-    renderDashboardDerbyFocus(d, next);
+    const d = configFor(next);
+    const dashboardEvent = currentActiveDerbyEvent() || next;
+    const dashboardConfig = configFor(dashboardEvent);
+    $("derbyType").textContent = /^Standard Derby$/i.test(d.type) ? "Normal Derby" : d.type;
+    $("dashboardDerbyType").textContent = /^Standard Derby$/i.test(dashboardConfig.type) ? "Normal Derby" : dashboardConfig.type;
+    renderDashboardDerbyFocus(dashboardConfig, dashboardEvent);
     renderTaskHubContext();
     const phase = derbyDashboardPhase(next);
     const startText = $("nextDerbyStart"); if (startText) startText.textContent = phase === "active" ? "Pågår nå" : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00");
@@ -3170,7 +3158,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.73").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.74").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

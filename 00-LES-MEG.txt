@@ -1,0 +1,11 @@
+WGANG Portal v0.18.0.74
+
+Last opp de fem øvrige filene i denne mappen til GitHub:
+app.js
+backend.js
+index.html
+main.css
+service-worker.js
+
+SQL-migreringen er allerede kjørt i Supabase.
+
