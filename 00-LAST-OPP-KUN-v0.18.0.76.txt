@@ -1,0 +1,12 @@
+WGANG Portal v0.18.0.76 – LAST OPP KUN DISSE FILENE
+=====================================================
+
+1. app.js
+2. backend.js
+3. index.html
+4. main.css
+5. service-worker.js
+
+SQL er allerede kjørt i Supabase og skal ikke kjøres manuelt på nytt.
+Når filene er lastet opp, vent på Cloudflare, lukk portalen helt og åpne den igjen.
+Kontroller at sidepanelet viser Portal v0.18.0.76.

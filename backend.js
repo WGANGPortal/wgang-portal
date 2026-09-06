@@ -1,4 +1,4 @@
-/* v0.18.0.75 – tydelig skille mellom pågående og neste derby */
+/* v0.18.0.76 – historiske derbyresultater fra Hay Day-sluttlisten */
 (function () {
   "use strict";
 
@@ -821,13 +821,13 @@
         if (correcting) {
           const previousIds = localState.derbyHistory.results
             .filter(item => String(item.archive_id) === String(archive.id))
-            .map(item => String(item.user_id || ""))
+            .map(item => item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name_snapshot || "").trim().toLocaleLowerCase("nb")}`)
             .sort();
           const submittedIds = payload.results
-            .map(item => String(item.user_id || ""))
+            .map(item => item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name || "").trim().toLocaleLowerCase("nb")}`)
             .sort();
           const participantBasisChanged = previousIds.length !== submittedIds.length
-            || previousIds.some((id, index) => !id || id !== submittedIds[index]);
+            || previousIds.some((id, index) => id !== submittedIds[index]);
           if (participantBasisChanged) {
             throw new Error("Deltakerlisten har endret seg etter registreringen. Historikken er låst og er ikke endret.");
           }
@@ -835,8 +835,8 @@
         const archiveId = archive?.id || Date.now();
         archive = Object.assign({}, archive || {}, {
           id:archiveId,event_id:event.id,derby_name:event.name,derby_type:event.name,
-          league:payload.league,placement:payload.placement,neighborhood_points:payload.neighborhoodPoints,
-          participant_count:payload.results.length,trashed_tasks:payload.trashedTasks || 0,
+          league:payload.league||null,placement:payload.placement??null,neighborhood_points:payload.neighborhoodPoints??payload.results.reduce((sum,row)=>sum+Number(row.points_earned||0),0),
+          participant_count:payload.results.length,trashed_tasks:payload.trashedTasks??null,
           started_at:event.start_at,ended_at:event.end_at,notes:payload.notes || null,
           created_at:archive?.created_at || new Date().toISOString(),updated_at:new Date().toISOString()
         });
@@ -844,14 +844,14 @@
         localState.derbyHistory.archives.unshift(archive);
         localState.derbyHistory.results = localState.derbyHistory.results.filter(item => String(item.archive_id) !== String(archiveId));
         payload.results.forEach((item,index) => {
-          const included = Number(event.task_total || 0), extra = Number(item.extra_tasks_used || 0), used = included + extra;
-          const pointsPerTask = Number(event.max_points || 0), points = Number(item.points_earned || 0), possible = included * pointsPerTask;
+          const included = Number(item.included_tasks || event.daily_task_limit || event.task_total || 0), extra = Number(item.extra_tasks_used || 0), used = included + extra;
+          const pointsPerTask = Number(item.points_per_task || event.max_points || 0), points = Number(item.points_earned || 0), possible = included * pointsPerTask;
           const extraStars = pointsPerTask > 0
             ? Math.min(extra,Math.max(0,Math.floor((points - possible) / pointsPerTask)))
             : 0;
           localState.derbyHistory.results.push({
             id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,
-            display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || "WGANG-medlem",
+            display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || String(item.display_name||"").trim() || "Tidligere spiller",
             included_tasks:included,extra_tasks:extra,tasks_used:used,tasks_completed:Number(item.tasks_completed || 0),
             points_per_task:pointsPerTask,points_earned:points,possible_points:possible,
             result_percent:possible ? Math.min(100, Math.round(points * 10000 / possible) / 100) : 0,
@@ -868,12 +868,12 @@
         localSave(localState);
         return archiveId;
       }
-      const { data, error } = await client.rpc("wgang_save_derby_result_v60", {
+      const { data, error } = await client.rpc("wgang_save_derby_result_v76", {
         p_event_id:Number(payload.eventId),
-        p_league:String(payload.league || "").trim(),
-        p_placement:Number(payload.placement),
-        p_neighborhood_points:Number(payload.neighborhoodPoints),
-        p_trashed_tasks:Number(payload.trashedTasks || 0),
+        p_league:String(payload.league || "").trim() || null,
+        p_placement:payload.placement===null?null:Number(payload.placement),
+        p_neighborhood_points:payload.neighborhoodPoints===null?null:Number(payload.neighborhoodPoints),
+        p_trashed_tasks:payload.trashedTasks===null?null:Number(payload.trashedTasks),
         p_notes:String(payload.notes || "").trim() || null,
         p_results:payload.results,
         p_correction_reason:String(payload.correctionReason || "").trim() || null

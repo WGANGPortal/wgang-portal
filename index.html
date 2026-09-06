@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.75">
+  <link rel="stylesheet" href="main.css?v=0.18.0.76">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -118,7 +118,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.75</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.76</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -357,12 +357,12 @@
   <dialog id="derbyResultDialog" class="derby-result-dialog">
     <form id="derbyResultForm" class="dialog-card derby-result-dialog-card">
       <div class="card-header"><div><p class="card-kicker">DERBYHISTORIKK</p><h2 id="resultDialogTitle">Registrer sluttresultat</h2></div><button type="button" class="icon-button" data-close-dialog="derbyResultDialog" aria-label="Lukk">×</button></div>
-      <p class="helper-text">Velg det avsluttede derbyet og registrer opplysningene nøyaktig slik de vises i sluttbildet. Oppgaver brukt er tallet i kolonnen «Oppgaver»; poengene avgjør prosent og ⭐.</p>
+      <p class="helper-text">Velg det avsluttede derbyet og registrer sluttlisten nøyaktig slik den vises i Hay Day. Påmeldingen brukes bare som forslag; sluttbildet er fasiten. Poengene avgjør prosent og ⭐.</p>
       <label>Avsluttet derby<select id="resultEventSelect" required></select></label>
-      <div class="form-grid"><label>Liga<input id="resultLeague" maxlength="80" placeholder="f.eks. Champions League" required></label><label>Plassering<input id="resultPlacement" type="number" min="1" max="100" required></label></div>
-      <div class="form-grid"><label>Lagets totalpoeng<input id="resultNeighborhoodPoints" type="number" min="0" required></label><label>Tapte / slettede oppgaver totalt<input id="resultTrashedTasks" type="number" min="0" value="0" required></label></div>
+      <div class="form-grid"><label>Liga <small>valgfritt for eldre resultat</small><input id="resultLeague" maxlength="80" placeholder="f.eks. Champions League"></label><label>Plassering <small>valgfritt</small><input id="resultPlacement" type="number" min="1" max="100"></label></div>
+      <div class="form-grid"><label>Lagets totalpoeng <small>fylles automatisk fra deltakerne</small><input id="resultNeighborhoodPoints" type="number" min="0"></label><label>Kastede oppgaver <small>valgfritt hvis tallet ikke vises</small><input id="resultTrashedTasks" type="number" min="0"></label></div>
       <label>Merknad <small>valgfritt</small><textarea id="resultNotes" rows="2" maxlength="2000" placeholder="Relevant forklaring til sluttresultatet"></textarea></label>
-      <div class="result-member-section"><div class="result-member-section-heading"><div><p class="card-kicker">RESULTAT PER MEDLEM</p><h3>Bekreftede deltakere</h3></div><span>Sum: <strong id="resultMemberPointSum">–</strong></span></div><div id="resultMemberRows" class="result-member-rows"></div><p id="resultPointDifference" class="result-point-difference"></p></div>
+      <div class="result-member-section"><div class="result-member-section-heading"><div><p class="card-kicker">RESULTAT PER DELTAKER</p><h3>Faktisk sluttliste</h3><small>Du kan legge til eller fjerne deltakere før førstegangsregistreringen.</small></div><div class="result-member-tools"><span>Sum: <strong id="resultMemberPointSum">–</strong></span><button type="button" class="button button-ghost button-compact" id="addDerbyResultMember">Legg til deltaker</button></div></div><div id="resultMemberRows" class="result-member-rows"></div><p id="resultPointDifference" class="result-point-difference"></p></div>
       <label id="resultCorrectionWrap" class="result-correction-wrap hidden">Begrunnelse for korreksjon <small>obligatorisk og lagres i endringsloggen</small><textarea id="resultCorrectionReason" rows="3" minlength="5" maxlength="500"></textarea></label>
       <div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="derbyResultDialog">Avbryt</button><button type="submit" class="button button-primary" id="saveDerbyResult">Lagre hele resultatet</button></div>
       <p class="form-message" id="derbyResultStatus"></p>
@@ -538,6 +538,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.75"></script><script src="app.js?v=0.18.0.75"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.76"></script><script src="app.js?v=0.18.0.76"></script>
 </body>
 </html>
