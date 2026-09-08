@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.76-historical-derby-results";
+const CACHE_NAME = "wgang-v0.18.0.77-bunny-task-cards-hare-alert";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.76",
-  "/app.js?v=0.18.0.76", "/backend.js?v=0.18.0.76", "/config.js?v=0.18.0.60",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.77",
+  "/app.js?v=0.18.0.77", "/backend.js?v=0.18.0.77", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -71,13 +71,20 @@ const APP_SHELL = [
   "/task-sukkerror.png",
   "/task-rustikk-bukett.png",
   "/task-dame.png",
-  "/task-danser.png",
+  "/task-danser.webp",
   "/task-ris.png",
   "/task-popkorn-med-smor.png",
   "/task-genser.png",
   "/task-bygjester-kafe.png",
   "/task-bjornebaer-muffins.png",
-  "/task-olivenolje.png"
+  "/task-olivenolje.png",
+  "/task-varm-sjokolade.webp",
+  "/task-honningpopkorn.webp",
+  "/task-tomatjus.webp",
+  "/task-egg-og-bacon.webp",
+  "/task-gronn-smoothie.webp",
+  "/task-bakt-potet.webp",
+  "/task-ingefaer.webp"
 ];
 self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); self.clients.claim(); });

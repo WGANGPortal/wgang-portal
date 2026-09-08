@@ -1,4 +1,4 @@
-/* v0.18.0.76 – historiske derbyresultater fra Hay Day-sluttlisten */
+/* v0.18.0.77 – standardiserte Bunny-kort og varsel ved harepust */
 (function () {
   "use strict";
 
