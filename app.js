@@ -1,4 +1,4 @@
-/* v0.18.0.80 – separate sider for kunngjøringer og diskusjoner */
+/* v0.18.0.81 – siste aktivitet i portalen for WGANG-ledelsen */
 (function () {
   "use strict";
 
@@ -91,6 +91,7 @@
     "Godkjente medlemmer":"Approved members","Ingen svar ennå":"No responses yet",
     "Neste derby er ikke publisert ennå.":"The next Derby has not been published yet.",
     "Ingen kunngjøringer ennå.":"No announcements yet.","Ingen innlegg ennå.":"No posts yet.",
+    "Sist aktiv i portalen":"Last active in the portal","Ikke registrert ennå":"Not recorded yet",
     "Lederprat":"Leadership Chat","Lukket chat for Ass. leder, Senior, Admin og Eier.":"Private chat for Assistant Leaders, Seniors, Admins and the Owner.",
     "Skriv en melding":"Write a message","Send melding":"Send message","Ingen meldinger ennå.":"No messages yet.",
     "Slett melding":"Delete message","Rediger melding":"Edit message",
@@ -351,6 +352,20 @@
     if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return "–";
     const date=new Date(`${value}T12:00:00`);
     return new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{day:"numeric",month:"short",year:"numeric"}).format(date);
+  }
+  function formatLastActive(value) {
+    if(!value)return currentLanguage==="en"?"Not recorded yet":"Ikke registrert ennå";
+    const date=new Date(value);
+    if(Number.isNaN(date.getTime()))return currentLanguage==="en"?"Not recorded yet":"Ikke registrert ennå";
+    const locale=currentLanguage==="en"?"en-GB":"nb-NO";
+    const now=new Date();
+    const dateKey=d=>new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+    const time=new Intl.DateTimeFormat(locale,{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"}).format(date);
+    if(now-date<15*60*1000)return currentLanguage==="en"?"Now":"Nå";
+    if(dateKey(date)===dateKey(now))return currentLanguage==="en"?`Today at ${time}`:`I dag kl. ${time}`;
+    const yesterday=new Date(now.getTime()-24*60*60*1000);
+    if(dateKey(date)===dateKey(yesterday))return currentLanguage==="en"?`Yesterday at ${time}`:`I går kl. ${time}`;
+    return new Intl.DateTimeFormat(locale,{timeZone:"Europe/Oslo",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(date);
   }
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
@@ -1214,7 +1229,8 @@
         const prefs = topPreferences(a);
         const absenceBadge=a.temporarilyInactive?`<span class="member-status status-inactive">Midlertidig inaktiv</span>`:"";
         const absenceDates=isLeadership()&&a.absencePeriod?`<div class="member-absence-dates"><span>Inaktiv periode · kun ledelsen</span><strong>${formatAbsenceDate(a.absencePeriod.starts_on)}–${formatAbsenceDate(a.absencePeriod.ends_on)}</strong></div>`:"";
-        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack"><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span>${absenceBadge}</div></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
+        const lastActive=isLeadership()?`<div><span>Sist aktiv i portalen</span><strong>${esc(formatLastActive(a.lastActiveAt))}</strong></div>`:"";
+        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack"><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span>${absenceBadge}</div></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${lastActive}${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
     $$('[data-profile-id]').forEach(card => {
       card.onclick = () => openMemberProfile(card.dataset.profileId);
@@ -3312,7 +3328,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.80").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.81").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

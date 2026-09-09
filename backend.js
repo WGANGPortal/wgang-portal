@@ -1,4 +1,4 @@
-/* v0.18.0.80 – separate sider for kunngjøringer og diskusjoner */
+/* v0.18.0.81 – siste aktivitet i portalen for WGANG-ledelsen */
 (function () {
   "use strict";
 
@@ -286,9 +286,10 @@
       ownAccount.email = session.user.email || "";
       return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
+    const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -309,9 +310,11 @@
       client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
       client.rpc("wgang_get_member_absence_statuses"),
-      client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at")
+      client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at"),
+      client.rpc("wgang_touch_my_portal_activity"),
+      loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -330,6 +333,7 @@
     const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
     const absenceStatusByUser = new Map((absenceStatusesRes.data || []).map(row => [String(row.user_id), !!row.is_inactive]));
     const absencePeriodByUser = new Map((absencePeriodsRes.data || []).map(row => [String(row.user_id), row]));
+    const lastActiveByUser = new Map((memberActivityRes.data || []).map(row => [String(row.user_id), row.last_active_at || null]));
     const accounts = (profilesRes.data || []).map(row => {
       const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
       const activeAccount = current
@@ -342,6 +346,7 @@
       account.derbyCompletedAt = completion?.completed_at || null;
       account.temporarilyInactive = absenceStatusByUser.get(String(row.id)) || false;
       account.absencePeriod = absencePeriodByUser.get(String(row.id)) || null;
+      account.lastActiveAt = lastActiveByUser.get(String(row.id)) || null;
       return account;
     });
     const ownAccount = accounts.find(account => String(account.id) === String(session.user.id));
