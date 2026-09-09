@@ -631,3 +631,16 @@ body:not(.admin-mode) .admin-only {
 [data-push-status][data-state="blocked"]:before{background:#bd4e4e;box-shadow:0 0 0 4px rgba(189,78,78,.12)}
 .push-notification-controls button:disabled,.push-quick-actions button:disabled{cursor:not-allowed;opacity:.52}
 @media(max-width:720px){.push-quick-panel{grid-template-columns:1fr}.push-quick-actions{justify-content:flex-start}.push-quick-actions .button{width:100%}}
+/* v0.18.0.78 – fraværsstatus */
+.member-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.status-inactive{background:#ece8f7;color:#61518a}
+.member-absence-dates{grid-column:1/-1}
+.absence-settings{padding:18px;border:1px solid var(--border);border-radius:18px;background:#fffaf5}
+.absence-settings h4{margin:2px 0 8px;font-size:1.05rem}
+.absence-settings form{margin-top:16px}
+.absence-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.absence-date-grid label{display:grid;gap:6px;font-weight:750}
+.absence-date-grid input{width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;font:inherit}
+.absence-derby-note{padding:12px;border-radius:12px;background:var(--cream);color:var(--muted);font-size:.8rem;line-height:1.5}
+.absence-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+@media(max-width:640px){.absence-date-grid{grid-template-columns:1fr}.member-status-stack{max-width:145px}}

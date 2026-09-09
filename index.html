@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.77">
+  <link rel="stylesheet" href="main.css?v=0.18.0.78">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -118,7 +118,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.77</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.78</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -213,7 +213,7 @@
           <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 80 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
-        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se hvem som deltar og hvordan laget ligger an.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
+        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se hvem som deltar og hvordan laget ligger an.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
         <section class="page" data-page="preferences">
           <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVER</p><h1 id="taskHubTitle">Oppgaver</h1><p id="taskHubIntro">Oppgaveverktøyet tilpasses derbyet som pågår.</p></div></div>
           <div id="standardTaskHub"><article class="portal-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div></div><div class="preference-list" id="preferenceList"></div><p class="helper-text">Marker hvilke oppgaver som passer deg. Lederne bruker oversikten til å vurdere hva som bør beholdes eller slettes fra tavla.</p></article></div>
@@ -419,7 +419,7 @@
         
       </div>
       <div id="profileHubNotifications" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Varsler</h3><div id="profileNotificationList"></div></div>
-      <div id="profileHubSettings" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Innstillinger</h3><div id="profileHubSettingsMount"></div></div>
+      <div id="profileHubSettings" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Innstillinger</h3><section class="absence-settings" id="absenceSettings"><p class="card-kicker">INAKTIV PERIODE</p><h4>Meld fra om midlertidig fravær</h4><p class="helper-text">Statusen «Midlertidig inaktiv» vises til alle medlemmer i perioden. Start- og sluttdato vises bare for deg og WGANG-ledelsen.</p><form id="absencePeriodForm"><div class="absence-date-grid"><label>Fra dato<input id="absenceStartDate" type="date" required></label><label>Til og med<input id="absenceEndDate" type="date" required></label></div><p class="absence-derby-note">Framtidige derbyer i perioden settes på pause hvis svarfristen fortsatt er åpen. Pågående eller låste derbyer endres aldri.</p><div class="absence-actions"><button type="submit" class="button button-secondary">Lagre periode</button><button type="button" class="text-button hidden" id="clearAbsencePeriod">Fjern periode</button></div><p class="form-message" id="absenceSettingsStatus" aria-live="polite">Ingen inaktiv periode er registrert.</p></form></section><div class="profile-divider"></div><div id="profileHubSettingsMount"></div></div>
       <div id="profileHubAccount" class="profile-hub-section hidden"><button type="button" class="profile-hub-back">← Tilbake</button><h3>Min konto</h3><div class="account-summary"><p><strong>Hay Day-navn</strong><br><span id="accountGameName">–</span></p>
 <p><strong>E-post</strong><br><span id="accountEmail">–</span></p>
 <p><strong>Rolle</strong><br><span id="accountRole">–</span></p>
@@ -540,6 +540,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.77"></script><script src="app.js?v=0.18.0.77"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.78"></script><script src="app.js?v=0.18.0.78"></script>
 </body>
 </html>

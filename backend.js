@@ -1,4 +1,4 @@
-/* v0.18.0.77 – standardiserte Bunny-kort og varsel ved harepust */
+/* v0.18.0.78 – sikre fraværsperioder med privat datovisning */
 (function () {
   "use strict";
 
@@ -20,6 +20,7 @@
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
     derbyManagement: { templates: [], events: [], participations: [], next: null, current: null, upcoming: null },
     derbyHistory: { archives: [], results: [], changeLog: [] },
+    absence: { statuses: [], periods: [] },
     legalAcceptance: null,
     currentUserId: null
   };
@@ -277,17 +278,17 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -306,9 +307,11 @@
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
       client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
-      client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200)
+      client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
+      client.rpc("wgang_get_member_absence_statuses"),
+      client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at")
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -325,6 +328,8 @@
     const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
     const completionForView = completionRowsForEvent(completionRes.data,current);
     const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
+    const absenceStatusByUser = new Map((absenceStatusesRes.data || []).map(row => [String(row.user_id), !!row.is_inactive]));
+    const absencePeriodByUser = new Map((absencePeriodsRes.data || []).map(row => [String(row.user_id), row]));
     const accounts = (profilesRes.data || []).map(row => {
       const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
       const activeAccount = current
@@ -335,6 +340,8 @@
       account.activeDerbyEventId = current?.id || null;
       account.derbyCompleted = !!completion;
       account.derbyCompletedAt = completion?.completed_at || null;
+      account.temporarilyInactive = absenceStatusByUser.get(String(row.id)) || false;
+      account.absencePeriod = absencePeriodByUser.get(String(row.id)) || null;
       return account;
     });
     const ownAccount = accounts.find(account => String(account.id) === String(session.user.id));
@@ -376,6 +383,7 @@
         results:memberResultsRes.data || [],
         changeLog:resultChangeLogRes.data || []
       },
+      absence:{statuses:absenceStatusesRes.data || [],periods:absencePeriodsRes.data || []},
       legalAcceptance,
       notifications:{
         preferences: notificationPrefsRes.data || null,
@@ -567,6 +575,28 @@
         },{onConflict:"user_id"});
         if (error) throw error;
       }
+    },
+    async saveAbsencePeriod(startsOn, endsOn) {
+      if (!configured) {
+        const account=localState.accounts.find(x=>x.id===localState.currentUserId);
+        if(account) account.absencePeriod={user_id:account.id,starts_on:startsOn,ends_on:endsOn,updated_at:new Date().toISOString()};
+        localSave(localState);
+        return account?.absencePeriod || null;
+      }
+      const { data, error }=await client.rpc("wgang_set_my_absence_period",{p_starts_on:startsOn,p_ends_on:endsOn});
+      if(error)throw error;
+      return Array.isArray(data)?data[0]||null:data;
+    },
+    async clearAbsencePeriod() {
+      if (!configured) {
+        const account=localState.accounts.find(x=>x.id===localState.currentUserId);
+        if(account) account.absencePeriod=null;
+        localSave(localState);
+        return true;
+      }
+      const { data, error }=await client.rpc("wgang_clear_my_absence_period");
+      if(error)throw error;
+      return !!data;
     },
     async setDerbyCompleted(userId, completed) {
       if (!configured) {

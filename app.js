@@ -1,4 +1,4 @@
-/* v0.18.0.77 – standardiserte Bunny-kort og varsel ved harepust */
+/* v0.18.0.78 – sikre fraværsperioder med privat datovisning */
 (function () {
   "use strict";
 
@@ -194,7 +194,7 @@
     });
   }
 
-  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let state = { accounts:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
   let activePortalRoute = "";
   let chatFocusToken = 0;
@@ -227,6 +227,7 @@
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
+  function isLeadership(user=current()) { return !!user && ["owner","admin","assistant_leader","senior"].includes(user.role); }
 
   const PERMISSION_DEFINITIONS = [
     {group:"Medlemmer",key:"members.view",label:"Se administrativ medlemsoversikt",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
@@ -345,6 +346,11 @@
   function approved() { return state.accounts.filter(a => a.approved); }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
+  function formatAbsenceDate(value) {
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return "–";
+    const date=new Date(`${value}T12:00:00`);
+    return new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{day:"numeric",month:"short",year:"numeric"}).format(date);
+  }
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
   function setBusy(value) { busy = value; document.body.classList.toggle("is-busy", value); }
@@ -870,6 +876,25 @@
     set("emailNotificationsEnabled","email_enabled");
   }
 
+  function renderAbsenceSettings() {
+    const user=current(), start=$("absenceStartDate"), end=$("absenceEndDate"), status=$("absenceSettingsStatus"), clear=$("clearAbsencePeriod");
+    if(!user||!start||!end||!status||!clear)return;
+    const period=user.absencePeriod;
+    if(period){
+      start.value=period.starts_on||"";
+      end.value=period.ends_on||"";
+      const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Oslo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+      const phase=today<period.starts_on?"Planlagt":today>period.ends_on?"Avsluttet":"Midlertidig inaktiv";
+      status.textContent=`${phase}: ${formatAbsenceDate(period.starts_on)}–${formatAbsenceDate(period.ends_on)}. Datoene vises bare for deg og ledelsen.`;
+      clear.classList.remove("hidden");
+    }else{
+      start.value="";
+      end.value="";
+      status.textContent="Ingen inaktiv periode er registrert.";
+      clear.classList.add("hidden");
+    }
+  }
+
   function renderSession() {
     const user = current();
     if (!user) return;
@@ -910,6 +935,7 @@
     renderDerbyManagement();
     renderNotifications();
     renderNotificationSettings();
+    renderAbsenceSettings();
     loadBunny();
     translateUi(portal);
     queueVisibleTranslations();
@@ -1181,10 +1207,12 @@
     const q = $("memberSearch").value.trim().toLowerCase();
     const filter = $("memberFilter").value;
     grid.innerHTML = approved()
-      .filter(a => a.name.toLowerCase().includes(q) && (filter === "all" || a.choice === filter))
+      .filter(a => a.name.toLowerCase().includes(q) && (filter === "all" || (filter === "inactive" ? a.temporarilyInactive : a.choice === filter)))
       .map(a => {
         const prefs = topPreferences(a);
-        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div></div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
+        const absenceBadge=a.temporarilyInactive?`<span class="member-status status-inactive">Midlertidig inaktiv</span>`:"";
+        const absenceDates=isLeadership()&&a.absencePeriod?`<div class="member-absence-dates"><span>Inaktiv periode · kun ledelsen</span><strong>${formatAbsenceDate(a.absencePeriod.starts_on)}–${formatAbsenceDate(a.absencePeriod.ends_on)}</strong></div>`:"";
+        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack"><span class="member-status status-${a.choice === "unsure" ? "waiting" : a.choice}">${choiceLabel(a.choice)}</span>${absenceBadge}</div></div><div class="member-info"><div><span>Neste derby</span><strong>${choiceLabel(a.choice)}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
     $$('[data-profile-id]').forEach(card => {
       card.onclick = () => openMemberProfile(card.dataset.profileId);
@@ -1210,6 +1238,8 @@
     const spokenLanguages=[...(account.languages||[])].map(x=>x==="no"?"Norsk":x==="en"?"Engelsk":x);
     if(account.otherLanguages) spokenLanguages.push(...String(account.otherLanguages).split(",").map(x=>x.trim()).filter(Boolean));
     if(spokenLanguages.length) details.push(["Språk", [...new Set(spokenLanguages)].join(", ")]);
+    if(account.temporarilyInactive) details.push(["Status", "Midlertidig inaktiv"]);
+    if(isLeadership() && account.absencePeriod) details.push(["Inaktiv periode · kun ledelsen", `${formatAbsenceDate(account.absencePeriod.starts_on)}–${formatAbsenceDate(account.absencePeriod.ends_on)}`]);
     $("memberProfileDetails").innerHTML = details.length ? details.map(([label,value])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("") : `<p class="helper-text">Frivillig å fylle ut.</p>`;
     $("profileEditSection").classList.toggle("hidden", !editable);
     if (editable) {
@@ -2862,6 +2892,7 @@
       const settings=$("notificationSettings"), mount=$("profileHubSettingsMount");
       if(settings&&mount&&!mount.contains(settings)) mount.appendChild(settings);
       renderNotificationSettings();
+      renderAbsenceSettings();
     }
     if(section==="account"){
       const u=current();
@@ -2942,6 +2973,32 @@
 
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
+
+  if($("absencePeriodForm")) $("absencePeriodForm").onsubmit=async event=>{
+    event.preventDefault();
+    if(busy||!current())return;
+    const startsOn=$("absenceStartDate").value, endsOn=$("absenceEndDate").value;
+    if(!startsOn||!endsOn){$("absenceSettingsStatus").textContent="Fyll ut både startdato og sluttdato.";return;}
+    if(endsOn<startsOn){$("absenceSettingsStatus").textContent="Sluttdato kan ikke være før startdato.";return;}
+    setBusy(true);
+    try{
+      const saved=await backend.saveAbsencePeriod(startsOn,endsOn);
+      await refreshState();
+      const count=Number(saved?.paused_derbies||0);
+      $("absenceSettingsStatus").textContent=count?`Perioden er lagret. ${count} framtidig derby er satt på pause.`:"Perioden er lagret. Pågående og låste derbyer er ikke endret.";
+    }catch(error){$("absenceSettingsStatus").textContent=humanError(error,"Kunne ikke lagre perioden.");}
+    setBusy(false);
+  };
+  if($("clearAbsencePeriod")) $("clearAbsencePeriod").onclick=async()=>{
+    if(busy||!current())return;
+    setBusy(true);
+    try{
+      await backend.clearAbsencePeriod();
+      await refreshState();
+      $("absenceSettingsStatus").textContent="Perioden er fjernet. Du blir ikke automatisk meldt på et derby.";
+    }catch(error){$("absenceSettingsStatus").textContent=humanError(error,"Kunne ikke fjerne perioden.");}
+    setBusy(false);
+  };
 
   document.querySelectorAll("[data-participation-rule]").forEach(input => {
     input.onchange = updateParticipationConfirmationState;
@@ -3230,7 +3287,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.77").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.78").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
