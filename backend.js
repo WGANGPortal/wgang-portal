@@ -1,4 +1,4 @@
-/* v0.18.0.79 – nyeste viktige kunngjøring som Nabolagsnytt */
+/* v0.18.0.80 – separate sider for kunngjøringer og diskusjoner */
 (function () {
   "use strict";
 

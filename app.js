@@ -1,4 +1,4 @@
-/* v0.18.0.79 – nyeste viktige kunngjøring som Nabolagsnytt */
+/* v0.18.0.80 – separate sider for kunngjøringer og diskusjoner */
 (function () {
   "use strict";
 
@@ -31,7 +31,7 @@
   const LANG_KEY = "wgangLanguage";
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const I18N_EN = {
-    "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
+    "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
     "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Medlemmer og roller":"Members and roles",
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
@@ -59,7 +59,7 @@
     "Hvor lenge har du spilt Hay Day?":"How long have you played Hay Day?","Hva liker du best i spillet?":"What do you like most about the game?",
     "Frivillig å fylle ut.":"Optional to fill in.","Ingen profilinformasjon er delt ennå.":"No profile information has been shared yet.",
     "Norsk":"Norwegian","Engelsk":"English",
-    "SAMTALER":"CONVERSATIONS","Viktige beskjeder og derbyprat samlet på ett sted.":"Important messages and Derby talk in one place.",
+    "SAMTALER":"CONVERSATIONS","VIKTIG INFORMASJON":"IMPORTANT INFORMATION","Viktige beskjeder fra ledelsen samlet på ett sted.":"Important messages from the leadership team gathered in one place.","Siste kunngjøringer":"Latest announcements","Strategi, spørsmål og koordinering rundt ukens derby.":"Strategy, questions and coordination for this week's Derby.",
     "Prat om ukens derby":"Talk about this week's Derby","Del strategi, spørsmål og koordinering med nabolaget.":"Share strategy, questions and coordination with the Neighborhood.",
     "Nytt innlegg":"New post","Ny kunngjøring":"New announcement","Publiser kunngjøring":"Publish announcement","Publiser innlegg":"Publish post",
     "KUNNSKAP":"KNOWLEDGE","WGANG Tips & triks":"WGANG Tips & Tricks","Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.":"What we already know works well – gathered in one place and developed together with the Neighborhood.",
@@ -312,6 +312,7 @@
     derby:"derby.view",
     history:"derby.view",
     preferences:"derby.plan",
+    announcements:"chat.community.view",
     discussions:"chat.community.view",
     leadership:"chat.leadership.view"
   };
@@ -535,6 +536,7 @@
   }
 
   function openNotificationTarget(route,entryId,commentId){
+    if(route==="discussions" && entryId && findContentItem(entryId)?.kind==="announcement")route="announcements";
     pendingNotificationFocus={entryId:entryId||null,commentId:commentId||null};
     navigate(route||"dashboard");
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -562,7 +564,7 @@
   function buildNotifications() {
     const prefs=notificationPrefs(), read=notificationRead(), items=[];
     const anns=state.content?.announcements||[], posts=state.content?.derbyPosts||[], msgs=state.leadershipMessages||[];
-    const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({group:"common",category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"discussions",time:latestAnn.publishedAt||latestAnn.createdAt});
+    const latestAnn=anns[0]; if(prefs.in_app_announcements && latestAnn && newerThan(latestAnn.publishedAt||latestAnn.createdAt,read.announcements_seen_at)) items.push({group:"common",category:"announcements",title:"Ny kunngjøring",text:latestAnn.title||"Ny beskjed fra WGANG",route:"announcements",time:latestAnn.publishedAt||latestAnn.createdAt});
     // Varsle på nyeste uleste aktivitet fra andre – innlegg ELLER kommentar.
     // Dette påvirker kun varslingsdeteksjon; eksisterende engangs-fokus/scrollfix beholdes urørt.
     const activityTime=x=>x?.createdAt||x?.created_at||x?.publishedAt||x?.published_at;
@@ -1985,7 +1987,7 @@
         ? (currentLanguage==="en"?"Read more":"Les mer")
         : (currentLanguage==="en"?"Open announcement":"Åpne kunngjøringen");
       latestNews.innerHTML=`<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${esc(view.title)}</h2></div></div><p class="neighborhood-news-preview">${esc(preview.text)}</p><div class="neighborhood-news-footer"><p class="helper-text">${currentLanguage==="en"?"Published":"Publisert"} ${esc(formatDate(publishedAt))}</p><button type="button" class="text-button neighborhood-news-more" aria-label="${esc(`${actionLabel}: ${view.title}`)}">${actionLabel}</button></div>`;
-      latestNews.querySelector(".neighborhood-news-more").onclick=()=>openNotificationTarget("discussions",latestAnnouncement.id,null);
+      latestNews.querySelector(".neighborhood-news-more").onclick=()=>openNotificationTarget("announcements",latestAnnouncement.id,null);
     }else if(latestNews){
       latestNews.innerHTML=`<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${currentLanguage==="en"?"No announcements yet":"Ingen kunngjøringer ennå"}</h2></div></div><p class="neighborhood-news-preview">${currentLanguage==="en"?"The newest important announcement will appear here when it is published.":"Den nyeste viktige kunngjøringen vises her når den er publisert."}</p>`;
     }
@@ -3310,7 +3312,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.79").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.80").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
