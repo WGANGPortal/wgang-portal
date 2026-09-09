@@ -1,4 +1,4 @@
-/* v0.18.0.78 – sikre fraværsperioder med privat datovisning */
+/* v0.18.0.79 – nyeste viktige kunngjøring som Nabolagsnytt */
 (function () {
   "use strict";
 
@@ -1935,6 +1935,22 @@
     return [content.announcements,content.derbyPosts,content.tips,content.pendingTips].flatMap(x=>x||[]).find(item=>String(item.id)===String(id))||null;
   }
 
+  function newestPublishedAnnouncement(items=[]) {
+    return [...items].sort((a,b) => {
+      const time = item => new Date(item?.publishedAt || item?.createdAt || 0).getTime() || 0;
+      return time(b) - time(a);
+    })[0] || null;
+  }
+
+  function announcementPreview(body, maxLength=260) {
+    const text=String(body||"").replace(/\s+/g," ").trim();
+    if(text.length<=maxLength)return {text,truncated:false};
+    const slice=text.slice(0,maxLength+1);
+    const wordBreak=slice.lastIndexOf(" ");
+    const end=wordBreak>=Math.floor(maxLength*.7)?wordBreak:maxLength;
+    return {text:`${slice.slice(0,end).trim()}…`,truncated:true};
+  }
+
   function postCard(item, options={}) {
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
@@ -1959,12 +1975,19 @@
     }
     if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
 
-    const latestNews = document.querySelector('[data-page="dashboard"] .dashboard-grid article:nth-child(2)');
-    if (latestNews && content.announcements.length) {
-      const a = content.announcements[0];
-      latestNews.classList.remove("development-card");
-      latestNews.innerHTML = `<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${esc(a.title)}</h2></div></div><p>${esc(a.body)}</p><p class="helper-text">Publisert ${esc(formatDate(a.publishedAt))}</p><button class="text-button" data-route="discussions">Se alle kunngjøringer</button>`;
-      latestNews.querySelector('[data-route="discussions"]').onclick = () => navigate("discussions");
+    const latestNews=$("neighborhoodNewsCard");
+    const latestAnnouncement=newestPublishedAnnouncement(content.announcements||[]);
+    if(latestNews && latestAnnouncement){
+      const view=translatedContent("community",latestAnnouncement);
+      const preview=announcementPreview(view.body);
+      const publishedAt=latestAnnouncement.publishedAt||latestAnnouncement.createdAt;
+      const actionLabel=preview.truncated
+        ? (currentLanguage==="en"?"Read more":"Les mer")
+        : (currentLanguage==="en"?"Open announcement":"Åpne kunngjøringen");
+      latestNews.innerHTML=`<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${esc(view.title)}</h2></div></div><p class="neighborhood-news-preview">${esc(preview.text)}</p><div class="neighborhood-news-footer"><p class="helper-text">${currentLanguage==="en"?"Published":"Publisert"} ${esc(formatDate(publishedAt))}</p><button type="button" class="text-button neighborhood-news-more" aria-label="${esc(`${actionLabel}: ${view.title}`)}">${actionLabel}</button></div>`;
+      latestNews.querySelector(".neighborhood-news-more").onclick=()=>openNotificationTarget("discussions",latestAnnouncement.id,null);
+    }else if(latestNews){
+      latestNews.innerHTML=`<div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>${currentLanguage==="en"?"No announcements yet":"Ingen kunngjøringer ennå"}</h2></div></div><p class="neighborhood-news-preview">${currentLanguage==="en"?"The newest important announcement will appear here when it is published.":"Den nyeste viktige kunngjøringen vises her når den er publisert."}</p>`;
     }
 
     if (hasPermission("content.pending.view")) {
@@ -3287,7 +3310,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.78").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.79").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

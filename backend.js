@@ -1,4 +1,4 @@
-/* v0.18.0.78 – sikre fraværsperioder med privat datovisning */
+/* v0.18.0.79 – nyeste viktige kunngjøring som Nabolagsnytt */
 (function () {
   "use strict";
 
