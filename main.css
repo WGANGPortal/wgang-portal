@@ -651,3 +651,22 @@ body:not(.admin-mode) .admin-only {
 .absence-derby-note{padding:12px;border-radius:12px;background:var(--cream);color:var(--muted);font-size:.8rem;line-height:1.5}
 .absence-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 @media(max-width:640px){.absence-date-grid{grid-template-columns:1fr}.member-status-stack{max-width:145px}}
+
+/* v0.18.0.82 – mobilmeny og flere spillprofiler */
+.sidebar{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.game-identity-list{display:grid;gap:12px;margin:18px 0}
+.game-identity-card{padding:15px;border:1px solid var(--border);border-radius:16px;background:var(--cream)}
+.game-identity-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+.game-identity-card>header>div{display:grid}.game-identity-card>header small{color:var(--muted);font-size:.72rem}
+.game-primary-badge{padding:5px 8px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.66rem;font-weight:850}
+.game-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}
+.game-choice-status{margin:10px 2px 0;color:var(--muted);font-size:.76rem}
+.game-identity-add{display:grid;grid-template-columns:minmax(170px,1fr) minmax(130px,.8fr) minmax(130px,.8fr) auto;align-items:end;gap:10px;margin-top:18px;padding:15px;border:1px dashed rgba(169,47,96,.34);border-radius:16px;background:#fff}
+.game-identity-add>div{align-self:center}.game-identity-add>div>*{display:block}.game-identity-add>div small{margin-top:3px;color:var(--muted);font-size:.7rem;line-height:1.35}
+.game-identity-add label{display:grid;gap:5px;font-size:.72rem;font-weight:800}.game-identity-add input{min-width:0;width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:11px;background:#fff}
+.game-identity-add .form-message{grid-column:1/-1;margin:0}.game-identity-add.identity-limit-reached{opacity:.72}.game-identity-add.identity-limit-reached>div small:after{content:" Grensen er nådd.";font-weight:800}
+.member-game-identities{display:grid;gap:7px;margin:16px 0 4px}
+.member-game-identities>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:12px;background:var(--cream)}
+.member-game-identities>div>span:first-child{display:grid}.member-game-identities small{color:var(--muted);font-size:.66rem}
+@media(max-width:900px){html.portal-menu-open,body.portal-menu-open{overflow:hidden;overscroll-behavior:none}body.portal-menu-open{position:fixed;left:0;right:0;width:100%}.sidebar{bottom:auto;height:calc(100vh - 76px);height:calc(100dvh - 76px);max-height:none;padding-bottom:max(24px,env(safe-area-inset-bottom))}}
+@media(max-width:620px){.sidebar{height:calc(100vh - 66px);height:calc(100dvh - 66px);padding-bottom:calc(92px + env(safe-area-inset-bottom))}.game-choice-grid,.game-identity-add{grid-template-columns:1fr}.game-identity-add .button{width:100%}.member-game-identities>div{align-items:flex-start}}

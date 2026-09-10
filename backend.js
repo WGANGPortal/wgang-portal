@@ -1,4 +1,4 @@
-/* v0.18.0.81 – siste aktivitet i portalen for WGANG-ledelsen */
+/* v0.18.0.82 – flere spillprofiler under én portalinnlogging */
 (function () {
   "use strict";
 
@@ -18,7 +18,8 @@
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
-    derbyManagement: { templates: [], events: [], participations: [], next: null, current: null, upcoming: null },
+    derbyManagement: { templates: [], events: [], participations: [], gameParticipations: [], next: null, current: null, upcoming: null },
+    gameIdentities: [],
     derbyHistory: { archives: [], results: [], changeLog: [] },
     absence: { statuses: [], periods: [] },
     legalAcceptance: null,
@@ -278,18 +279,18 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -298,6 +299,8 @@
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
+      client.from("member_game_identities").select("id,user_id,game_name,player_tag,is_primary,created_at,updated_at").order("is_primary",{ascending:false}).order("game_name"),
+      client.from("derby_game_participation").select("event_id,game_identity_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
@@ -314,7 +317,7 @@
       client.rpc("wgang_touch_my_portal_activity"),
       loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -382,7 +385,13 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next,current,upcoming},
+      accounts, derby, content, leadershipMessages,
+      gameIdentities:(gameIdentitiesRes.data || []).map(row=>({
+        id:row.id,userId:row.user_id,name:String(row.game_name || "").toUpperCase(),
+        playerTag:row.player_tag || "",isPrimary:!!row.is_primary,
+        createdAt:row.created_at || null,updatedAt:row.updated_at || null
+      })),
+      derbyManagement:{templates,events,participations:eventParticipationRes.data || [],gameParticipations:gameParticipationRes.data || [],next,current,upcoming},
       derbyHistory:{
         archives:archivesRes.data || [],
         results:memberResultsRes.data || [],
@@ -580,6 +589,47 @@
         },{onConflict:"user_id"});
         if (error) throw error;
       }
+    },
+    async addGameIdentity(gameName, playerTag="") {
+      const name=String(gameName || "").trim();
+      const tag=String(playerTag || "").trim();
+      if(!name || name.length>40)throw new Error("Spillnavnet må inneholde 1–40 tegn.");
+      if(tag && (tag.length<2 || tag.length>30))throw new Error("Spill-ID må inneholde 2–30 tegn.");
+      if(!configured){
+        const userId=localState.currentUserId;
+        localState.gameIdentities=localState.gameIdentities || [];
+        if(localState.gameIdentities.filter(item=>String(item.userId)===String(userId)).length>=5)throw new Error("Du kan registrere maksimalt fem spillprofiler.");
+        const row={id:Date.now(),userId,name:name.toUpperCase(),playerTag:tag.toUpperCase(),isPrimary:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        localState.gameIdentities.push(row);localSave(localState);return row;
+      }
+      const {data,error}=await client.rpc("wgang_add_game_identity",{p_game_name:name,p_player_tag:tag || null});
+      if(error)throw error;
+      return data;
+    },
+    async setGameParticipation(gameIdentityId, choice, acknowledgement={}) {
+      if(!new Set(["joined","pause","unsure"]).has(choice))throw new Error("Ugyldig derby-svar.");
+      if(choice==="joined"&&acknowledgement.accepted!==true)throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
+      const eventResult=await (configured
+        ? client.from("derby_events").select("id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(20)
+        : Promise.resolve({data:localState.derbyManagement?.events || [],error:null}));
+      if(eventResult.error)throw eventResult.error;
+      const nextEvent=selectDerbyContexts(eventResult.data || []).next;
+      if(!nextEvent)throw new Error("Det finnes ikke et publisert derby som er åpent for påmelding.");
+      const lockAt=derbyParticipationLockAt(nextEvent)?.getTime();
+      if(Number.isFinite(lockAt)&&Date.now()>=lockAt)throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
+      if(!configured){
+        localState.derbyManagement.gameParticipations=localState.derbyManagement.gameParticipations || [];
+        const rows=localState.derbyManagement.gameParticipations;
+        const existing=rows.find(item=>String(item.event_id)===String(nextEvent.id)&&String(item.game_identity_id)===String(gameIdentityId));
+        const value={event_id:nextEvent.id,game_identity_id:gameIdentityId,user_id:localState.currentUserId,choice,updated_at:new Date().toISOString()};
+        if(existing)Object.assign(existing,value);else rows.push(value);
+        localSave(localState);return value;
+      }
+      const {data,error}=await client.rpc("wgang_set_game_participation",{
+        p_event_id:Number(nextEvent.id),p_game_identity_id:Number(gameIdentityId),p_choice:choice,p_rules_accepted:choice==="joined"&&acknowledgement.accepted===true
+      });
+      if(error)throw error;
+      return data;
     },
     async saveAbsencePeriod(startsOn, endsOn) {
       if (!configured) {
