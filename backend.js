@@ -1,4 +1,4 @@
-/* v0.18.0.82 – flere spillprofiler under én portalinnlogging */
+/* v0.18.0.83 – bilde eller film på Tips og triks */
 (function () {
   "use strict";
 
@@ -31,9 +31,10 @@
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
   const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
-  const WIKI_VIDEO_BUCKET = "wiki-videos";
+  const WIKI_MEDIA_BUCKET = "wiki-videos";
+  const WIKI_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
   const WIKI_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
-  const WIKI_VIDEO_TYPES = new Set(["video/mp4","video/quicktime","video/webm"]);
+  const WIKI_MEDIA_TYPES = new Set(["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","video/webm"]);
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -47,18 +48,30 @@
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
-  function wikiVideoExtension(file) {
+  function wikiMediaExtension(file) {
     const fromName=String(file?.name||"").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
-    if(["mp4","mov","webm"].includes(fromName))return fromName;
-    return {"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+    const normalized=fromName==="jpeg"?"jpg":fromName;
+    if(["jpg","png","webp","mp4","mov","webm"].includes(normalized))return normalized;
+    return {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
   }
 
-  function validateWikiVideo(file) {
-    if(!(file instanceof File))throw new Error("Velg en filmfil før opplasting.");
-    if(!WIKI_VIDEO_TYPES.has(file.type))throw new Error("Filmen må være MP4, MOV eller WebM. MP4 anbefales.");
-    if(!file.size || file.size > WIKI_VIDEO_MAX_BYTES)throw new Error("Filmen kan være maksimalt 50 MB.");
-    const extension=wikiVideoExtension(file);
-    if(!extension)throw new Error("Filtypen støttes ikke. Bruk MP4, MOV eller WebM.");
+  async function validateWikiMedia(file) {
+    if(!(file instanceof File))throw new Error("Velg et bilde eller en film før opplasting.");
+    if(!WIKI_MEDIA_TYPES.has(file.type))throw new Error("Vedlegget må være JPG, PNG, WebP, MP4, MOV eller WebM.");
+    const image=file.type.startsWith("image/");
+    const limit=image?WIKI_IMAGE_MAX_BYTES:WIKI_VIDEO_MAX_BYTES;
+    if(!file.size || file.size > limit)throw new Error(image?"Bildet kan være maksimalt 10 MB.":"Filmen kan være maksimalt 50 MB.");
+    const extension=wikiMediaExtension(file);
+    const allowedByType={"image/jpeg":["jpg"],"image/png":["png"],"image/webp":["webp"],"video/mp4":["mp4"],"video/quicktime":["mov"],"video/webm":["webm"]};
+    if(!extension || !allowedByType[file.type]?.includes(extension))throw new Error("Filendelsen stemmer ikke med filtypen.");
+    const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
+    const ascii=(start,end)=>String.fromCharCode(...bytes.slice(start,end));
+    const signatureOk=(file.type==="image/jpeg"&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)
+      ||(file.type==="image/png"&&[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((value,index)=>bytes[index]===value))
+      ||(file.type==="image/webp"&&ascii(0,4)==="RIFF"&&ascii(8,12)==="WEBP")
+      ||(["video/mp4","video/quicktime"].includes(file.type)&&ascii(4,8)==="ftyp")
+      ||(file.type==="video/webm"&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3);
+    if(!signatureOk)throw new Error("Filinnholdet stemmer ikke med valgt bilde- eller filmtype.");
     return extension;
   }
 
@@ -966,10 +979,10 @@
       if (error) throw error;
       return data;
     },
-    async uploadWikiVideo(file, onProgress) {
-      if (!configured) throw new Error("Filmopplasting krever tilkobling til medlemsportalen.");
+    async uploadWikiMedia(file, onProgress) {
+      if (!configured) throw new Error("Opplasting av bilde eller film krever tilkobling til medlemsportalen.");
       if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
-      const extension=validateWikiVideo(file);
+      const extension=await validateWikiMedia(file);
       const { data:{session}, error:sessionError }=await client.auth.getSession();
       if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
       const objectId=globalThis.crypto?.randomUUID?.();
@@ -987,7 +1000,7 @@
           uploadDataDuringCreation:true,
           removeFingerprintOnSuccess:true,
           metadata:{
-            bucketName:WIKI_VIDEO_BUCKET,
+            bucketName:WIKI_MEDIA_BUCKET,
             objectName:path,
             contentType:file.type,
             cacheControl:"3600"
@@ -1005,18 +1018,18 @@
         path,
         mimeType:file.type,
         sizeBytes:file.size,
-        originalName:String(file.name||`film.${extension}`).slice(0,255)
+        originalName:String(file.name||`vedlegg.${extension}`).slice(0,255)
       };
     },
-    async getWikiVideoUrl(path) {
+    async getWikiMediaUrl(path) {
       if(!configured || !path)return null;
-      const {data,error}=await client.storage.from(WIKI_VIDEO_BUCKET).createSignedUrl(path,3600);
+      const {data,error}=await client.storage.from(WIKI_MEDIA_BUCKET).createSignedUrl(path,3600);
       if(error)throw error;
       return data?.signedUrl || null;
     },
-    async deleteWikiVideo(path) {
+    async deleteWikiMedia(path) {
       if(!configured || !path)return;
-      const {error}=await client.storage.from(WIKI_VIDEO_BUCKET).remove([path]);
+      const {error}=await client.storage.from(WIKI_MEDIA_BUCKET).remove([path]);
       if(error)throw error;
     },
     async createContent(kind, title, body, category="", publishNow=false, video=null) {
@@ -1034,7 +1047,7 @@
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
       if(video?.path){
-        if(kind!=="tip")throw new Error("Film kan bare knyttes til Tips og triks.");
+        if(kind!=="tip")throw new Error("Bilde eller film kan bare knyttes til Tips og triks.");
         payload.video_path=video.path;
         payload.video_mime_type=video.mimeType;
         payload.video_size_bytes=Number(video.sizeBytes);

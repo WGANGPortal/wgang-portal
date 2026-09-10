@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.82">
+  <link rel="stylesheet" href="main.css?v=0.18.0.83">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -119,7 +119,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.82</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.83</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -410,7 +410,7 @@
 
   <dialog id="announcementDialog"><form id="announcementForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Ny kunngjøring</h2></div><button type="button" class="icon-button" data-close-dialog="announcementDialog">×</button></div><label>Tittel<input id="announcementTitle" maxlength="100" required></label><label>Beskjed<textarea id="announcementBody" rows="6" maxlength="2000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser kunngjøring</button><p class="form-message" id="announcementMessage"></p></form></dialog>
   <dialog id="derbyPostDialog"><form id="derbyPostForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Nytt innlegg</h2></div><button type="button" class="icon-button" data-close-dialog="derbyPostDialog">×</button></div><label>Tittel<input id="derbyPostTitle" maxlength="100" required></label><label>Innlegg<textarea id="derbyPostBody" rows="6" maxlength="3000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser innlegg</button><p class="form-message" id="derbyPostMessage"></p></form></dialog>
-  <dialog id="tipDialog"><form id="tipForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">TIPS &amp; TRIKS</p><h2 id="tipDialogTitle">Send inn tips</h2></div><button type="button" class="icon-button" data-close-dialog="tipDialog">×</button></div><label>Kategori<select id="tipCategory"><option>Standard Derby</option><option>Oppgavetavla</option><option>Høsting</option><option>Produksjon</option><option>Byen</option><option>Fiske</option><option>Båt</option><option>Annet</option></select></label><label>Tittel<input id="tipTitle" maxlength="100" required></label><label>Tips<textarea id="tipBody" rows="6" maxlength="3000" required></textarea></label><label>Film <small>valgfritt</small><input id="tipVideo" type="file" accept="video/mp4,video/quicktime,video/webm"></label><p class="helper-text wiki-video-guidance">Én film, maks 50 MB. MP4 anbefales for best avspilling på både iPhone og Android. Korte filmer på 2–3 minutter fungerer best.</p><div id="tipVideoPreview" class="wiki-video-preview hidden"><video id="tipVideoPreviewPlayer" controls playsinline preload="metadata"></video><div><span id="tipVideoFileName"></span><button type="button" class="text-button" id="removeTipVideo">Fjern film</button></div></div><div id="tipVideoProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="tipVideoProgressBar"></span></div><small id="tipVideoProgressText">Laster opp film … 0 %</small></div><button class="button button-primary button-full" type="submit" id="tipSubmitButton">Send til godkjenning</button><p class="form-message" id="tipMessage"></p></form></dialog>
+  <dialog id="tipDialog"><form id="tipForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">TIPS &amp; TRIKS</p><h2 id="tipDialogTitle">Send inn tips</h2></div><button type="button" class="icon-button" data-close-dialog="tipDialog">×</button></div><label>Kategori<select id="tipCategory"><option>Standard Derby</option><option>Oppgavetavla</option><option>Høsting</option><option>Produksjon</option><option>Byen</option><option>Fiske</option><option>Båt</option><option>Annet</option></select></label><label>Tittel<input id="tipTitle" maxlength="100" required></label><label>Tips<textarea id="tipBody" rows="6" maxlength="3000" required></textarea></label><label>Bilde eller film <small>valgfritt</small><input id="tipVideo" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"></label><p class="helper-text wiki-video-guidance">Ett valgfritt vedlegg: bilde (JPG, PNG eller WebP, maks 10 MB) eller film (MP4, MOV eller WebM, maks 50 MB). MP4 anbefales for best avspilling på iPhone og Android.</p><div id="tipVideoPreview" class="wiki-video-preview hidden"><img id="tipImagePreview" class="hidden" alt="Forhåndsvisning av valgt bilde"><video id="tipVideoPreviewPlayer" class="hidden" controls playsinline preload="metadata"></video><div><span id="tipVideoFileName"></span><button type="button" class="text-button" id="removeTipVideo">Fjern vedlegg</button></div></div><div id="tipVideoProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="tipVideoProgressBar"></span></div><small id="tipVideoProgressText">Laster opp vedlegg … 0 %</small></div><button class="button button-primary button-full" type="submit" id="tipSubmitButton">Send til godkjenning</button><p class="form-message" id="tipMessage"></p></form></dialog>
 
 
   <dialog id="memberProfileDialog" class="profile-dialog">
@@ -547,6 +547,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.82"></script><script src="app.js?v=0.18.0.82"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.83"></script><script src="app.js?v=0.18.0.83"></script>
 </body>
 </html>

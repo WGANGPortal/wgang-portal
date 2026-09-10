@@ -1,0 +1,13 @@
+WGANG Portal v0.18.0.83 – bilde eller film på Tips og triks
+
+Last opp disse fem filene til GitHub-roten:
+- app.js
+- backend.js
+- index.html
+- main.css
+- service-worker.js
+
+Databasemigreringen er allerede kjørt og kontrollert. Ikke kjør SQL manuelt.
+
+Commit-melding:
+v0.18.0.83 – Image or video attachments for tips

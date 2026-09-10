@@ -1,4 +1,4 @@
-/* v0.18.0.82 – flere spillprofiler under én portalinnlogging */
+/* v0.18.0.83 – bilde eller film på Tips og triks */
 (function () {
   "use strict";
 
@@ -130,6 +130,8 @@
     "OPPGAVETAVLA":"TASK BOARD","Preferanser gjør tavla bedre":"Preferences improve the task board","Marker hvilke oppgavetyper du liker, kan ta, helst unngår eller ikke kan ta. Jo bedre admin kjenner laget, desto enklere er det å vite hvilke 320-oppgaver som bør få stå.":"Mark which task types you like, can do, prefer to avoid or cannot do. The better admins know the team, the easier it is to decide which 320-point tasks should stay on the board.",
     "SAMARBEID":"TEAMWORK","Gi beskjed når du klargjør en oppgave":"Let the team know when you are preparing for a task","Skal du forberede deg på en bestemt derbyoppgave, gi beskjed i chatten i spillet. Da unngår vi at flere klargjør seg til den samme oppgaven, og at oppgaven blir tatt eller forsvinner før du er klar. God kommunikasjon og samarbeid gjør at vi fordeler oppgavene bedre og utnytter potensialet vårt best mulig.":"When preparing for a specific Derby task, let the team know in the in-game chat. This prevents several players from preparing for the same task and reduces the risk of the task being taken or disappearing before you are ready. Good communication and teamwork help us distribute tasks better and make the most of our potential.",
     "FRA NABOLAGET":"FROM THE NEIGHBORHOOD","Send inn egne tips. Admin gjennomgår dem før de publiseres.":"Submit your own tips. An admin reviews them before they are published.",
+    "Bilde eller film":"Image or video","valgfritt":"optional","Fjern vedlegg":"Remove attachment",
+    "Ett valgfritt vedlegg: bilde (JPG, PNG eller WebP, maks 10 MB) eller film (MP4, MOV eller WebM, maks 50 MB). MP4 anbefales for best avspilling på iPhone og Android.":"One optional attachment: an image (JPG, PNG or WebP, max 10 MB) or a video (MP4, MOV or WebM, max 50 MB). MP4 is recommended for the best playback on iPhone and Android.",
     "WGANG SOM APP":"WGANG AS AN APP","Legg portalen på hjemskjermen":"Add the portal to your Home Screen","Da åpnes WGANG Portal mer som en egen app på telefonen din.":"WGANG Portal will then open more like a dedicated app on your phone.",
     "Installer WGANG Portal":"Install WGANG Portal","iPhone / iPad":"iPhone / iPad","Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til.":"Open the portal in Safari → tap the Share button → choose “Add to Home Screen” → tap Add.",
     "Åpne portalen i Chrome. Velg «Installer app» eller «Legg til på startskjermen» når valget vises.":"Open the portal in Chrome. Choose “Install app” or “Add to Home screen” when the option appears.",
@@ -202,7 +204,7 @@
   const openSocialThreads = new Set();
   const chatReadTimers = new Map();
   const chatReadWrites = new Map();
-  const wikiVideoUrls = new Map();
+  const wikiMediaUrls = new Map();
 
   const landing = $("landing");
   const portal = $("portal");
@@ -241,7 +243,7 @@
   const tipDialog = $("tipDialog");
   const memberProfileDialog = $("memberProfileDialog");
   let adminTipMode = false;
-  let tipVideoPreviewUrl = null;
+  let tipMediaPreviewUrl = null;
   let openProfileUserId = null;
   let participationGameIdentityId = null;
 
@@ -1972,26 +1974,30 @@
     if(!size)return "";
     return size>=1024*1024?`${(size/(1024*1024)).toFixed(size>=10*1024*1024?0:1)} MB`:`${Math.ceil(size/1024)} kB`;
   }
-  function wikiVideoBlock(item) {
+  function wikiMediaBlock(item) {
     if(!item?.videoPath)return "";
     const details=[item.videoOriginalName,formatFileSize(item.videoSizeBytes)].filter(Boolean).map(esc).join(" · ");
-    return `<div class="wiki-video"><video controls playsinline preload="metadata" data-wiki-video-path="${esc(item.videoPath)}" aria-label="Film til ${esc(item.title||"tipset")}"></video>${details?`<small>${details}</small>`:""}<p class="wiki-video-error hidden">Filmen kunne ikke åpnes akkurat nå.</p></div>`;
+    const image=String(item.videoMimeType||"").startsWith("image/");
+    const media=image
+      ? `<img data-wiki-media-path="${esc(item.videoPath)}" alt="Bilde til ${esc(item.title||"tipset")}" loading="lazy">`
+      : `<video controls playsinline preload="metadata" data-wiki-media-path="${esc(item.videoPath)}" aria-label="Film til ${esc(item.title||"tipset")}"></video>`;
+    return `<div class="wiki-media">${media}${details?`<small>${details}</small>`:""}<p class="wiki-media-error hidden">Vedlegget kunne ikke åpnes akkurat nå.</p></div>`;
   }
-  async function hydrateWikiVideos(root=document) {
-    const players=[...root.querySelectorAll("video[data-wiki-video-path]")];
-    await Promise.all(players.map(async player=>{
-      const path=player.dataset.wikiVideoPath;
+  async function hydrateWikiMedia(root=document) {
+    const elements=[...root.querySelectorAll("[data-wiki-media-path]")];
+    await Promise.all(elements.map(async element=>{
+      const path=element.dataset.wikiMediaPath;
       try{
-        if(!wikiVideoUrls.has(path)){
-          const request=backend.getWikiVideoUrl(path).catch(error=>{wikiVideoUrls.delete(path);throw error;});
-          wikiVideoUrls.set(path,request);
-          setTimeout(()=>{if(wikiVideoUrls.get(path)===request)wikiVideoUrls.delete(path);},55*60*1000);
+        if(!wikiMediaUrls.has(path)){
+          const request=backend.getWikiMediaUrl(path).catch(error=>{wikiMediaUrls.delete(path);throw error;});
+          wikiMediaUrls.set(path,request);
+          setTimeout(()=>{if(wikiMediaUrls.get(path)===request)wikiMediaUrls.delete(path);},55*60*1000);
         }
-        const url=await wikiVideoUrls.get(path);
-        if(url && player.isConnected && player.dataset.wikiVideoPath===path)player.src=url;
+        const url=await wikiMediaUrls.get(path);
+        if(url && element.isConnected && element.dataset.wikiMediaPath===path)element.src=url;
       }catch(error){
-        console.warn("Kunne ikke åpne Wiki-film",error);
-        player.closest(".wiki-video")?.querySelector(".wiki-video-error")?.classList.remove("hidden");
+        console.warn("Kunne ikke åpne Wiki-vedlegg",error);
+        element.closest(".wiki-media")?.querySelector(".wiki-media-error")?.classList.remove("hidden");
       }
     }));
   }
@@ -2021,7 +2027,7 @@
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
-    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiVideoBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   function renderContent() {
@@ -2057,7 +2063,7 @@
 
     if (hasPermission("content.pending.view")) {
       const pending = $("pendingTips");
-      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p>${wikiVideoBlock(t)}</div><div class="approval-actions">${hasPermission("content.approve")?`<button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button>`:""}${hasPermission("content.reject")?`<button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
+      if (pending) pending.innerHTML = content.pendingTips.length ? content.pendingTips.map(t => `<div class="approval-card"><div><strong>${esc(t.title)}</strong><span>${esc(t.category || "Tips")} · fra ${esc(t.authorName)}</span><p>${esc(t.body)}</p>${wikiMediaBlock(t)}</div><div class="approval-actions">${hasPermission("content.approve")?`<button class="button button-primary" data-tip-approve="${t.id}">Godkjenn</button>`:""}${hasPermission("content.reject")?`<button class="button button-secondary" data-tip-reject="${t.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen tips venter på gjennomgang.</p>`;
       $$('[data-tip-approve]').forEach(b => b.onclick = async () => {
         if(!hasPermission("content.approve")) return alert("Du har ikke rettighet til å godkjenne innhold.");
         if (busy) return; setBusy(true);
@@ -2070,7 +2076,7 @@
         try {
           const item=findContentItem(b.dataset.tipReject);
           await backend.moderateContent(b.dataset.tipReject,"rejected");
-          if(item?.videoPath)await backend.deleteWikiVideo(item.videoPath).catch(error=>console.warn("Kunne ikke rydde avvist Wiki-film",error));
+          if(item?.videoPath)await backend.deleteWikiMedia(item.videoPath).catch(error=>console.warn("Kunne ikke rydde avvist Wiki-vedlegg",error));
           await refreshState();
         } catch(e) { alert(humanError(e)); }
         setBusy(false);
@@ -2083,13 +2089,13 @@
       try {
         const item=findContentItem(b.dataset.deleteContent);
         await backend.deleteContent(b.dataset.deleteContent);
-        if(item?.videoPath)await backend.deleteWikiVideo(item.videoPath).catch(error=>console.warn("Kunne ikke rydde slettet Wiki-film",error));
+        if(item?.videoPath)await backend.deleteWikiMedia(item.videoPath).catch(error=>console.warn("Kunne ikke rydde slettet Wiki-vedlegg",error));
         await refreshState();
       } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
     bindSocialActions(document);
-    hydrateWikiVideos(document);
+    hydrateWikiMedia(document);
   }
 
   function renderLeadershipChat() {
@@ -3298,17 +3304,20 @@
     const safe=Math.max(0,Math.min(100,Number(percent)||0));
     $("tipVideoProgress")?.classList.remove("hidden");
     if($("tipVideoProgressBar"))$("tipVideoProgressBar").style.width=`${safe}%`;
-    setText("tipVideoProgressText",`Laster opp film … ${safe} %`);
+    const image=$("tipVideo")?.files?.[0]?.type?.startsWith("image/");
+    setText("tipVideoProgressText",`Laster opp ${image?"bilde":"film"} … ${safe} %`);
   }
   function resetTipVideoForm(clearInput=true) {
-    if(tipVideoPreviewUrl){URL.revokeObjectURL(tipVideoPreviewUrl);tipVideoPreviewUrl=null;}
+    if(tipMediaPreviewUrl){URL.revokeObjectURL(tipMediaPreviewUrl);tipMediaPreviewUrl=null;}
     if(clearInput && $("tipVideo"))$("tipVideo").value="";
     $("tipVideoPreview")?.classList.add("hidden");
     $("tipVideoProgress")?.classList.add("hidden");
     if($("tipVideoProgressBar"))$("tipVideoProgressBar").style.width="0%";
-    setText("tipVideoProgressText","Laster opp film … 0 %");
+    setText("tipVideoProgressText","Laster opp vedlegg … 0 %");
     const player=$("tipVideoPreviewPlayer");
-    if(player){player.removeAttribute("src");player.load();}
+    if(player){player.classList.add("hidden");player.removeAttribute("src");player.load();}
+    const image=$("tipImagePreview");
+    if(image){image.classList.add("hidden");image.removeAttribute("src");}
     setText("tipVideoFileName","");
   }
   function prepareTipDialog(publishNow) {
@@ -3329,17 +3338,25 @@
     resetTipVideoForm(false);
     const file=$("tipVideo").files?.[0];
     if(!file)return;
-    if(!["video/mp4","video/quicktime","video/webm"].includes(file.type)){
-      $("tipMessage").textContent="Filmen må være MP4, MOV eller WebM. MP4 anbefales.";
+    const image=file.type.startsWith("image/");
+    if(!["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","video/webm"].includes(file.type)){
+      $("tipMessage").textContent="Vedlegget må være JPG, PNG, WebP, MP4, MOV eller WebM.";
       return resetTipVideoForm();
     }
-    if(!file.size || file.size>50*1024*1024){
-      $("tipMessage").textContent="Filmen kan være maksimalt 50 MB.";
+    const limit=image?10*1024*1024:50*1024*1024;
+    if(!file.size || file.size>limit){
+      $("tipMessage").textContent=image?"Bildet kan være maksimalt 10 MB.":"Filmen kan være maksimalt 50 MB.";
       return resetTipVideoForm();
     }
     $("tipMessage").textContent="";
-    tipVideoPreviewUrl=URL.createObjectURL(file);
-    $("tipVideoPreviewPlayer").src=tipVideoPreviewUrl;
+    tipMediaPreviewUrl=URL.createObjectURL(file);
+    if(image){
+      $("tipImagePreview").src=tipMediaPreviewUrl;
+      $("tipImagePreview").classList.remove("hidden");
+    }else{
+      $("tipVideoPreviewPlayer").src=tipMediaPreviewUrl;
+      $("tipVideoPreviewPlayer").classList.remove("hidden");
+    }
     setText("tipVideoFileName",`${file.name} · ${formatFileSize(file.size)}`);
     $("tipVideoPreview")?.classList.remove("hidden");
   };
@@ -3364,16 +3381,16 @@
   if ($("tipForm")) $("tipForm").onsubmit = async e => {
     e.preventDefault(); if (busy || (adminTipMode && !hasPermission("content.approve"))) return;
     setBusy(true);
-    let uploadedVideo=null;
+    let uploadedMedia=null;
     try {
       const publishNow=adminTipMode && hasPermission("content.approve");
       const file=$("tipVideo").files?.[0]||null;
-      if(file)uploadedVideo=await backend.uploadWikiVideo(file,setTipUploadProgress);
-      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, publishNow, uploadedVideo);
+      if(file)uploadedMedia=await backend.uploadWikiMedia(file,setTipUploadProgress);
+      await backend.createContent("tip", $("tipTitle").value.trim(), $("tipBody").value.trim(), $("tipCategory").value, publishNow, uploadedMedia);
       closeDialog(tipDialog); e.target.reset(); resetTipVideoForm(); await refreshState();
       if (!adminTipMode) alert("Takk! Tipset er sendt til admin for gjennomgang.");
     } catch(err) {
-      if(uploadedVideo?.path)await backend.deleteWikiVideo(uploadedVideo.path).catch(error=>console.warn("Kunne ikke rydde ufullført Wiki-film",error));
+      if(uploadedMedia?.path)await backend.deleteWikiMedia(uploadedMedia.path).catch(error=>console.warn("Kunne ikke rydde ufullført Wiki-vedlegg",error));
       $("tipMessage").textContent=humanError(err);
       $("tipVideoProgress")?.classList.add("hidden");
     }
@@ -3410,7 +3427,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.82").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.83").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
