@@ -1,4 +1,4 @@
-/* v0.18.0.83 – bilde eller film på Tips og triks */
+/* v0.18.0.84 – sikker administratorkontroll av tipsvedlegg */
 (function () {
   "use strict";
 

@@ -1,0 +1,12 @@
+Last opp kun disse seks filene til GitHub-roten:
+
+- _headers
+- app.js
+- backend.js
+- index.html
+- main.css
+- service-worker.js
+
+Ikke kjør SQL.
+
+Commit: v0.18.0.84 – Require admin review of tip attachments
