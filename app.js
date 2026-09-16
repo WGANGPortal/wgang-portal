@@ -1,4 +1,4 @@
-/* v0.18.0.85 – eier/admin kan rette publiserte kunngjøringer */
+/* v0.18.0.86 – skjermbilder og @-varsler i Derbyprat og Lederprat */
 (function () {
   "use strict";
 
@@ -208,6 +208,9 @@
   const chatReadTimers = new Map();
   const chatReadWrites = new Map();
   const wikiMediaUrls = new Map();
+  const chatImageUrls = new Map();
+  const mentionSelections = new WeakMap();
+  const composePreviewUrls = new Map();
 
   const landing = $("landing");
   const portal = $("portal");
@@ -371,6 +374,59 @@
     document.body.classList.toggle("owner-mode",isOwner(user));
   }
   function approved() { return state.accounts.filter(a => a.approved); }
+
+  function mentionCandidates(channel="community") {
+    const permission=channel==="leadership"?"chat.leadership.view":"chat.community.view";
+    return approved().filter(user=>String(user.id)!==String(current()?.id)&&hasPermission(permission,user))
+      .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"nb"));
+  }
+  function regexEscape(value) { return String(value||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+  function mentionIdsFor(textarea) {
+    const selected=mentionSelections.get(textarea)||new Map();
+    const text=String(textarea?.value||"");
+    return [...selected.entries()].filter(([,name])=>new RegExp(`@${regexEscape(name)}(?=\\s|$|[.,!?;:])`,"iu").test(text)).map(([id])=>id).slice(0,10);
+  }
+  function bindMentionAutocomplete(textarea,list,channel="community") {
+    if(!textarea||!list||textarea.dataset.mentionBound)return;
+    mentionSelections.set(textarea,new Map());
+    const close=()=>{list.classList.add("hidden");list.innerHTML="";};
+    const update=()=>{
+      const cursor=textarea.selectionStart??textarea.value.length;
+      const before=textarea.value.slice(0,cursor);
+      const match=before.match(/@([^\s@]{0,40})$/u);
+      if(!match)return close();
+      const query=match[1].toLocaleLowerCase("nb");
+      const options=mentionCandidates(channel).filter(user=>!query||String(user.name||"").toLocaleLowerCase("nb").includes(query)).slice(0,8);
+      if(!options.length)return close();
+      list.innerHTML=options.map(user=>`<button type="button" class="mention-suggestion" role="option" data-mention-id="${esc(user.id)}"><span class="mention-suggestion-avatar">${esc(String(user.name||"?").charAt(0).toUpperCase())}</span><strong>${esc(user.name||"WGANG-medlem")}</strong></button>`).join("");
+      list.classList.remove("hidden");
+      list.querySelectorAll("[data-mention-id]").forEach(button=>button.onclick=()=>{
+        const user=options.find(item=>String(item.id)===String(button.dataset.mentionId));
+        if(!user)return;
+        const start=cursor-match[0].length;
+        const insertion=`@${user.name} `;
+        textarea.value=textarea.value.slice(0,start)+insertion+textarea.value.slice(cursor);
+        const next=start+insertion.length;
+        textarea.focus();textarea.setSelectionRange(next,next);
+        const selected=mentionSelections.get(textarea)||new Map();selected.set(String(user.id),String(user.name));mentionSelections.set(textarea,selected);
+        close();
+      });
+    };
+    textarea.addEventListener("input",update);
+    textarea.addEventListener("click",update);
+    textarea.addEventListener("blur",()=>setTimeout(close,150));
+    textarea.dataset.mentionBound="1";
+  }
+  function resetMentionField(textarea) { if(textarea)mentionSelections.set(textarea,new Map()); }
+  function chatText(text,mentionedIds=[]) {
+    let html=esc(String(text||"")).replace(/\n/g,"<br>");
+    const names=(mentionedIds||[]).map(id=>state.accounts.find(user=>String(user.id)===String(id))?.name).filter(Boolean).sort((a,b)=>b.length-a.length);
+    names.forEach(name=>{
+      const escapedName=regexEscape(esc(name));
+      html=html.replace(new RegExp(`@${escapedName}(?=\\s|$|[.,!?;:])`,"giu"),match=>`<span class="chat-mention">${match}</span>`);
+    });
+    return html;
+  }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role; }
   function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
   function gameIdentitiesFor(userId) {
@@ -634,6 +690,7 @@
     const activityTime=x=>x?.createdAt||x?.created_at||x?.publishedAt||x?.published_at;
     const activityUser=x=>x?.userId||x?.user_id||x?.authorId||x?.author_id;
     const activityText=x=>x?.text||x?.body||x?.comment||x?.title||"";
+    const mentionsCurrent=x=>(x?.mentionedUserIds||x?.mentioned_user_ids||[]).some(id=>String(id)===String(current()?.id));
     const commentsOf=(entry,targetType)=>(socialData().comments||[]).filter(comment=>
       comment.target_type===targetType && String(comment.target_id)===String(entry?.id)
     );
@@ -642,11 +699,11 @@
       const found=[];
       (entries||[]).forEach(entry=>{
         const et=activityTime(entry);
-        if(et && String(activityUser(entry)||"")!==String(current()?.id||"") && newerThan(et,seenAt))
+        if(et && String(activityUser(entry)||"")!==String(current()?.id||"") && !mentionsCurrent(entry) && newerThan(et,seenAt))
           found.push({kind:"post",time:et,text:activityText(entry),entryId:entry.id});
         commentsOf(entry,targetType).forEach(comment=>{
           const ct=activityTime(comment);
-          if(ct && String(activityUser(comment)||"")!==String(current()?.id||"") && newerThan(ct,seenAt))
+          if(ct && String(activityUser(comment)||"")!==String(current()?.id||"") && !mentionsCurrent(comment) && newerThan(ct,seenAt))
             found.push({kind:"comment",time:ct,text:activityText(comment),entryId:entry.id,commentId:comment.id});
         });
       });
@@ -686,10 +743,11 @@
           ? (socialData().comments||[]).filter(c=>String(c.target_type)===String(n.target_type)&&String(c.target_id)===String(n.target_id)&&String(c.user_id)===String(n.actor_id)).sort((x,y)=>Math.abs(new Date(x.created_at)-new Date(n.created_at))-Math.abs(new Date(y.created_at)-new Date(n.created_at)))[0]
           : likedComment;
         const commentLike=n.target_type==="comment";
+        const isMention=n.activity_type==="mention";
         items.push({
           group:"personal",category:"social_activity",activityId:n.id,
-          title:n.activity_type==="comment"?"Ny kommentar":commentLike?"Noen likte kommentaren din":"Ny likerklikk",
-          text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte innlegget ditt":commentLike?"likte kommentaren din":"likte innlegget ditt"}`,
+          title:isMention?"Du ble nevnt":n.activity_type==="comment"?"Ny kommentar":commentLike?"Noen likte kommentaren din":"Ny likerklikk",
+          text:isMention?`${actor?.name||"Et medlem"} nevnte deg i ${parentType==="leadership"?"Lederprat":"Derbyprat"}`:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte innlegget ditt":commentLike?"likte kommentaren din":"likte innlegget ditt"}`,
           route:parentType==="leadership"?"leadership":"discussions",time:n.created_at,
           focusEntryId:commentLike?likedComment?.target_id||null:n.target_id||null,
           focusCommentId:matchingComment?.id||null
@@ -1835,9 +1893,9 @@
       const canDelete=String(cm.user_id)===String(current()?.id) || hasPermission("chat.moderate");
       const commentLikes=targetLikes("comment",cm.id);
       const commentLiked=commentLikes.some(x=>String(x.user_id)===String(current()?.id));
-      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p><div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
+      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${chatText(tr?.body||cm.body,cm.mentioned_user_ids||cm.mentionedUserIds)}</p>${chatAttachmentBlock(cm)}<div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
     }).join("");
-    const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
+    const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><div class="social-comment-compose"><input type="text" maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment or type @…":"Skriv en kommentar eller bruk @…"}"><div class="mention-suggestions hidden" role="listbox"></div></div><label class="comment-image-label" title="Legg ved skjermbilde">📎 Bilde<input type="file" accept="image/jpeg,image/png,image/webp" data-comment-image></label><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button><span class="comment-image-name hidden"></span></form>`:"";
     return `<div class="social-bar"><button type="button" class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-channel="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like post":"Lik innlegg"}">👍🏼 <span>${likes.length}</span></button><button type="button" class="social-comment-toggle" data-comment-toggle="${threadKey}" aria-expanded="${threadOpen}">💬 <span>${comments.length}</span><span class="social-action-label">${currentLanguage==="en"?"Comments":"Kommentarer"}</span></button>${likerDetails(likes,currentLanguage==="en"?"post":"innlegget")}</div><div class="social-comments ${threadOpen?"":"hidden"}" data-comments-for="${threadKey}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
   }
   function bindSocialActions(root=document) {
@@ -1859,20 +1917,41 @@
       if(opening)openSocialThreads.add(key);else openSocialThreads.delete(key);
       if(opening)setTimeout(()=>comments.querySelector("input")?.focus(),80);
     });
-    root.querySelectorAll("[data-comment-form]").forEach(form=>form.onsubmit=async e=>{
-      e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector("input"); if(!input.value.trim()) return;
+    root.querySelectorAll("[data-comment-form]").forEach(form=>{
+      const [type]=form.dataset.commentForm.split(":");
+      const input=form.querySelector('.social-comment-compose input[type="text"]');
+      const suggestions=form.querySelector(".mention-suggestions");
+      const fileInput=form.querySelector("[data-comment-image]");
+      const fileName=form.querySelector(".comment-image-name");
+      bindMentionAutocomplete(input,suggestions,type);
+      if(fileInput)fileInput.onchange=()=>{
+        const file=fileInput.files?.[0]||null;const error=checkChatImageFile(file);
+        if(error){alert(error);fileInput.value="";fileName?.classList.add("hidden");return;}
+        if(fileName){fileName.textContent=file?`${file.name} · ${Math.max(1,Math.round(file.size/1024))} kB`:"";fileName.classList.toggle("hidden",!file);}
+      };
+      form.onsubmit=async e=>{
+      e.preventDefault(); const [,id]=form.dataset.commentForm.split(":"); const body=input.value.trim();const file=fileInput?.files?.[0]||null;if(!body&&!file)return;
       const canPost=socialPermission(type);
       if(!canPost)return;
       openSocialThreads.add(`${type}:${id}`);
       const submit=form.querySelector('button[type="submit"]');if(submit){submit.disabled=true;submit.setAttribute("aria-busy","true");}
-      try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); const latest=lastOf(targetComments(type,id));const target=latest?document.querySelector(`[data-comment-id="${latest.id}"]`):null;if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("chat-focus-target");setTimeout(()=>target.classList.remove("chat-focus-target"),1800);} } catch(err) { alert(humanError(err)); }
+      let uploadedImage=null;
+      try {
+        if(file)uploadedImage=await backend.uploadChatImage(file);
+        await backend.addComment(type,id,body||"Skjermbilde",uploadedImage,mentionIdsFor(input));input.value="";resetMentionField(input);
+        await refreshState();const latest=lastOf(targetComments(type,id));const target=latest?document.querySelector(`[data-comment-id="${latest.id}"]`):null;if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("chat-focus-target");setTimeout(()=>target.classList.remove("chat-focus-target"),1800);}
+      } catch(err) {
+        if(uploadedImage?.path)await backend.deleteChatImage(uploadedImage.path).catch(error=>console.warn("Kunne ikke rydde ufullført kommentar-bilde",error));
+        alert(humanError(err));
+      }
       finally { if(submit){submit.disabled=false;submit.removeAttribute("aria-busy");} }
+      };
     });
     root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
       const comment=socialData().comments.find(x=>String(x.id)===String(btn.dataset.deleteComment));
       if(String(comment?.user_id)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
       if(!confirm(currentLanguage==="en"?"Delete this comment?":"Slette denne kommentaren?")) return;
-      try { await backend.deleteComment(btn.dataset.deleteComment); await refreshState(); } catch(err) { alert(humanError(err)); }
+      try { if(comment?.attachment_path||comment?.attachmentPath)await backend.deleteChatImage(comment.attachment_path||comment.attachmentPath);await backend.deleteComment(btn.dataset.deleteComment); await refreshState(); } catch(err) { alert(humanError(err)); }
     });
   }
   async function ensureEnglishTranslation(type,item) {
@@ -2032,6 +2111,38 @@
       }
     }));
   }
+  function chatAttachmentBlock(item) {
+    const path=item?.attachmentPath||item?.attachment_path;
+    if(!path)return "";
+    const name=item?.attachmentOriginalName||item?.attachment_original_name||"Skjermbilde";
+    return `<figure class="chat-attachment" data-chat-attachment="${esc(path)}"><button type="button" data-chat-image-open="${esc(path)}" aria-label="Åpne ${esc(name)} i full størrelse"><span class="chat-image-loading">Laster skjermbildet …</span><img class="hidden" data-chat-image-path="${esc(path)}" alt="${esc(name)}"></button><span class="chat-image-error hidden">Bildet kunne ikke åpnes.</span></figure>`;
+  }
+  function openChatImageLightbox(url,alt="Skjermbilde") {
+    const box=document.createElement("div");box.className="chat-image-lightbox";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
+    box.innerHTML=`<button type="button" aria-label="Lukk">×</button><img src="${esc(url)}" alt="${esc(alt)}">`;
+    const close=()=>box.remove();box.onclick=e=>{if(e.target===box||e.target.closest("button"))close();};
+    document.addEventListener("keydown",function escape(event){if(event.key==="Escape"){close();document.removeEventListener("keydown",escape);}});
+    document.body.appendChild(box);box.querySelector("button")?.focus();
+  }
+  async function hydrateChatImages(root=document) {
+    const images=[...root.querySelectorAll("[data-chat-image-path]")];
+    await Promise.all(images.map(async image=>{
+      const path=image.dataset.chatImagePath;if(!path)return;
+      const block=image.closest("[data-chat-attachment]");
+      try{
+        if(!chatImageUrls.has(path)){
+          const request=backend.getChatImageUrl(path).catch(error=>{chatImageUrls.delete(path);throw error;});
+          chatImageUrls.set(path,request);setTimeout(()=>{if(chatImageUrls.get(path)===request)chatImageUrls.delete(path);},55*60*1000);
+        }
+        const url=await chatImageUrls.get(path);
+        if(!url||!image.isConnected)return;
+        image.onload=()=>{image.classList.remove("hidden");block?.querySelector(".chat-image-loading")?.classList.add("hidden");};
+        image.onerror=()=>{block?.querySelector(".chat-image-loading")?.classList.add("hidden");block?.querySelector(".chat-image-error")?.classList.remove("hidden");};
+        image.src=url;if(image.complete&&image.naturalWidth)image.onload();
+        block?.querySelector("[data-chat-image-open]")?.addEventListener("click",()=>openChatImageLightbox(url,image.alt));
+      }catch(error){console.warn("Kunne ikke åpne chat-bilde",error);block?.querySelector(".chat-image-loading")?.classList.add("hidden");block?.querySelector(".chat-image-error")?.classList.remove("hidden");}
+    }));
+  }
   function findContentItem(id) {
     const content=state.content||{};
     return [content.announcements,content.derbyPosts,content.tips,content.pendingTips].flatMap(x=>x||[]).find(item=>String(item.id)===String(id))||null;
@@ -2062,7 +2173,8 @@
     const actions = actionButtons ? `<div class="content-actions">${actionButtons}</div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
-    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
+    const bodyHtml=options.chatChannel?chatText(view.body,item.mentionedUserIds):esc(view.body).replace(/\n/g,"<br>");
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${bodyHtml}</p>${item.kind==="tip"?wikiMediaBlock(item):chatAttachmentBlock(item)}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   function renderContent() {
@@ -2144,6 +2256,7 @@
       if (busy) return; setBusy(true);
       try {
         const item=findContentItem(b.dataset.deleteContent);
+        if(item?.attachmentPath)await backend.deleteChatImage(item.attachmentPath);
         await backend.deleteContent(b.dataset.deleteContent);
         if(item?.videoPath)await backend.deleteWikiMedia(item.videoPath).catch(error=>console.warn("Kunne ikke rydde slettet Wiki-vedlegg",error));
         await refreshState();
@@ -2152,6 +2265,7 @@
     });
     bindSocialActions(document);
     hydrateWikiMedia(document);
+    hydrateChatImages(document);
   }
 
   function renderLeadershipChat() {
@@ -2172,7 +2286,7 @@
       const canDelete = own || hasPermission("chat.moderate");
       const view=translatedContent("leadership",m);
       const unreadMark=String(m.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="leadershipUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:"";
-      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
+      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${chatText(view.body,m.mentionedUserIds)}</p>${chatAttachmentBlock(m)}${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
     }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
     if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));list.appendChild(jump);}
     translateUi(list);
@@ -2181,10 +2295,11 @@
       if(String(message?.userId)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
       if (!confirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
       if (busy) return; setBusy(true);
-      try { await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
+      try { if(message?.attachmentPath)await backend.deleteChatImage(message.attachmentPath);await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
     });
     bindSocialActions(list);
+    hydrateChatImages(list);
   }
 
   function renderAdmin() {
@@ -3139,6 +3254,40 @@
     }
     setBusy(false);
   };
+  function checkChatImageFile(file) {
+    if(!file)return "";
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type))return "Bildet må være JPG, PNG eller WebP.";
+    if(!file.size||file.size>10*1024*1024)return "Bildet kan være maksimalt 10 MB.";
+    return "";
+  }
+  function resetComposeImage(inputId,previewId,imageId,fileNameId,progressId,progressBarId,clearInput=true) {
+    const old=composePreviewUrls.get(inputId);if(old){URL.revokeObjectURL(old);composePreviewUrls.delete(inputId);}
+    const input=$(inputId);if(clearInput&&input)input.value="";
+    $(previewId)?.classList.add("hidden");$(progressId)?.classList.add("hidden");
+    if($(progressBarId))$(progressBarId).style.width="0%";
+    if($(imageId))$(imageId).removeAttribute("src");setText(fileNameId,"");
+  }
+  function bindComposeImage(inputId,previewId,imageId,fileNameId,removeId,statusId,progressId,progressBarId) {
+    const input=$(inputId);if(!input)return;
+    input.onchange=()=>{
+      resetComposeImage(inputId,previewId,imageId,fileNameId,progressId,progressBarId,false);
+      const file=input.files?.[0];if(!file)return;
+      const error=checkChatImageFile(file);if(error){setText(statusId,error);return resetComposeImage(inputId,previewId,imageId,fileNameId,progressId,progressBarId);}
+      setText(statusId,"");const url=URL.createObjectURL(file);composePreviewUrls.set(inputId,url);
+      $(imageId).src=url;$(previewId).classList.remove("hidden");setText(fileNameId,`${file.name} · ${Math.max(1,Math.round(file.size/1024))} kB`);
+    };
+    if($(removeId))$(removeId).onclick=()=>resetComposeImage(inputId,previewId,imageId,fileNameId,progressId,progressBarId);
+  }
+  function composeUploadProgress(progressId,progressBarId,textId,percent) {
+    const safe=Math.max(0,Math.min(100,Number(percent)||0));$(progressId)?.classList.remove("hidden");
+    if($(progressBarId))$(progressBarId).style.width=`${safe}%`;setText(textId,`Laster opp skjermbilde … ${safe} %`);
+  }
+
+  bindMentionAutocomplete($("leadershipMessageInput"),$("leadershipMentionSuggestions"),"leadership");
+  bindMentionAutocomplete($("derbyPostBody"),$("derbyPostMentionSuggestions"),"community");
+  bindComposeImage("leadershipImage","leadershipImagePreview","leadershipImagePreviewImg","leadershipImageFileName","removeLeadershipImage","leadershipMessageStatus","leadershipImageProgress","leadershipImageProgressBar");
+  bindComposeImage("derbyPostImage","derbyPostImagePreview","derbyPostImagePreviewImg","derbyPostImageFileName","removeDerbyPostImage","derbyPostMessage","derbyPostImageProgress","derbyPostImageProgressBar");
+
   if ($("leadershipMessageForm")) $("leadershipMessageForm").onsubmit = async e => {
     e.preventDefault();
     if (busy || !hasPermission("chat.leadership.post")) return;
@@ -3147,14 +3296,23 @@
     const message = input.value.trim();
     if (!message) return;
     setBusy(true);
+    let uploadedImage=null;
     try {
-      await backend.sendLeadershipMessage(message);
+      const file=$("leadershipImage")?.files?.[0]||null;
+      if(file)uploadedImage=await backend.uploadChatImage(file,percent=>composeUploadProgress("leadershipImageProgress","leadershipImageProgressBar","leadershipImageProgressText",percent));
+      await backend.sendLeadershipMessage(message,uploadedImage,mentionIdsFor(input));
       input.value = "";
+      resetMentionField(input);
+      resetComposeImage("leadershipImage","leadershipImagePreview","leadershipImagePreviewImg","leadershipImageFileName","leadershipImageProgress","leadershipImageProgressBar");
       status.textContent = currentLanguage === "en" ? "Message sent." : "Meldingen er sendt.";
       status.classList.add("success");
       await refreshState();
       if(activePortalRoute==="leadership")positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));
-    } catch(e) { status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen."); }
+    } catch(e) {
+      if(uploadedImage?.path)await backend.deleteChatImage(uploadedImage.path).catch(error=>console.warn("Kunne ikke rydde ufullført chat-bilde",error));
+      status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen.");
+      $("leadershipImageProgress")?.classList.add("hidden");
+    }
     setBusy(false);
   };
 
@@ -3394,7 +3552,7 @@
     $("announcementMessage").textContent="";
   }
   if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { if(!hasPermission("content.approve"))return; prepareAnnouncementDialog(); showDialog(announcementDialog); };
-  if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { if(!hasPermission("chat.community.post"))return; $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
+  if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { if(!hasPermission("chat.community.post"))return; $("derbyPostForm").reset(); resetMentionField($("derbyPostBody")); resetComposeImage("derbyPostImage","derbyPostImagePreview","derbyPostImagePreviewImg","derbyPostImageFileName","derbyPostImageProgress","derbyPostImageProgressBar"); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
   if ($("openTipForm")) $("openTipForm").onclick = () => prepareTipDialog(false);
   if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { if(hasPermission("content.approve"))prepareTipDialog(true); };
   if ($("tipVideo")) $("tipVideo").onchange = () => {
@@ -3443,8 +3601,18 @@
   if ($("derbyPostForm")) $("derbyPostForm").onsubmit = async e => {
     e.preventDefault(); if (busy || !hasPermission("chat.community.post")) return;
     setBusy(true);
-    try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); if(activePortalRoute==="discussions")positionChatTarget("derby",lastOf(chatActivityElements("derby"))); }
-    catch(err) { $("derbyPostMessage").textContent=humanError(err); }
+    let uploadedImage=null;
+    try {
+      const file=$("derbyPostImage")?.files?.[0]||null;
+      if(file)uploadedImage=await backend.uploadChatImage(file,percent=>composeUploadProgress("derbyPostImageProgress","derbyPostImageProgressBar","derbyPostImageProgressText",percent));
+      await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true, null, uploadedImage, mentionIdsFor($("derbyPostBody")));
+      closeDialog(derbyPostDialog);e.target.reset();resetMentionField($("derbyPostBody"));resetComposeImage("derbyPostImage","derbyPostImagePreview","derbyPostImagePreviewImg","derbyPostImageFileName","derbyPostImageProgress","derbyPostImageProgressBar");
+      await refreshState();if(activePortalRoute==="discussions")positionChatTarget("derby",lastOf(chatActivityElements("derby")));
+    }
+    catch(err) {
+      if(uploadedImage?.path)await backend.deleteChatImage(uploadedImage.path).catch(error=>console.warn("Kunne ikke rydde ufullført chat-bilde",error));
+      $("derbyPostMessage").textContent=humanError(err);$("derbyPostImageProgress")?.classList.add("hidden");
+    }
     setBusy(false);
   };
 
@@ -3497,7 +3665,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.85").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.86").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
