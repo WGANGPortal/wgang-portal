@@ -1,4 +1,4 @@
-/* v0.18.0.84 – sikker forhåndskontroll av tipsvedlegg */
+/* v0.18.0.85 – eier/admin kan rette publiserte kunngjøringer */
 (function () {
   "use strict";
 
@@ -61,7 +61,7 @@
     "Norsk":"Norwegian","Engelsk":"English",
     "SAMTALER":"CONVERSATIONS","VIKTIG INFORMASJON":"IMPORTANT INFORMATION","Viktige beskjeder fra ledelsen samlet på ett sted.":"Important messages from the leadership team gathered in one place.","Siste kunngjøringer":"Latest announcements","Strategi, spørsmål og koordinering rundt ukens derby.":"Strategy, questions and coordination for this week's Derby.",
     "Prat om ukens derby":"Talk about this week's Derby","Del strategi, spørsmål og koordinering med nabolaget.":"Share strategy, questions and coordination with the Neighborhood.",
-    "Nytt innlegg":"New post","Ny kunngjøring":"New announcement","Publiser kunngjøring":"Publish announcement","Publiser innlegg":"Publish post",
+    "Nytt innlegg":"New post","Ny kunngjøring":"New announcement","Publiser kunngjøring":"Publish announcement","Rediger kunngjøring":"Edit announcement","Lagre endringer":"Save changes","Rediger":"Edit","Publiser innlegg":"Publish post",
     "KUNNSKAP":"KNOWLEDGE","WGANG Tips & triks":"WGANG Tips & Tricks","Det vi allerede vet fungerer godt – samlet på ett sted og bygget videre sammen med nabolaget.":"What we already know works well – gathered in one place and developed together with the Neighborhood.",
     "WGANGS GRUNNSTRATEGI":"WGANG'S CORE STRATEGY","320 poeng – og en tavle som holdes i bevegelse":"320 points – and a task board that keeps moving",
     "LEDELSE":"LEADERSHIP","Lederprat":"Leadership Chat","Et lukket rom for Ass. leder, Senior, Administrator og Eier.":"A private space for Assistant Leaders, Seniors, Administrators and the Owner.",
@@ -252,6 +252,7 @@
 
   function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
+  function canEditAnnouncements(user=current()) { return !!user && ["owner","admin"].includes(user.role); }
   function isLeadership(user=current()) { return !!user && ["owner","admin","assistant_leader","senior"].includes(user.role); }
 
   const PERMISSION_DEFINITIONS = [
@@ -2054,7 +2055,11 @@
 
   function postCard(item, options={}) {
     const category = item.category ? `<span class="content-category">${esc(tText(item.category))}</span>` : "";
-    const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
+    const actionButtons = [
+      options.canEditAnnouncement ? `<button class="table-action" type="button" data-edit-announcement="${item.id}">${currentLanguage==="en"?"Edit":"Rediger"}</button>` : "",
+      options.canModerate ? `<button class="table-action" type="button" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>` : ""
+    ].filter(Boolean).join("");
+    const actions = actionButtons ? `<div class="content-actions">${actionButtons}</div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
     return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
@@ -2066,7 +2071,7 @@
     const derbyPostList = $("derbyPostList");
     const tipsList = $("communityTipsList");
     const canModerate=hasPermission("chat.moderate");
-    if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
+    if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{canModerate,canEditAnnouncement:canEditAnnouncements()})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
     if (derbyPostList) {
       const posts=content.derbyPosts||[];
       const chronological=[...posts].sort((a,b)=>new Date(a.publishedAt||a.createdAt)-new Date(b.publishedAt||b.createdAt));
@@ -2119,6 +2124,20 @@
         setBusy(false);
       });
     }
+
+    $$('[data-edit-announcement]').forEach(b => b.onclick = () => {
+      if(!canEditAnnouncements())return alert("Bare Eier og Administrator kan redigere kunngjøringer.");
+      const item=findContentItem(b.dataset.editAnnouncement);
+      if(!item || item.kind!=="announcement" || item.status!=="published")return alert("Kunngjøringen kan ikke redigeres.");
+      $("announcementForm").reset();
+      $("announcementEditId").value=String(item.id);
+      $("announcementTitle").value=item.title||"";
+      $("announcementBody").value=item.body||"";
+      $("announcementDialogTitle").textContent=tText("Rediger kunngjøring");
+      $("announcementSubmitButton").textContent=tText("Lagre endringer");
+      $("announcementMessage").textContent="";
+      showDialog(announcementDialog);
+    });
 
     $$('[data-delete-content]').forEach(b => b.onclick = async () => {
       if (!hasPermission("chat.moderate") || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
@@ -3367,7 +3386,14 @@
     showDialog(tipDialog);
   }
 
-  if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { if(!hasPermission("content.approve"))return; $("announcementForm").reset(); $("announcementMessage").textContent=""; showDialog(announcementDialog); };
+  function prepareAnnouncementDialog(){
+    $("announcementForm").reset();
+    $("announcementEditId").value="";
+    $("announcementDialogTitle").textContent=tText("Ny kunngjøring");
+    $("announcementSubmitButton").textContent=tText("Publiser kunngjøring");
+    $("announcementMessage").textContent="";
+  }
+  if ($("openAnnouncementForm")) $("openAnnouncementForm").onclick = () => { if(!hasPermission("content.approve"))return; prepareAnnouncementDialog(); showDialog(announcementDialog); };
   if ($("openDerbyPostForm")) $("openDerbyPostForm").onclick = () => { if(!hasPermission("chat.community.post"))return; $("derbyPostForm").reset(); $("derbyPostMessage").textContent=""; showDialog(derbyPostDialog); };
   if ($("openTipForm")) $("openTipForm").onclick = () => prepareTipDialog(false);
   if ($("openAdminTipForm")) $("openAdminTipForm").onclick = () => { if(hasPermission("content.approve"))prepareTipDialog(true); };
@@ -3400,9 +3426,16 @@
   if ($("removeTipVideo")) $("removeTipVideo").onclick = () => { resetTipVideoForm(); $("tipMessage").textContent=""; };
 
   if ($("announcementForm")) $("announcementForm").onsubmit = async e => {
-    e.preventDefault(); if (busy || !hasPermission("content.approve")) return;
+    e.preventDefault();
+    const editId=$("announcementEditId").value;
+    if (busy || (editId ? !canEditAnnouncements() : !hasPermission("content.approve"))) return;
     setBusy(true);
-    try { await backend.createContent("announcement", $("announcementTitle").value.trim(), $("announcementBody").value.trim(), "", true); closeDialog(announcementDialog); e.target.reset(); await refreshState(); }
+    try {
+      const title=$("announcementTitle").value.trim(),body=$("announcementBody").value.trim();
+      if(editId)await backend.updateAnnouncement(editId,title,body);
+      else await backend.createContent("announcement",title,body,"",true);
+      closeDialog(announcementDialog); prepareAnnouncementDialog(); await refreshState();
+    }
     catch(err) { $("announcementMessage").textContent=humanError(err); }
     setBusy(false);
   };
@@ -3464,7 +3497,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.84").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.85").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

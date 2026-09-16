@@ -1,4 +1,4 @@
-/* v0.18.0.84 – sikker administratorkontroll av tipsvedlegg */
+/* v0.18.0.85 – sikker redigering av publiserte kunngjøringer */
 (function () {
   "use strict";
 
@@ -242,6 +242,7 @@
       category: row.category || "",
       status: row.status,
       createdAt: row.created_at,
+      updatedAt: row.updated_at || row.created_at,
       publishedAt: row.published_at || row.created_at,
       videoPath: row.video_path || null,
       videoMimeType: row.video_mime_type || null,
@@ -308,7 +309,7 @@
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
-      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,updated_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
@@ -1069,6 +1070,26 @@
       }
       const { error } = await client.rpc("wgang_moderate_content",{p_content_id:Number(id),p_status:status});
       if (error) throw error;
+    },
+    async updateAnnouncement(id, title, body) {
+      const cleanTitle=String(title||"").trim();
+      const cleanBody=String(body||"").trim();
+      if(!cleanTitle || cleanTitle.length>100)throw new Error("Tittelen må inneholde mellom 1 og 100 tegn.");
+      if(!cleanBody || cleanBody.length>3000)throw new Error("Beskjeden må inneholde mellom 1 og 3000 tegn.");
+      if (!configured) {
+        const item=(localState.content?.announcements||[]).find(x=>String(x.id)===String(id));
+        if(!item)throw new Error("Kunngjøringen finnes ikke.");
+        item.title=cleanTitle;
+        item.body=cleanBody;
+        item.updatedAt=new Date().toISOString();
+        localSave(localState);
+        return item;
+      }
+      const { data, error } = await client.rpc("wgang_update_announcement",{
+        p_content_id:Number(id),p_title:cleanTitle,p_body:cleanBody
+      });
+      if (error) throw error;
+      return data;
     },
     async deleteContent(id) {
       if (!configured) return;
