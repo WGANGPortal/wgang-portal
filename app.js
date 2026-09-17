@@ -1,4 +1,4 @@
-/* v0.18.0.86 – skjermbilder og @-varsler i Derbyprat og Lederprat */
+/* v0.18.0.87 – bingoplan, bindende oppgaver og privat beredskap */
 (function () {
   "use strict";
 
@@ -201,6 +201,9 @@
   }
 
   let state = { accounts:[], gameIdentities:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let bingoData = {plan:null,cells:[],assignments:[],standby:[]};
+  let bingoLoadingEventId = null;
+  let bingoDraftClaims = [];
   let busy = false;
   let activePortalRoute = "";
   let chatFocusToken = 0;
@@ -1054,6 +1057,7 @@
     renderNotificationSettings();
     renderAbsenceSettings();
     loadBunny();
+    loadBingoPlanner();
     translateUi(portal);
     queueVisibleTranslations();
     setTimeout(consumeNotificationFocusFromUrl,120);
@@ -2867,6 +2871,164 @@
     }
   }
 
+  const BINGO_LINES = {
+    r1:[1,2,3,4],r2:[5,6,7,8],r3:[9,10,11,12],r4:[13,14,15,16],
+    c1:[1,5,9,13],c2:[2,6,10,14],c3:[3,7,11,15],c4:[4,8,12,16],
+    d1:[1,6,11,16],d2:[4,7,10,13]
+  };
+  const BINGO_LINE_LABELS={r1:"Rad 1",r2:"Rad 2",r3:"Rad 3",r4:"Rad 4",c1:"Kolonne 1",c2:"Kolonne 2",c3:"Kolonne 3",c4:"Kolonne 4",d1:"Diagonal ↘",d2:"Diagonal ↙"};
+  function bingoEvent(){
+    const events=[currentActiveDerbyEvent(),state.derbyManagement?.next,state.derbyManagement?.upcoming].filter(Boolean);
+    return events.find(event=>/bingo/i.test(String(event.name||"")))||null;
+  }
+  function canManageBingo(){return !!current()&&["owner","admin"].includes(current().role);}
+  function bingoLineRoles(){
+    const rows=Array.isArray(bingoData.plan?.strategy_lines)?bingoData.plan.strategy_lines:[];
+    return Object.fromEntries(rows.filter(x=>x&&BINGO_LINES[x.key]&&["main","reserve"].includes(x.role)).map(x=>[x.key,x.role]));
+  }
+  function bingoIdentity(id){return (state.gameIdentities||[]).find(x=>String(x.id)===String(id));}
+  function bingoJoinedIdentities(event=bingoEvent()){
+    if(!event)return[];
+    return (state.gameIdentities||[]).filter(identity=>gameParticipationFor(identity.id,event)?.choice==="joined");
+  }
+  function bingoIsStandby(identityId){return (bingoData.standby||[]).some(x=>String(x.game_identity_id)===String(identityId)&&x.status!=="released");}
+  function bingoOwnEligibleIdentities(){return bingoJoinedIdentities().filter(x=>String(x.userId)===String(state.currentUserId)&&!bingoIsStandby(x.id));}
+  function bingoCellRole(position){
+    const roles=bingoLineRoles();let reserve=false;
+    for(const [key,role] of Object.entries(roles)){if(BINGO_LINES[key].includes(Number(position))){if(role==="main")return"main";reserve=true;}}
+    return reserve?"reserve":"";
+  }
+  function bingoStrategyCellIds(){
+    const positions=new Set();const roles=bingoLineRoles();
+    Object.keys(roles).forEach(key=>(BINGO_LINES[key]||[]).forEach(position=>positions.add(position)));
+    return positions;
+  }
+  function bingoTaskName(cellId){return (bingoData.cells||[]).find(x=>String(x.id)===String(cellId))?.task_name||"Oppgave";}
+  async function loadBingoPlanner(force=false){
+    const event=bingoEvent(),card=$("bingoPlannerCard");
+    if(!event){card?.classList.add("hidden");bingoData={plan:null,cells:[],assignments:[],standby:[]};return;}
+    card?.classList.remove("hidden");
+    if(!force&&String(bingoLoadingEventId)===String(event.id)&&bingoData.plan){renderBingoPlanner();return;}
+    bingoLoadingEventId=event.id;
+    try{bingoData=await backend.getBingoData(event.id);bingoDraftClaims=[];renderBingoPlanner();}
+    catch(error){console.error(error);if($("bingoPlannerIntro"))$("bingoPlannerIntro").textContent="Bingoplanen kunne ikke lastes. Kontroller at databaseoppdateringen er installert.";}
+  }
+  function renderBingoPlanner(){
+    const event=bingoEvent(),card=$("bingoPlannerCard");if(!event||!card)return;
+    card.classList.remove("hidden");
+    const plan=bingoData.plan;
+    const admin=canManageBingo();
+    $("bingoAdminPanel")?.classList.toggle("hidden",!admin);
+    if(!plan){
+      $("bingoPlanState").textContent="Ikke publisert";$("bingoPlanMetrics").innerHTML="";$("bingoBoard").innerHTML=`<p class="empty-state">${admin?"Opprett og publiser bingoplanen i administrasjonen under.":"Ledelsen arbeider med bingoplanen. Vent med å ta derbyoppgaver."}</p>`;$("bingoCommitmentPanel").innerHTML="";$("bingoTaskOverview").innerHTML="";if(admin)renderBingoAdmin();return;
+    }
+    const status=$("bingoPlanState");status.textContent={draft:"Utkast",published:"Publisert",active:"Aktiv",completed:"Ferdig"}[plan.status]||plan.status;status.className=`bingo-plan-state ${plan.status}`;
+    $("bingoPlannerIntro").textContent=plan.status==="draft"?"Planen er fortsatt et utkast. Ingen oppgaver skal tas før den publiseres.":(plan.instructions||"Følg oppgavefordelingen. Gi beskjed straks dersom noe ikke kan fullføres.");
+    const joined=bingoJoinedIdentities(),actualStandby=(bingoData.standby||[]).filter(x=>x.status!=="released").length;
+    const plannedStandby=Number(plan.planned_standby_count||0);
+    const ordinary=Math.max(0,joined.length-(admin?Math.max(actualStandby,plannedStandby):plannedStandby));
+    const commitmentCapacity=ordinary*Number(plan.commitments_per_profile||5);
+    const strategyPositions=bingoStrategyCellIds();
+    const strategySlots=(bingoData.cells||[]).filter(cell=>strategyPositions.has(Number(cell.position))&&!cell.is_blocked).reduce((sum,cell)=>sum+Number(cell.required_count||0),0);
+    const pointsNeeded=Math.ceil(Number(plan.target_points||0)/Number(plan.max_points||320));
+    const freeMaxTasks=Math.max(0,pointsNeeded-strategySlots);
+    $("bingoPlanMetrics").innerHTML=`
+      <div><span>Deltakende profiler</span><strong>${joined.length}</strong></div><div><span>Mål</span><strong>${Number(plan.target_points||0).toLocaleString("nb-NO")} p</strong></div>
+      <div><span>Oppgaver til målet</span><strong>${pointsNeeded}</strong></div><div><span>Frie maksoppgaver etter planen</span><strong>${freeMaxTasks}</strong></div><div><span>Planlagte bindinger</span><strong>${commitmentCapacity}</strong></div>
+      <div class="${strategySlots&&strategySlots!==commitmentCapacity?"warning":""}"><span>Strategiplasser</span><strong>${strategySlots||"–"}</strong></div>`;
+    renderBingoBoard();renderBingoCommitment();renderBingoOverview();renderBingoStandbyNotice();if(admin)renderBingoAdmin();
+  }
+  function renderBingoBoard(){
+    const board=$("bingoBoard"),plan=bingoData.plan;if(!board||!plan)return;
+    const roles=bingoLineRoles(),hasStrategy=Object.keys(roles).length>0,assignments=bingoData.assignments||[];
+    board.innerHTML=(bingoData.cells||[]).map(cell=>{
+      const assigned=assignments.filter(x=>String(x.cell_id)===String(cell.id)&&x.status!=="reassigned"),done=assigned.filter(x=>x.status==="completed").length;
+      const lineRole=bingoCellRole(cell.position),lineBadges=Object.entries(roles).filter(([key])=>BINGO_LINES[key].includes(Number(cell.position))).map(([key,role])=>`<b>${role==="reserve"?"R":"H"}${esc(key.toUpperCase())}</b>`).join("");
+      const selected=bingoDraftClaims.some(x=>String(x.cellId)===String(cell.id));
+      const classes=["bingo-cell",cell.is_blocked?"blocked":"",cell.classification==="delete"?"delete":"",lineRole?`${lineRole}-line`:"",hasStrategy&&!lineRole&&!cell.is_blocked?"dimmed":"",selected?"draft-selected":""].join(" ");
+      const slots=Array.from({length:Number(cell.required_count||0)},(_,i)=>`<i class="${i<done?"done":i<assigned.length?"filled":""}"></i>`).join("");
+      return `<button type="button" class="${classes}" data-bingo-cell="${cell.id}" ${cell.is_blocked||cell.classification==="delete"?"disabled":""}><span class="bingo-line-badges">${lineBadges}</span><span class="bingo-cell-icon">${esc(cell.icon||"◇")}</span><span class="bingo-cell-name">${esc(cell.task_name)}</span><span class="bingo-cell-count">${done}/${cell.required_count} fullført · ${assigned.length} fordelt</span><span class="bingo-cell-slots">${slots}</span></button>`;
+    }).join("");
+    board.querySelectorAll("[data-bingo-cell]").forEach(button=>button.onclick=()=>toggleBingoDraft(button.dataset.bingoCell));
+  }
+  function selectedBingoIdentityId(){return $("bingoIdentitySelect")?.value||bingoOwnEligibleIdentities()[0]?.id||"";}
+  function toggleBingoDraft(cellId){
+    const plan=bingoData.plan;if(!plan||!["published","active"].includes(plan.status))return alert("Vent til ledelsen har publisert planen.");
+    const identityId=selectedBingoIdentityId();if(!identityId)return alert("Du har ingen ordinær, påmeldt spillprofil som kan velge bingooppgaver.");
+    const cell=(bingoData.cells||[]).find(x=>String(x.id)===String(cellId));if(!cell||cell.is_blocked||cell.classification==="delete")return;
+    const existing=(bingoData.assignments||[]).filter(x=>String(x.game_identity_id)===String(identityId)&&x.status!=="reassigned").length;
+    const index=bingoDraftClaims.findIndex(x=>String(x.identityId)===String(identityId)&&String(x.cellId)===String(cellId));
+    if(index>=0)bingoDraftClaims.splice(index,1);
+    else{
+      const filled=(bingoData.assignments||[]).filter(x=>String(x.cell_id)===String(cellId)&&x.status!=="reassigned").length+bingoDraftClaims.filter(x=>String(x.cellId)===String(cellId)).length;
+      if(filled>=Number(cell.required_count||0))return alert("Alle plassene på denne oppgaven er allerede fordelt.");
+      if(existing+bingoDraftClaims.filter(x=>String(x.identityId)===String(identityId)).length>=Number(plan.commitments_per_profile||5))return alert(`Denne spillprofilen har allerede valgt ${plan.commitments_per_profile} oppgaver.`);
+      bingoDraftClaims.push({identityId:String(identityId),cellId:String(cellId)});
+    }
+    renderBingoBoard();renderBingoCommitment();
+  }
+  function renderBingoCommitment(){
+    const box=$("bingoCommitmentPanel"),plan=bingoData.plan;if(!box||!plan)return;
+    const eligible=bingoOwnEligibleIdentities();const selected=selectedBingoIdentityId()||eligible[0]?.id||"";
+    const identity=eligible.find(x=>String(x.id)===String(selected))||eligible[0];
+    const existing=identity?(bingoData.assignments||[]).filter(x=>String(x.game_identity_id)===String(identity.id)&&x.status!=="reassigned"):[];
+    const draft=identity?bingoDraftClaims.filter(x=>String(x.identityId)===String(identity.id)):[];
+    const target=Number(plan.commitments_per_profile||5),total=existing.length+draft.length;
+    if(!eligible.length){box.innerHTML=`<h3>Din bingoplan</h3><p class="helper-text">${bingoJoinedIdentities().some(x=>String(x.userId)===String(state.currentUserId))?"En av dine profiler er valgt til privat beredskap. Se meldingen over.":"Du må være påmeldt derbyet med en spillprofil for å velge oppgaver."}</p>`;return;}
+    box.innerHTML=`<h3>Dine bindende valg</h3><label>Spillprofil<select id="bingoIdentitySelect">${eligible.map(x=>`<option value="${x.id}" ${String(x.id)===String(identity?.id)?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label><div class="bingo-profile-counter"><span>Valgt for ${esc(identity?.name||"")}</span><strong>${total}/${target}</strong></div>${draft.length?`<ol class="bingo-draft-list">${draft.map(x=>`<li>${esc(bingoTaskName(x.cellId))}</li>`).join("")}</ol>`:"<p class=\"helper-text\">Trykk på rutene du har en gjennomførbar plan for.</p>"}<div class="bingo-binding-copy"><strong>Bindende bekreftelse</strong><br>Jeg har vurdert alle valgene, har en plan for å gjennomføre dem og gir beskjed straks dersom det oppstår et problem. Lagrede valg kan bare flyttes av eier/admin.</div><button class="button button-primary bingo-confirm-button" id="confirmBingoClaims" ${total!==target||!draft.length?"disabled":""}>Bekreft og bind ${draft.length} valg</button>`;
+    $("bingoIdentitySelect").onchange=()=>{bingoDraftClaims=[];renderBingoBoard();renderBingoCommitment();};
+    if($("confirmBingoClaims"))$("confirmBingoClaims").onclick=confirmBingoClaims;
+  }
+  async function confirmBingoClaims(){
+    const identityId=selectedBingoIdentityId(),draft=bingoDraftClaims.filter(x=>String(x.identityId)===String(identityId)),plan=bingoData.plan;if(!draft.length||!plan)return;
+    if(!confirm("Dette er bindende oppgaver. Bekrefter du at alle valgene er planlagt og skal fullføres?"))return;
+    try{await backend.claimBingoSlots(plan.id,identityId,draft.map(x=>x.cellId));await loadBingoPlanner(true);}
+    catch(error){alert(humanError(error,"Kunne ikke lagre oppgavevalgene."));await loadBingoPlanner(true);}
+  }
+  function renderBingoOverview(){
+    const box=$("bingoTaskOverview"),assignments=bingoData.assignments||[];if(!box)return;
+    const strategy=bingoStrategyCellIds();
+    box.innerHTML=(bingoData.cells||[]).filter(cell=>strategy.has(Number(cell.position))&&!cell.is_blocked).map(cell=>{
+      const rows=assignments.filter(x=>String(x.cell_id)===String(cell.id)&&x.status!=="reassigned");
+      return `<article class="bingo-task-row"><header><strong>${esc(cell.icon||"◇")} ${esc(cell.task_name)}</strong><span>${rows.length}/${cell.required_count} fordelt</span></header>${rows.length?`<ul>${rows.map(row=>{const identity=bingoIdentity(row.game_identity_id),canEdit=String(row.user_id)===String(state.currentUserId)||canManageBingo();return `<li>${esc(identity?.name||"Spillprofil")} – ${({waiting:"venter",in_progress:"i gang",completed:"fullført",problem:"problem",reassigned:"flyttet"}[row.status]||row.status)}${canEdit?`<div class="bingo-assignment-actions"><select data-bingo-status="${row.id}"><option value="waiting" ${row.status==="waiting"?"selected":""}>Venter</option><option value="in_progress" ${row.status==="in_progress"?"selected":""}>I gang</option><option value="completed" ${row.status==="completed"?"selected":""}>Fullført</option><option value="problem" ${row.status==="problem"?"selected":""}>Problem</option></select><button data-bingo-detail="${row.id}">Detaljer</button>${canManageBingo()?`<button data-bingo-remove="${row.id}">Flytt</button>`:""}</div>`:""}</li>`;}).join("")}</ul>`:"<p class=\"helper-text\">Ingen har valgt denne ennå.</p>"}</article>`;
+    }).join("")||`<p class="empty-state">Ledelsen må velge hovedlinjer og reservestrategi.</p>`;
+    box.querySelectorAll("[data-bingo-status]").forEach(select=>select.onchange=async()=>{try{await backend.updateBingoAssignment(select.dataset.bingoStatus,{status:select.value});await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke oppdatere status."));}});
+    box.querySelectorAll("[data-bingo-detail]").forEach(button=>button.onclick=async()=>{const row=assignments.find(x=>String(x.id)===String(button.dataset.bingoDetail));const details=prompt("Faktisk antall og annen viktig informasjon:",row?.actual_details||"");if(details===null)return;const deadline=prompt("Oppgavens tidsfrist (valgfritt, f.eks. 2026-09-18 22:30):",row?.actual_deadline?String(row.actual_deadline).slice(0,16).replace("T"," "):"");if(deadline===null)return;const pointsRaw=prompt("Poeng for oppgaven (valgfritt):",row?.points??"");if(pointsRaw===null)return;const parsedDeadline=deadline.trim()?new Date(deadline.trim().replace(" ","T")):null;if(deadline.trim()&&Number.isNaN(parsedDeadline.getTime()))return alert("Tidsfristen kunne ikke leses. Bruk dato og klokkeslett.");const points=pointsRaw.trim()===""?null:Number(pointsRaw);if(points!==null&&(!Number.isFinite(points)||points<0))return alert("Poeng må være et positivt tall.");try{await backend.updateBingoAssignment(row.id,{actual_details:details||null,actual_deadline:parsedDeadline?parsedDeadline.toISOString():null,points});await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke lagre detaljene."));}});
+    box.querySelectorAll("[data-bingo-remove]").forEach(button=>button.onclick=async()=>{if(!confirm("Flytte denne bindende oppgaven tilbake til ledig plass?"))return;try{await backend.deleteBingoAssignment(button.dataset.bingoRemove);await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke flytte oppgaven."));}});
+  }
+  function renderBingoStandbyNotice(){
+    const box=$("bingoStandbyNotice");if(!box)return;const mine=(bingoData.standby||[]).filter(x=>String(x.user_id)===String(state.currentUserId)&&x.status!=="released");
+    box.innerHTML=mine.map(row=>{const identity=bingoIdentity(row.game_identity_id),urgent=row.status==="activated";return `<div class="bingo-private-alert ${urgent?"urgent":""}"><h3>${urgent?"🚨 Beredskap er aktivert":"🔒 Privat beredskap"}: ${esc(identity?.name||"spillprofil")}</h3><p>${urgent?"Du kan bli nødt til å fullføre tildelte oppgaver svært raskt, også helt mot slutten.":`Hold ${row.reserved_slots} oppgaveplass${row.reserved_slots===1?"":"er"} ledig. Du skal ikke velge fem offentlige planoppgaver for denne profilen.`} ${esc(row.private_note||"")}</p>${row.status==="selected"?`<button class="button button-primary" data-confirm-standby="${row.id}">Jeg forstår og er klar</button>`:"<strong>Status: bekreftet</strong>"}</div>`;}).join("");
+    box.querySelectorAll("[data-confirm-standby]").forEach(button=>button.onclick=async()=>{try{await backend.updateBingoStandby(button.dataset.confirmStandby,"confirmed");await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke bekrefte beredskap."));}});
+  }
+  function renderBingoAdmin(){
+    const host=$("bingoAdminContent"),event=bingoEvent();if(!host||!event||!canManageBingo())return;const plan=bingoData.plan||{};const cells=bingoData.cells||[];const lineRoles=bingoLineRoles();
+    const defaults=Array.from({length:16},(_,i)=>cells.find(x=>Number(x.position)===i+1)||{position:i+1,task_name:"Oppgave",icon:"◇",required_count:4,classification:"free",is_blocked:false});
+    const joined=bingoJoinedIdentities();
+    host.innerHTML=`<div class="bingo-admin-settings"><label>Målpoeng<input id="bingoTargetPoints" type="number" min="1" value="${Number(plan.target_points||28800)}"></label><label>Makspoeng per oppgave<input id="bingoMaxPoints" type="number" min="1" value="${Number(plan.max_points||event.max_points||320)}"></label><label>Bindende valg per profil<input id="bingoCommitments" type="number" min="1" max="20" value="${Number(plan.commitments_per_profile||5)}"></label><label>Planlagt beredskap<input id="bingoStandbyCount" type="number" min="0" max="20" value="${Number(plan.planned_standby_count??3)}"></label><label class="wide">Instruksjon til deltakerne<textarea id="bingoInstructions" rows="3">${esc(plan.instructions||"")}</textarea></label></div><h3>1. Velg tre hovedlinjer og én reserve</h3><p class="helper-text">Trykk flere ganger for å bytte mellom hovedlinje, reserve og ikke valgt.</p><div class="bingo-line-picker">${Object.keys(BINGO_LINES).map(key=>`<button type="button" data-bingo-line="${key}" class="${lineRoles[key]||""}">${esc(BINGO_LINE_LABELS[key])}</button>`).join("")}</div><h3>2. Kontroller de 16 rutene</h3><div class="bingo-admin-grid">${defaults.map(cell=>`<div class="bingo-cell-editor" data-bingo-cell-editor="${cell.position}"><div class="row"><input aria-label="Ikon" data-field="icon" value="${esc(cell.icon||"◇")}"><input aria-label="Oppgavenavn" data-field="task_name" value="${esc(cell.task_name)}"><input aria-label="Antall" data-field="required_count" type="number" min="0" max="20" value="${Number(cell.required_count||0)}"></div><select data-field="classification"><option value="focus" ${cell.classification==="focus"?"selected":""}>Strategi – behold</option><option value="free" ${cell.classification==="free"?"selected":""}>Fri makspoengoppgave</option><option value="delete" ${cell.classification==="delete"?"selected":""}>Ikke aktuell – slett</option></select><small>Rute ${cell.position}</small></div>`).join("")}</div>${plan.id?`<h3>3. Privat beredskap</h3><p class="helper-text">Dette er bare synlig for eier/admin og den utpekte spilleren.</p><div class="bingo-standby-admin">${joined.map(identity=>{const row=(bingoData.standby||[]).find(x=>String(x.game_identity_id)===String(identity.id)&&x.status!=="released");return `<div class="bingo-standby-row"><label><input type="checkbox" data-standby-identity="${identity.id}" ${row?"checked":""}> ${esc(identity.name)}</label><input type="number" min="1" max="20" value="${Number(row?.reserved_slots||3)}" data-standby-slots="${identity.id}" aria-label="Ledige plasser">${row?`<span><button class="button" data-standby-save="${identity.id}">Lagre</button> <button class="button" data-standby-activate="${row.id}">${row.status==="activated"?"Aktivert":"Aktiver"}</button></span>`:`<button class="button" data-standby-save="${identity.id}">Velg</button>`}</div>`;}).join("")}</div>`:"<p class=\"helper-text\">Lagre utkastet før beredskap velges.</p>"}<div class="bingo-admin-actions"><button class="button" id="saveBingoDraft">Lagre utkast</button><button class="button button-primary" id="publishBingoPlan">Publiser planen</button></div>`;
+    host.querySelectorAll("[data-bingo-line]").forEach(button=>button.onclick=()=>{if(button.classList.contains("main")){button.classList.remove("main");button.classList.add("reserve");}else if(button.classList.contains("reserve"))button.classList.remove("reserve");else button.classList.add("main");});
+    $("saveBingoDraft").onclick=()=>saveBingoAdmin("draft");$("publishBingoPlan").onclick=()=>saveBingoAdmin("published");
+    host.querySelectorAll("[data-standby-save]").forEach(button=>button.onclick=()=>saveBingoStandbyChoice(button.dataset.standbySave));
+    host.querySelectorAll("[data-standby-activate]").forEach(button=>button.onclick=async()=>{if(!confirm("Aktivere beredskap? Spilleren får et tydelig hastevarsel i portalen."))return;try{await backend.updateBingoStandby(button.dataset.standbyActivate,"activated");await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke aktivere beredskap."));}});
+    const activated=(bingoData.standby||[]).filter(row=>row.status==="activated");
+    if(activated.length){
+      host.querySelector(".bingo-admin-actions")?.insertAdjacentHTML("beforebegin",`<h3>4. Hastefordeling til aktivert beredskap</h3><p class="helper-text">Brukes når en planlagt oppgave må overtas raskt. Flytt først den opprinnelige tildelingen dersom plassen er opptatt.</p><div class="bingo-standby-row"><select id="bingoEmergencyIdentity">${activated.map(row=>`<option value="${row.game_identity_id}">${esc(bingoIdentity(row.game_identity_id)?.name||"Spillprofil")}</option>`).join("")}</select><select id="bingoEmergencyCell">${(bingoData.cells||[]).filter(cell=>!cell.is_blocked&&cell.classification!=="delete").map(cell=>`<option value="${cell.id}">${esc(cell.icon||"◇")} ${esc(cell.task_name)}</option>`).join("")}</select><button class="button button-primary" id="assignBingoEmergency">Tildel hasteoppgave</button></div>`);
+      $("assignBingoEmergency").onclick=async()=>{if(!confirm("Tildele denne bindende hasteoppgaven til beredskapsprofilen?"))return;try{await backend.claimBingoSlots(bingoData.plan.id,$("bingoEmergencyIdentity").value,[$("bingoEmergencyCell").value]);await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke tildele hasteoppgaven."));}};
+    }
+  }
+  async function saveBingoAdmin(status){
+    const buttons=[...document.querySelectorAll("[data-bingo-line]")];const strategyLines=buttons.filter(b=>b.classList.contains("main")||b.classList.contains("reserve")).map(b=>({key:b.dataset.bingoLine,role:b.classList.contains("reserve")?"reserve":"main"}));
+    const mainCount=strategyLines.filter(x=>x.role==="main").length,reserveCount=strategyLines.filter(x=>x.role==="reserve").length;
+    if(status==="published"&&(mainCount!==3||reserveCount!==1))return alert("Velg nøyaktig tre hovedlinjer og én reservelinje før publisering.");
+    const cells=[...document.querySelectorAll("[data-bingo-cell-editor]")].map(editor=>{const classification=editor.querySelector('[data-field="classification"]').value;return{task_name:editor.querySelector('[data-field="task_name"]').value.trim()||"Oppgave",icon:editor.querySelector('[data-field="icon"]').value.trim()||"◇",required_count:Number(editor.querySelector('[data-field="required_count"]').value||0),classification,is_blocked:classification==="delete"};});
+    const patch={status,target_points:Number($("bingoTargetPoints").value),max_points:Number($("bingoMaxPoints").value),commitments_per_profile:Number($("bingoCommitments").value),planned_standby_count:Number($("bingoStandbyCount").value),reward_line_count:3,strategy_lines:strategyLines,instructions:$("bingoInstructions").value.trim()||null};
+    try{await backend.saveBingoPlan(bingoEvent().id,patch,cells);await loadBingoPlanner(true);alert(status==="published"?"Bingoplanen er publisert.":"Utkastet er lagret.");}catch(error){alert(humanError(error,"Kunne ikke lagre bingoplanen."));}
+  }
+  async function saveBingoStandbyChoice(identityId){
+    const checkbox=document.querySelector(`[data-standby-identity="${identityId}"]`),existing=(bingoData.standby||[]).find(x=>String(x.game_identity_id)===String(identityId)&&x.status!=="released");
+    try{if(!checkbox?.checked&&existing)await backend.deleteBingoStandby(existing.id);else if(checkbox?.checked)await backend.saveBingoStandby(bingoData.plan.id,identityId,document.querySelector(`[data-standby-slots="${identityId}"]`)?.value||3,"Vær klar til å overta og fullføre oppgaver raskt dersom planen trenger det.");await loadBingoPlanner(true);}catch(error){alert(humanError(error,"Kunne ikke oppdatere beredskap."));}
+  }
+
   function renderDerbyConfig() {
     const next = state.derbyManagement?.next;
     const configFor = event => event ? {
@@ -3665,7 +3827,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.86").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.87").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

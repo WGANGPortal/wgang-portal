@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.86">
+  <link rel="stylesheet" href="main.css?v=0.18.0.87">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -119,7 +119,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.86</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.87</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -175,6 +175,18 @@
             <ul class="strategy-list" id="derbyStrategy"><li>Ta kun oppgaver med 320 poeng i Standard Derby.</li><li>Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.</li><li>Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.</li></ul>
           </article></div>
           
+          <article class="portal-card bingo-planner-card hidden" id="bingoPlannerCard">
+            <div class="card-header"><div><p class="card-kicker">🎯 BINGOPLAN</p><h2>Felles spillebrett og oppgavefordeling</h2><p class="helper-text" id="bingoPlannerIntro">Vent med å ta oppgaver til planen er publisert.</p></div><span class="bingo-plan-state" id="bingoPlanState">Utkast</span></div>
+            <div id="bingoStandbyNotice"></div>
+            <div class="bingo-plan-metrics" id="bingoPlanMetrics"></div>
+            <div class="bingo-planner-layout">
+              <div><div class="bingo-board" id="bingoBoard" aria-label="Bingobrett"></div><div class="bingo-line-legend"><span><i class="main"></i>Hovedlinje</span><span><i class="reserve"></i>Reservelinje</span><span><i class="free"></i>Fri makspoengoppgave</span></div></div>
+              <aside class="bingo-commitment-panel" id="bingoCommitmentPanel"></aside>
+            </div>
+            <div class="bingo-task-overview" id="bingoTaskOverview"></div>
+            <details class="bingo-admin-panel hidden" id="bingoAdminPanel"><summary>Administrer bingoplanen</summary><div id="bingoAdminContent"></div></details>
+          </article>
+
           <div class="derby-rule-grid">
             <article class="portal-card derby-target-card">
               <p class="card-kicker">DITT MÅL I DETTE DERBYET</p>
@@ -552,6 +564,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.86"></script><script src="app.js?v=0.18.0.86"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.87"></script><script src="app.js?v=0.18.0.87"></script>
 </body>
 </html>

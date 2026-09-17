@@ -1,4 +1,4 @@
-/* v0.18.0.86 – skjermbilder og @-varsler i chat */
+/* v0.18.0.87 – bingoplan, bindende oppgaver og privat beredskap */
 (function () {
   "use strict";
 
@@ -776,6 +776,74 @@
         p_other_languages: profile.otherLanguages || null
       });
       if (error) throw error;
+    },
+    async getBingoData(eventId) {
+      if (!eventId) return {plan:null,cells:[],assignments:[],standby:[]};
+      if (!configured) {
+        try { return JSON.parse(localStorage.getItem(`wgang_bingo_${eventId}`) || "null") || {plan:null,cells:[],assignments:[],standby:[]}; }
+        catch { return {plan:null,cells:[],assignments:[],standby:[]}; }
+      }
+      const {data:plan,error:planError}=await client.from("bingo_plans").select("*").eq("event_id",eventId).maybeSingle();
+      if(planError){
+        if(planError.code==="42P01"||/bingo_plans/i.test(planError.message||""))return {plan:null,cells:[],assignments:[],standby:[]};
+        throw planError;
+      }
+      if(!plan)return {plan:null,cells:[],assignments:[],standby:[]};
+      const [cells,assignments,standby]=await Promise.all([
+        client.from("bingo_board_cells").select("*").eq("plan_id",plan.id).order("position"),
+        client.from("bingo_assignments").select("*").eq("plan_id",plan.id).order("cell_id").order("slot_number"),
+        client.from("bingo_standby").select("*").eq("plan_id",plan.id).order("created_at")
+      ]);
+      for(const result of [cells,assignments,standby])if(result.error)throw result.error;
+      return {plan,cells:cells.data||[],assignments:assignments.data||[],standby:standby.data||[]};
+    },
+    async saveBingoPlan(eventId,planPatch,cells) {
+      if(!eventId)throw new Error("Mangler derbyhendelse.");
+      if(!configured){
+        const plan=Object.assign({id:`local-${eventId}`,event_id:eventId},planPatch);
+        const data={plan,cells:(cells||[]).map((cell,index)=>Object.assign({id:`local-${eventId}-${index+1}`,plan_id:plan.id},cell)),assignments:[],standby:[]};
+        localStorage.setItem(`wgang_bingo_${eventId}`,JSON.stringify(data));return data;
+      }
+      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const payload=Object.assign({},planPatch,{event_id:eventId,updated_by:user.id,updated_at:new Date().toISOString()});
+      if(payload.status==="published"&&!payload.published_at)payload.published_at=new Date().toISOString();
+      const {data:plan,error}=await client.from("bingo_plans").upsert(payload,{onConflict:"event_id"}).select().single();if(error)throw error;
+      if(Array.isArray(cells)&&cells.length){
+        const rows=cells.map((cell,index)=>({plan_id:plan.id,position:index+1,task_name:String(cell.task_name||"Oppgave").trim(),task_type:cell.task_type||null,icon:cell.icon||null,image_key:cell.image_key||null,required_count:Number(cell.required_count||0),classification:cell.classification||"free",is_blocked:!!cell.is_blocked,updated_at:new Date().toISOString()}));
+        const {error:cellError}=await client.from("bingo_board_cells").upsert(rows,{onConflict:"plan_id,position"});if(cellError)throw cellError;
+      }
+      return this.getBingoData(eventId);
+    },
+    async claimBingoSlots(planId,gameIdentityId,cellIds) {
+      if(!planId||!gameIdentityId||!Array.isArray(cellIds)||!cellIds.length)throw new Error("Velg oppgavene først.");
+      if(!configured)return;
+      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const rows=cellIds.map(cellId=>({plan_id:planId,cell_id:cellId,game_identity_id:gameIdentityId,user_id:user.id,status:"waiting"}));
+      const {error}=await client.from("bingo_assignments").insert(rows);if(error)throw error;
+    },
+    async updateBingoAssignment(id,patch) {
+      if(!configured)return;
+      const allowed={status:patch.status,actual_details:patch.actual_details,actual_deadline:patch.actual_deadline,points:patch.points,updated_at:new Date().toISOString()};
+      Object.keys(allowed).forEach(key=>allowed[key]===undefined&&delete allowed[key]);
+      const {error}=await client.from("bingo_assignments").update(allowed).eq("id",id);if(error)throw error;
+    },
+    async deleteBingoAssignment(id) {
+      if(!configured)return;
+      const {error}=await client.from("bingo_assignments").delete().eq("id",id);if(error)throw error;
+    },
+    async saveBingoStandby(planId,gameIdentityId,reservedSlots,privateNote) {
+      if(!configured)return;
+      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const {error}=await client.from("bingo_standby").upsert({plan_id:planId,game_identity_id:gameIdentityId,user_id:user.id,reserved_slots:Number(reservedSlots||3),private_note:privateNote||null,status:"selected",selected_by:user.id,updated_at:new Date().toISOString()},{onConflict:"plan_id,game_identity_id"});if(error)throw error;
+    },
+    async updateBingoStandby(id,status) {
+      if(!configured)return;
+      const patch={status,updated_at:new Date().toISOString()};if(status==="activated")patch.activated_at=new Date().toISOString();
+      const {error}=await client.from("bingo_standby").update(patch).eq("id",id);if(error)throw error;
+    },
+    async deleteBingoStandby(id) {
+      if(!configured)return;
+      const {error}=await client.from("bingo_standby").delete().eq("id",id);if(error)throw error;
     },
     async getBunnyData() {
       if (!configured) {
