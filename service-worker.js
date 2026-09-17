@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.88-bingo-board-image";
+const CACHE_NAME = "wgang-v0.18.0.89-bingo-line-selection";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.88",
-  "/app.js?v=0.18.0.88", "/backend.js?v=0.18.0.88", "/config.js?v=0.18.0.60",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.89",
+  "/app.js?v=0.18.0.89", "/backend.js?v=0.18.0.89", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",

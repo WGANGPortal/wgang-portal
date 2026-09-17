@@ -1,4 +1,4 @@
-/* v0.18.0.88 – privat opplasting av bingobrett med rettighetsmerking */
+/* v0.18.0.89 – tydelig valg av hovedlinjer og reservelinje */
 (function () {
   "use strict";
 
