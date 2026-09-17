@@ -1,4 +1,4 @@
-/* v0.18.0.87 – bingoplan, bindende oppgaver og privat beredskap */
+/* v0.18.0.88 – privat opplasting av bingobrett med rettighetsmerking */
 (function () {
   "use strict";
 
@@ -33,6 +33,7 @@
   const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
   const WIKI_MEDIA_BUCKET = "wiki-videos";
   const CHAT_IMAGE_BUCKET = "chat-images";
+  const BINGO_BOARD_BUCKET = "bingo-boards";
   const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
   const CHAT_IMAGE_TYPES = new Set(["image/jpeg","image/png","image/webp"]);
   const WIKI_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
@@ -1167,6 +1168,53 @@
       if(!configured || !path)return;
       const {error}=await client.storage.from(CHAT_IMAGE_BUCKET).remove([path]);
       if(error)throw error;
+    },
+    async uploadBingoBoardImage(eventId,planId,file,oldPath=null,onProgress) {
+      if(!configured)throw new Error("Opplasting av bingobrett krever tilkobling til medlemsportalen.");
+      if(!window.tus?.Upload)throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
+      if(!eventId||!planId)throw new Error("Lagre bingoplanen før skjermbildet lastes opp.");
+      const extension=await validateChatImage(file);
+      const {data:{session},error:sessionError}=await client.auth.getSession();
+      if(sessionError||!session?.access_token||!session?.user?.id)throw sessionError||new Error("Du må være logget inn.");
+      const objectId=globalThis.crypto?.randomUUID?.();
+      if(!objectId)throw new Error("Denne nettleseren kan ikke opprette en sikker filidentifikator.");
+      const path=`${eventId}/${objectId}.${extension}`;
+      const projectId=new URL(cfg.url).hostname.split(".")[0];
+      await new Promise((resolve,reject)=>{
+        const upload=new window.tus.Upload(file,{
+          endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
+          retryDelays:[0,3000,5000,10000,20000],
+          headers:{authorization:`Bearer ${session.access_token}`,apikey:cfg.anonKey},
+          uploadDataDuringCreation:true,
+          removeFingerprintOnSuccess:true,
+          metadata:{bucketName:BINGO_BOARD_BUCKET,objectName:path,contentType:file.type,cacheControl:"3600"},
+          chunkSize:6*1024*1024,
+          onError:error=>reject(error),
+          onProgress:(uploaded,total)=>{if(typeof onProgress==="function")onProgress(total?Math.round(uploaded*100/total):0);},
+          onSuccess:()=>resolve()
+        });
+        upload.start();
+      });
+      const patch={board_image_path:path,board_image_mime_type:file.type,board_image_size_bytes:file.size,board_image_original_name:String(file.name||`bingobrett.${extension}`).slice(0,255),board_image_updated_at:new Date().toISOString(),updated_by:session.user.id,updated_at:new Date().toISOString()};
+      const {error:updateError}=await client.from("bingo_plans").update(patch).eq("id",planId);
+      if(updateError){try{await client.storage.from(BINGO_BOARD_BUCKET).remove([path]);}catch{}throw updateError;}
+      if(oldPath&&oldPath!==path){try{await client.storage.from(BINGO_BOARD_BUCKET).remove([oldPath]);}catch{}}
+      return Object.assign({path},patch);
+    },
+    async getBingoBoardImageUrl(path) {
+      if(!configured||!path)return null;
+      const {data,error}=await client.storage.from(BINGO_BOARD_BUCKET).createSignedUrl(path,3600);
+      if(error)throw error;
+      return data?.signedUrl||null;
+    },
+    async deleteBingoBoardImage(planId,path) {
+      if(!configured||!planId||!path)return;
+      const {data:{user},error:userError}=await client.auth.getUser();
+      if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const {error:updateError}=await client.from("bingo_plans").update({board_image_path:null,board_image_mime_type:null,board_image_size_bytes:null,board_image_original_name:null,board_image_updated_at:null,updated_by:user.id,updated_at:new Date().toISOString()}).eq("id",planId);
+      if(updateError)throw updateError;
+      const {error:removeError}=await client.storage.from(BINGO_BOARD_BUCKET).remove([path]);
+      if(removeError)throw removeError;
     },
     async createContent(kind, title, body, category="", publishNow=false, video=null, attachment=null, mentionedUserIds=[]) {
       if (!configured) {

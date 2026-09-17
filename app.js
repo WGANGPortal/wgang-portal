@@ -1,4 +1,4 @@
-/* v0.18.0.87 – bingoplan, bindende oppgaver og privat beredskap */
+/* v0.18.0.88 – privat opplasting av bingobrett med rettighetsmerking */
 (function () {
   "use strict";
 
@@ -204,6 +204,9 @@
   let bingoData = {plan:null,cells:[],assignments:[],standby:[]};
   let bingoLoadingEventId = null;
   let bingoDraftClaims = [];
+  let bingoBoardImageRequest = 0;
+  let bingoBoardImagePath = "";
+  let bingoBoardImageUrl = "";
   let busy = false;
   let activePortalRoute = "";
   let chatFocusToken = 0;
@@ -2920,7 +2923,7 @@
     const admin=canManageBingo();
     $("bingoAdminPanel")?.classList.toggle("hidden",!admin);
     if(!plan){
-      $("bingoPlanState").textContent="Ikke publisert";$("bingoPlanMetrics").innerHTML="";$("bingoBoard").innerHTML=`<p class="empty-state">${admin?"Opprett og publiser bingoplanen i administrasjonen under.":"Ledelsen arbeider med bingoplanen. Vent med å ta derbyoppgaver."}</p>`;$("bingoCommitmentPanel").innerHTML="";$("bingoTaskOverview").innerHTML="";if(admin)renderBingoAdmin();return;
+      $("bingoPlanState").textContent="Ikke publisert";$("bingoBoardScreenshot").innerHTML="";$("bingoPlanMetrics").innerHTML="";$("bingoBoard").innerHTML=`<p class="empty-state">${admin?"Opprett og publiser bingoplanen i administrasjonen under.":"Ledelsen arbeider med bingoplanen. Vent med å ta derbyoppgaver."}</p>`;$("bingoCommitmentPanel").innerHTML="";$("bingoTaskOverview").innerHTML="";if(admin)renderBingoAdmin();return;
     }
     const status=$("bingoPlanState");status.textContent={draft:"Utkast",published:"Publisert",active:"Aktiv",completed:"Ferdig"}[plan.status]||plan.status;status.className=`bingo-plan-state ${plan.status}`;
     $("bingoPlannerIntro").textContent=plan.status==="draft"?"Planen er fortsatt et utkast. Ingen oppgaver skal tas før den publiseres.":(plan.instructions||"Følg oppgavefordelingen. Gi beskjed straks dersom noe ikke kan fullføres.");
@@ -2936,7 +2939,31 @@
       <div><span>Deltakende profiler</span><strong>${joined.length}</strong></div><div><span>Mål</span><strong>${Number(plan.target_points||0).toLocaleString("nb-NO")} p</strong></div>
       <div><span>Oppgaver til målet</span><strong>${pointsNeeded}</strong></div><div><span>Frie maksoppgaver etter planen</span><strong>${freeMaxTasks}</strong></div><div><span>Planlagte bindinger</span><strong>${commitmentCapacity}</strong></div>
       <div class="${strategySlots&&strategySlots!==commitmentCapacity?"warning":""}"><span>Strategiplasser</span><strong>${strategySlots||"–"}</strong></div>`;
-    renderBingoBoard();renderBingoCommitment();renderBingoOverview();renderBingoStandbyNotice();if(admin)renderBingoAdmin();
+    renderBingoBoardScreenshot();renderBingoBoard();renderBingoCommitment();renderBingoOverview();renderBingoStandbyNotice();if(admin)renderBingoAdmin();
+  }
+  async function renderBingoBoardScreenshot(){
+    const host=$("bingoBoardScreenshot"),plan=bingoData.plan;if(!host)return;
+    const request=++bingoBoardImageRequest;
+    if(!plan?.board_image_path){bingoBoardImagePath="";bingoBoardImageUrl="";host.innerHTML="";return;}
+    const paint=url=>{
+      const assignments=bingoData.assignments||[];
+      const overlays=Array.from({length:16},(_,index)=>{
+        const cell=(bingoData.cells||[]).find(x=>Number(x.position)===index+1);
+        if(!cell)return `<span class="bingo-shot-cell missing" aria-hidden="true"></span>`;
+        const assigned=assignments.filter(x=>String(x.cell_id)===String(cell.id)&&x.status!=="reassigned"),done=assigned.filter(x=>x.status==="completed").length;
+        const selected=bingoDraftClaims.some(x=>String(x.cellId)===String(cell.id));
+        const full=assigned.length>=Number(cell.required_count||0),blocked=cell.is_blocked||cell.classification==="delete";
+        return `<button type="button" class="bingo-shot-cell ${selected?"selected":""} ${full?"full":""} ${blocked?"blocked":""}" data-bingo-shot-cell="${cell.id}" ${blocked?"disabled":""} aria-label="${esc(cell.task_name)}: ${assigned.length} av ${Number(cell.required_count||0)} fordelt"><span>${done}/${Number(cell.required_count||0)} ferdig</span><strong>${assigned.length}/${Number(cell.required_count||0)} valgt</strong></button>`;
+      }).join("");
+      host.innerHTML=`<section class="bingo-board-shot"><p class="bingo-shot-help"><strong>Velg direkte på brettet.</strong> Hver rute kan bare velges så mange ganger som totalen for oppgaven.</p><span class="bingo-board-shot-frame"><img src="${esc(url)}" alt="Skjermbilde av det aktuelle bingobrettet"><span class="bingo-shot-grid">${overlays}</span><span class="bingo-board-watermark">UOFFISIELT FANINNHOLD · HAY DAY © SUPERCELL</span></span><p class="bingo-shot-open"><a href="${esc(url)}" target="_blank" rel="noopener">Åpne originalbildet i full størrelse</a></p><p class="bingo-fan-disclaimer">Hay Day og innholdet i skjermbildet tilhører Supercell. Dette er uoffisielt faninnhold og er ikke godkjent eller støttet av Supercell. <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noopener">Se Supercells Fan Content Policy</a>.</p></section>`;
+      host.querySelectorAll("[data-bingo-shot-cell]").forEach(button=>button.onclick=()=>toggleBingoDraft(button.dataset.bingoShotCell));
+    };
+    if(bingoBoardImagePath===plan.board_image_path&&bingoBoardImageUrl){paint(bingoBoardImageUrl);return;}
+    host.innerHTML=`<section class="bingo-board-shot"><div class="bingo-board-shot-loading">Laster skjermbildet av bingobrettet …</div></section>`;
+    try{
+      const url=await backend.getBingoBoardImageUrl(plan.board_image_path);if(request!==bingoBoardImageRequest||!url)return;
+      bingoBoardImagePath=plan.board_image_path;bingoBoardImageUrl=url;paint(url);
+    }catch(error){if(request===bingoBoardImageRequest)host.innerHTML=`<p class="form-message">Skjermbildet kunne ikke lastes: ${esc(humanError(error,"ukjent feil"))}</p>`;}
   }
   function renderBingoBoard(){
     const board=$("bingoBoard"),plan=bingoData.plan;if(!board||!plan)return;
@@ -2965,7 +2992,7 @@
       if(existing+bingoDraftClaims.filter(x=>String(x.identityId)===String(identityId)).length>=Number(plan.commitments_per_profile||5))return alert(`Denne spillprofilen har allerede valgt ${plan.commitments_per_profile} oppgaver.`);
       bingoDraftClaims.push({identityId:String(identityId),cellId:String(cellId)});
     }
-    renderBingoBoard();renderBingoCommitment();
+    renderBingoBoardScreenshot();renderBingoBoard();renderBingoCommitment();
   }
   function renderBingoCommitment(){
     const box=$("bingoCommitmentPanel"),plan=bingoData.plan;if(!box||!plan)return;
@@ -3006,15 +3033,29 @@
     const defaults=Array.from({length:16},(_,i)=>cells.find(x=>Number(x.position)===i+1)||{position:i+1,task_name:"Oppgave",icon:"◇",required_count:4,classification:"free",is_blocked:false});
     const joined=bingoJoinedIdentities();
     host.innerHTML=`<div class="bingo-admin-settings"><label>Målpoeng<input id="bingoTargetPoints" type="number" min="1" value="${Number(plan.target_points||28800)}"></label><label>Makspoeng per oppgave<input id="bingoMaxPoints" type="number" min="1" value="${Number(plan.max_points||event.max_points||320)}"></label><label>Bindende valg per profil<input id="bingoCommitments" type="number" min="1" max="20" value="${Number(plan.commitments_per_profile||5)}"></label><label>Planlagt beredskap<input id="bingoStandbyCount" type="number" min="0" max="20" value="${Number(plan.planned_standby_count??3)}"></label><label class="wide">Instruksjon til deltakerne<textarea id="bingoInstructions" rows="3">${esc(plan.instructions||"")}</textarea></label></div><h3>1. Velg tre hovedlinjer og én reserve</h3><p class="helper-text">Trykk flere ganger for å bytte mellom hovedlinje, reserve og ikke valgt.</p><div class="bingo-line-picker">${Object.keys(BINGO_LINES).map(key=>`<button type="button" data-bingo-line="${key}" class="${lineRoles[key]||""}">${esc(BINGO_LINE_LABELS[key])}</button>`).join("")}</div><h3>2. Kontroller de 16 rutene</h3><div class="bingo-admin-grid">${defaults.map(cell=>`<div class="bingo-cell-editor" data-bingo-cell-editor="${cell.position}"><div class="row"><input aria-label="Ikon" data-field="icon" value="${esc(cell.icon||"◇")}"><input aria-label="Oppgavenavn" data-field="task_name" value="${esc(cell.task_name)}"><input aria-label="Antall" data-field="required_count" type="number" min="0" max="20" value="${Number(cell.required_count||0)}"></div><select data-field="classification"><option value="focus" ${cell.classification==="focus"?"selected":""}>Strategi – behold</option><option value="free" ${cell.classification==="free"?"selected":""}>Fri makspoengoppgave</option><option value="delete" ${cell.classification==="delete"?"selected":""}>Ikke aktuell – slett</option></select><small>Rute ${cell.position}</small></div>`).join("")}</div>${plan.id?`<h3>3. Privat beredskap</h3><p class="helper-text">Dette er bare synlig for eier/admin og den utpekte spilleren.</p><div class="bingo-standby-admin">${joined.map(identity=>{const row=(bingoData.standby||[]).find(x=>String(x.game_identity_id)===String(identity.id)&&x.status!=="released");return `<div class="bingo-standby-row"><label><input type="checkbox" data-standby-identity="${identity.id}" ${row?"checked":""}> ${esc(identity.name)}</label><input type="number" min="1" max="20" value="${Number(row?.reserved_slots||3)}" data-standby-slots="${identity.id}" aria-label="Ledige plasser">${row?`<span><button class="button" data-standby-save="${identity.id}">Lagre</button> <button class="button" data-standby-activate="${row.id}">${row.status==="activated"?"Aktivert":"Aktiver"}</button></span>`:`<button class="button" data-standby-save="${identity.id}">Velg</button>`}</div>`;}).join("")}</div>`:"<p class=\"helper-text\">Lagre utkastet før beredskap velges.</p>"}<div class="bingo-admin-actions"><button class="button" id="saveBingoDraft">Lagre utkast</button><button class="button button-primary" id="publishBingoPlan">Publiser planen</button></div>`;
+    if(plan.id)host.insertAdjacentHTML("beforeend",`<section class="bingo-image-admin"><h3>Skjermbilde av bingobrettet</h3><p class="helper-text">Beskjær bildet tett rundt selve 4×4-brettet, slik som eksemplet. JPG, PNG eller WebP, maks 10 MB. Originalbildet lagres privat. Portalen viser automatisk en synlig uoffisiell-faninnhold-markering uten å endre selve bildefilen.</p><div class="bingo-image-controls"><input id="bingoBoardImageInput" type="file" accept="image/jpeg,image/png,image/webp"><button class="button button-primary" id="uploadBingoBoardImage">${plan.board_image_path?"Erstatt skjermbilde":"Last opp skjermbilde"}</button>${plan.board_image_path?`<button class="button" id="deleteBingoBoardImage">Fjern skjermbilde</button>`:""}</div><p class="form-message" id="bingoBoardImageStatus"></p></section>`);
     host.querySelectorAll("[data-bingo-line]").forEach(button=>button.onclick=()=>{if(button.classList.contains("main")){button.classList.remove("main");button.classList.add("reserve");}else if(button.classList.contains("reserve"))button.classList.remove("reserve");else button.classList.add("main");});
     $("saveBingoDraft").onclick=()=>saveBingoAdmin("draft");$("publishBingoPlan").onclick=()=>saveBingoAdmin("published");
     host.querySelectorAll("[data-standby-save]").forEach(button=>button.onclick=()=>saveBingoStandbyChoice(button.dataset.standbySave));
     host.querySelectorAll("[data-standby-activate]").forEach(button=>button.onclick=async()=>{if(!confirm("Aktivere beredskap? Spilleren får et tydelig hastevarsel i portalen."))return;try{await backend.updateBingoStandby(button.dataset.standbyActivate,"activated");await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke aktivere beredskap."));}});
+    if($("uploadBingoBoardImage"))$("uploadBingoBoardImage").onclick=uploadBingoBoardImage;
+    if($("deleteBingoBoardImage"))$("deleteBingoBoardImage").onclick=deleteBingoBoardImage;
     const activated=(bingoData.standby||[]).filter(row=>row.status==="activated");
     if(activated.length){
       host.querySelector(".bingo-admin-actions")?.insertAdjacentHTML("beforebegin",`<h3>4. Hastefordeling til aktivert beredskap</h3><p class="helper-text">Brukes når en planlagt oppgave må overtas raskt. Flytt først den opprinnelige tildelingen dersom plassen er opptatt.</p><div class="bingo-standby-row"><select id="bingoEmergencyIdentity">${activated.map(row=>`<option value="${row.game_identity_id}">${esc(bingoIdentity(row.game_identity_id)?.name||"Spillprofil")}</option>`).join("")}</select><select id="bingoEmergencyCell">${(bingoData.cells||[]).filter(cell=>!cell.is_blocked&&cell.classification!=="delete").map(cell=>`<option value="${cell.id}">${esc(cell.icon||"◇")} ${esc(cell.task_name)}</option>`).join("")}</select><button class="button button-primary" id="assignBingoEmergency">Tildel hasteoppgave</button></div>`);
       $("assignBingoEmergency").onclick=async()=>{if(!confirm("Tildele denne bindende hasteoppgaven til beredskapsprofilen?"))return;try{await backend.claimBingoSlots(bingoData.plan.id,$("bingoEmergencyIdentity").value,[$("bingoEmergencyCell").value]);await loadBingoPlanner(true);}catch(e){alert(humanError(e,"Kunne ikke tildele hasteoppgaven."));}};
     }
+  }
+  async function uploadBingoBoardImage(){
+    const input=$("bingoBoardImageInput"),button=$("uploadBingoBoardImage"),status=$("bingoBoardImageStatus"),file=input?.files?.[0],plan=bingoData.plan,event=bingoEvent();
+    if(!file||!plan?.id||!event?.id){if(status)status.textContent="Velg et skjermbilde først.";return;}
+    button.disabled=true;if(status)status.textContent="Laster opp 0 % …";
+    try{await backend.uploadBingoBoardImage(event.id,plan.id,file,plan.board_image_path,progress=>{if(status)status.textContent=`Laster opp ${progress} % …`;});await loadBingoPlanner(true);}
+    catch(error){if(status)status.textContent=humanError(error,"Kunne ikke laste opp skjermbildet.");button.disabled=false;}
+  }
+  async function deleteBingoBoardImage(){
+    const plan=bingoData.plan;if(!plan?.id||!plan.board_image_path||!confirm("Fjerne skjermbildet av bingobrettet?"))return;
+    try{await backend.deleteBingoBoardImage(plan.id,plan.board_image_path);await loadBingoPlanner(true);}catch(error){const status=$("bingoBoardImageStatus");if(status)status.textContent=humanError(error,"Kunne ikke fjerne skjermbildet.");}
   }
   async function saveBingoAdmin(status){
     const buttons=[...document.querySelectorAll("[data-bingo-line]")];const strategyLines=buttons.filter(b=>b.classList.contains("main")||b.classList.contains("reserve")).map(b=>({key:b.dataset.bingoLine,role:b.classList.contains("reserve")?"reserve":"main"}));
@@ -3827,7 +3868,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.87").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.88").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
