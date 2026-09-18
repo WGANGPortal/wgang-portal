@@ -1,4 +1,4 @@
-/* v0.18.0.89 – tydelig valg av hovedlinjer og reservelinje */
+/* v0.18.0.90 – strategimerking på opplastet bingobrett */
 (function () {
   "use strict";
 

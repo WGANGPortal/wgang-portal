@@ -1,4 +1,4 @@
-/* v0.18.0.89 – tydelig valg av hovedlinjer og reservelinje */
+/* v0.18.0.90 – strategimerking på opplastet bingobrett */
 (function () {
   "use strict";
 
@@ -2947,15 +2947,19 @@
     if(!plan?.board_image_path){bingoBoardImagePath="";bingoBoardImageUrl="";host.innerHTML="";return;}
     const paint=url=>{
       const assignments=bingoData.assignments||[];
+      const roles=bingoLineRoles(),hasStrategy=Object.keys(roles).length>0;
       const overlays=Array.from({length:16},(_,index)=>{
         const cell=(bingoData.cells||[]).find(x=>Number(x.position)===index+1);
         if(!cell)return `<span class="bingo-shot-cell missing" aria-hidden="true"></span>`;
         const assigned=assignments.filter(x=>String(x.cell_id)===String(cell.id)&&x.status!=="reassigned"),done=assigned.filter(x=>x.status==="completed").length;
         const selected=bingoDraftClaims.some(x=>String(x.cellId)===String(cell.id));
         const full=assigned.length>=Number(cell.required_count||0),blocked=cell.is_blocked||cell.classification==="delete";
-        return `<button type="button" class="bingo-shot-cell ${selected?"selected":""} ${full?"full":""} ${blocked?"blocked":""}" data-bingo-shot-cell="${cell.id}" ${blocked?"disabled":""} aria-label="${esc(cell.task_name)}: ${assigned.length} av ${Number(cell.required_count||0)} fordelt"><span>${done}/${Number(cell.required_count||0)} ferdig</span><strong>${assigned.length}/${Number(cell.required_count||0)} valgt</strong></button>`;
+        const lineRole=bingoCellRole(cell.position);
+        const lineBadges=Object.entries(roles).filter(([key])=>BINGO_LINES[key].includes(Number(cell.position))).map(([key,role])=>`<b>${role==="reserve"?"R":"H"}${esc(key.toUpperCase())}</b>`).join("");
+        const strategyClass=lineRole==="main"?"strategy-main":lineRole==="reserve"?"strategy-reserve":hasStrategy&&!blocked?"strategy-dimmed":"";
+        return `<button type="button" class="bingo-shot-cell ${strategyClass} ${selected?"selected":""} ${full?"full":""} ${blocked?"blocked":""}" data-bingo-shot-cell="${cell.id}" ${blocked?"disabled":""} aria-label="${esc(cell.task_name)}: ${assigned.length} av ${Number(cell.required_count||0)} fordelt"><i class="bingo-shot-line-badges">${lineBadges}</i><span>${done}/${Number(cell.required_count||0)} ferdig</span><strong>${assigned.length}/${Number(cell.required_count||0)} valgt</strong></button>`;
       }).join("");
-      host.innerHTML=`<section class="bingo-board-shot"><p class="bingo-shot-help"><strong>Velg direkte på brettet.</strong> Hver rute kan bare velges så mange ganger som totalen for oppgaven.</p><span class="bingo-board-shot-frame"><img src="${esc(url)}" alt="Skjermbilde av det aktuelle bingobrettet"><span class="bingo-shot-grid">${overlays}</span><span class="bingo-board-watermark">UOFFISIELT FANINNHOLD · HAY DAY © SUPERCELL</span></span><p class="bingo-shot-open"><a href="${esc(url)}" target="_blank" rel="noopener">Åpne originalbildet i full størrelse</a></p><p class="bingo-fan-disclaimer">Hay Day og innholdet i skjermbildet tilhører Supercell. Dette er uoffisielt faninnhold og er ikke godkjent eller støttet av Supercell. <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noopener">Se Supercells Fan Content Policy</a>.</p></section>`;
+      host.innerHTML=`<section class="bingo-board-shot"><p class="bingo-shot-help"><strong>Velg direkte på brettet.</strong> Turkis viser hovedlinjene, lilla viser reservelinjen, og resten tones ned. Hver rute kan bare velges så mange ganger som totalen for oppgaven.</p><span class="bingo-board-shot-frame"><img src="${esc(url)}" alt="Skjermbilde av det aktuelle bingobrettet"><span class="bingo-shot-grid">${overlays}</span><span class="bingo-board-watermark">UOFFISIELT FANINNHOLD · HAY DAY © SUPERCELL</span></span><p class="bingo-shot-open"><a href="${esc(url)}" target="_blank" rel="noopener">Åpne originalbildet i full størrelse</a></p><p class="bingo-fan-disclaimer">Hay Day og innholdet i skjermbildet tilhører Supercell. Dette er uoffisielt faninnhold og er ikke godkjent eller støttet av Supercell. <a href="https://supercell.com/en/fan-content-policy/" target="_blank" rel="noopener">Se Supercells Fan Content Policy</a>.</p></section>`;
       host.querySelectorAll("[data-bingo-shot-cell]").forEach(button=>button.onclick=()=>toggleBingoDraft(button.dataset.bingoShotCell));
     };
     if(bingoBoardImagePath===plan.board_image_path&&bingoBoardImageUrl){paint(bingoBoardImageUrl);return;}
@@ -3038,7 +3042,7 @@
     if(lineHelp)lineHelp.innerHTML="<strong>Første trykk:</strong> hovedlinje. <strong>Andre trykk:</strong> reserve. <strong>Tredje trykk:</strong> ikke valgt.";
     if(linePicker)linePicker.insertAdjacentHTML("beforebegin",'<p class="bingo-line-selection-status" id="bingoLineSelectionStatus"></p>');
     const refreshLineSelection=()=>{const buttons=[...host.querySelectorAll("[data-bingo-line]")],main=buttons.filter(b=>b.classList.contains("main")).length,reserve=buttons.filter(b=>b.classList.contains("reserve")).length;buttons.forEach(button=>{const role=button.classList.contains("main")?"main":button.classList.contains("reserve")?"reserve":"";let label=button.dataset.lineLabel;if(!label){label=button.textContent.trim();button.dataset.lineLabel=label;}button.innerHTML=`<span>${esc(label)}</span><small>${role==="main"?"HOVEDLINJE":role==="reserve"?"RESERVE":"IKKE VALGT"}</small>`;button.setAttribute("aria-pressed",role?"true":"false");});const status=$("bingoLineSelectionStatus");if(status){status.textContent=`${main}/3 hovedlinjer · ${reserve}/1 reserve`;status.classList.toggle("ready",main===3&&reserve===1);}};
-    host.querySelectorAll("[data-bingo-line]").forEach(button=>button.onclick=()=>{if(button.classList.contains("main")){button.classList.remove("main");button.classList.add("reserve");}else if(button.classList.contains("reserve"))button.classList.remove("reserve");else button.classList.add("main");refreshLineSelection();});
+    host.querySelectorAll("[data-bingo-line]").forEach(button=>button.onclick=()=>{if(button.classList.contains("main")){button.classList.remove("main");button.classList.add("reserve");}else if(button.classList.contains("reserve"))button.classList.remove("reserve");else button.classList.add("main");refreshLineSelection();if(bingoData.plan){bingoData.plan.strategy_lines=[...host.querySelectorAll("[data-bingo-line]")].filter(item=>item.classList.contains("main")||item.classList.contains("reserve")).map(item=>({key:item.dataset.bingoLine,role:item.classList.contains("reserve")?"reserve":"main"}));renderBingoBoardScreenshot();renderBingoBoard();}});
     refreshLineSelection();
     $("saveBingoDraft").onclick=()=>saveBingoAdmin("draft");$("publishBingoPlan").onclick=()=>saveBingoAdmin("published");
     host.querySelectorAll("[data-standby-save]").forEach(button=>button.onclick=()=>saveBingoStandbyChoice(button.dataset.standbySave));
@@ -3873,7 +3877,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.89").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.90").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
