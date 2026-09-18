@@ -1,4 +1,4 @@
-/* v0.18.0.91 – bingoplan på oppgavetavlen */
+/* v0.18.0.92 – synkroniserte bingo-deltakere */
 (function () {
   "use strict";
 

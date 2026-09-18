@@ -1,3 +1,10 @@
+## v0.18.0.92 – Synkroniserte bingo-deltakere
+- Bingoplanen leser påmeldte spillprofiler fra Bingo Derby som faktisk pågår.
+- Deltakerlisten oppdateres automatisk ved derbystart og når portalen åpnes igjen.
+- Eier/admin kan hente listen på nytt med «Oppdater deltakere nå».
+- Beredskap kan bare velges blant aktive, påmeldte spillprofiler i aktuelt derby.
+- Meldingen skiller mellom manglende påmelding og profil som er satt i beredskap.
+
 ## v0.18.0.23
 - Tydelig Harepus-fokus og nedtelling på Oversikt.
 - Direkte snarvei til oppslagstavla.
