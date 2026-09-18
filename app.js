@@ -1,4 +1,4 @@
-/* v0.18.0.90 – strategimerking på opplastet bingobrett */
+/* v0.18.0.91 – bingoplan på oppgavetavlen */
 (function () {
   "use strict";
 
@@ -31,7 +31,7 @@
   const LANG_KEY = "wgangLanguage";
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const I18N_EN = {
-    "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
+    "Oversikt":"Overview","Derby":"Derby","Derbypåmelding":"Derby registration","Påmelding":"Registration","Medlemmer":"Members","Oppgaver":"Tasks","Oppgavetavlen":"Task board","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
     "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Medlemmer og roller":"Members and roles",
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
@@ -2613,6 +2613,7 @@
     const type = /^Standard Derby$/i.test(rawType) ? "Normal Derby" : rawType;
     const shortType = type.replace(/\s*Derby$/i, "");
     const bunny = /bunny|harepus/i.test(type);
+    const bingo = /bingo/i.test(type);
 
     const spotlight=$("dashboardDerbySpotlight");
     if (spotlight) spotlight.classList.toggle("bunny-focus", bunny);
@@ -2625,9 +2626,9 @@
     setText("nextDerbyStart", active
       ? "Pågår nå"
       : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00"));
-    setText("dashboardDerbyAction", bunny && active ? "Åpne oppslagstavla" : (bunny ? "Åpne påmelding" : "Åpne derby-senter"));
+    setText("dashboardDerbyAction", bingo ? (active ? "Åpne bingoplanen" : "Klargjør bingoplanen") : (bunny && active ? "Åpne oppslagstavla" : (bunny ? "Åpne påmelding" : "Åpne derbypåmelding")));
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
-    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
+    if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=(bingo || bunny && active) ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
     renderDerbyCompletion();
@@ -2730,13 +2731,15 @@
   }
 
   function renderTaskHubContext(){
-    const event=state.derbyManagement?.next;
+    const event=currentActiveDerbyEvent()||state.derbyManagement?.next;
     const type=String(event?.name||state.derby?.type||"Normal Derby");
-    const bunny=/bunny|harepus/i.test(type), derbyScope=preferenceDerbyScope(type), preferenceBased=!!derbyScope;
-    $("standardTaskHub")?.classList.toggle("hidden",!preferenceBased);
-    $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
-    $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
-    if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgaver i neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg oppgavene sammen og se felles interesse før neste harepus.":"Påmeldingen er åpen. Dere kan samtidig klargjøre oppgaver og se felles interesse før derbyet starter.");}
+    const bingo=/bingo/i.test(type),bunny=/bunny|harepus/i.test(type),derbyScope=preferenceDerbyScope(type),preferenceBased=!!derbyScope;
+    $("bingoTaskHub")?.classList.toggle("hidden",!bingo);
+    $("standardTaskHub")?.classList.toggle("hidden",bingo||!preferenceBased);
+    $("bunnyTaskHub")?.classList.toggle("hidden",bingo||!bunny);
+    $("genericTaskHub")?.classList.toggle("hidden",bingo||preferenceBased||bunny);
+    if(bingo){setText("taskHubEyebrow","BINGO DERBY");setText("taskHubTitle","Bingoplanen");setText("taskHubIntro","Følg felles strategi, velg dine bindende oppgaver og se hvem som har ansvar for hver rute.");}
+    else if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgaver i neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg oppgavene sammen og se felles interesse før neste harepus.":"Påmeldingen er åpen. Dere kan samtidig klargjøre oppgaver og se felles interesse før derbyet starter.");}
     else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
     else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
@@ -3877,7 +3880,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.90").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.91").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

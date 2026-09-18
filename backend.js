@@ -1,4 +1,4 @@
-/* v0.18.0.90 – strategimerking på opplastet bingobrett */
+/* v0.18.0.91 – bingoplan på oppgavetavlen */
 (function () {
   "use strict";
 
