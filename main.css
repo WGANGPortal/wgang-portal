@@ -369,8 +369,9 @@ body:not(.admin-mode) .admin-only {
 .social-comment-actions{display:flex;align-items:center;gap:10px;margin-top:7px}.social-comment-actions .text-button{margin-left:auto}.social-comment-like{padding:5px 9px;min-height:32px}.social-comment .social-like-details{display:inline-block;margin-top:5px}
 .chat-focus-target{animation:chat-focus-pulse 1.8s ease}.chat-unread-divider{scroll-margin-top:100px}.leadership-message,.content-post,.social-comment{scroll-margin-top:100px}.notification-focus-target{outline:3px solid rgba(185,49,112,.25);outline-offset:4px}
 
-/* v0.18.0.76 – historiske derbyresultater fra Hay Day-sluttlisten */
-.wiki-video{display:grid;gap:.55rem;margin-top:1rem}.wiki-video video,.wiki-video-preview video{display:block;width:100%;max-height:min(62vh,560px);border-radius:15px;background:#211a1d;object-fit:contain}.wiki-video small,.wiki-video-preview span{color:var(--muted);font-size:.76rem;overflow-wrap:anywhere}.wiki-video-error{padding:.7rem;border-radius:10px;background:var(--cream);color:var(--pink)!important;font-size:.8rem}.wiki-video-guidance{margin:.5rem 0 0;line-height:1.55}.wiki-video-preview{display:grid;gap:.65rem;margin-top:.8rem;padding:.75rem;border:1px solid var(--border);border-radius:16px;background:var(--cream)}.wiki-video-preview>div{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.wiki-video-preview .text-button{flex:none}.wiki-upload-progress{display:grid;gap:.45rem;margin-top:1rem}.wiki-upload-progress .progress-track span{width:0}.wiki-upload-progress small{color:var(--muted);font-weight:750}.approval-card .wiki-video{max-width:520px}.approval-card .wiki-video video{max-height:360px}
+/* v0.18.0.84 – sikker administratorkontroll av tipsvedlegg */
+.wiki-media{display:grid;gap:.55rem;margin-top:1rem}.wiki-media video,.wiki-media img,.wiki-video-preview video,.wiki-video-preview img{display:block;width:100%;max-height:min(62vh,560px);border-radius:15px;background:#211a1d;object-fit:contain}.wiki-media img,.wiki-video-preview img{height:auto;background:var(--cream)}.wiki-media small,.wiki-video-preview span{color:var(--muted);font-size:.76rem;overflow-wrap:anywhere}.wiki-media-error{padding:.7rem;border-radius:10px;background:var(--cream);color:var(--pink)!important;font-size:.8rem}.wiki-video-guidance{margin:.5rem 0 0;line-height:1.55}.wiki-video-preview{display:grid;gap:.65rem;margin-top:.8rem;padding:.75rem;border:1px solid var(--border);border-radius:16px;background:var(--cream)}.wiki-video-preview>div{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.wiki-video-preview .text-button{flex:none}.wiki-upload-progress{display:grid;gap:.45rem;margin-top:1rem}.wiki-upload-progress .progress-track span{width:0}.wiki-upload-progress small{color:var(--muted);font-weight:750}.approval-card .wiki-media{max-width:520px}.approval-card .wiki-media video,.approval-card .wiki-media img{max-height:360px}
+.wiki-media-loading{margin:0;color:var(--muted);font-size:.8rem}.wiki-media-review{display:flex!important;align-items:flex-start;gap:.65rem;margin-top:.25rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;background:var(--cream);font-size:.85rem;font-weight:750;line-height:1.4}.wiki-media-review input{width:1.2rem;height:1.2rem;margin:.05rem 0 0;flex:none;accent-color:var(--pink)}.wiki-media-review input:disabled{opacity:.55}.approval-card [data-tip-approve]:disabled{cursor:not-allowed;opacity:.48;box-shadow:none}
 @keyframes chat-focus-pulse{0%,100%{filter:none}35%{filter:drop-shadow(0 0 9px rgba(185,49,112,.42))}}
 @media(max-width:620px){.chat-continuation-note{border-radius:10px}.social-like-details{width:100%;margin-left:0}.social-like-details[open] ul{position:static;max-width:none}.social-action-label{display:none}}
 
@@ -651,6 +652,28 @@ body:not(.admin-mode) .admin-only {
 .absence-derby-note{padding:12px;border-radius:12px;background:var(--cream);color:var(--muted);font-size:.8rem;line-height:1.5}
 .absence-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 @media(max-width:640px){.absence-date-grid{grid-template-columns:1fr}.member-status-stack{max-width:145px}}
-.derby-participant-admin-list{display:grid;gap:.65rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line)}
-.derby-participant-admin-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;border:1px solid var(--line);border-radius:16px;background:var(--surface-soft)}
-.derby-participant-admin-row div{display:grid;gap:.2rem}.derby-participant-admin-row small{color:var(--muted)}
+
+/* v0.18.0.82 – mobilmeny og flere spillprofiler */
+.sidebar{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.game-identity-list{display:grid;gap:12px;margin:18px 0}
+.game-identity-card{padding:15px;border:1px solid var(--border);border-radius:16px;background:var(--cream)}
+.game-identity-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px}
+.game-identity-card>header>div{display:grid}.game-identity-card>header small{color:var(--muted);font-size:.72rem}
+.game-primary-badge{padding:5px 8px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.66rem;font-weight:850}
+.game-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}
+.game-choice-status{margin:10px 2px 0;color:var(--muted);font-size:.76rem}
+.game-identity-add{display:grid;grid-template-columns:minmax(170px,1fr) minmax(130px,.8fr) minmax(130px,.8fr) auto;align-items:end;gap:10px;margin-top:18px;padding:15px;border:1px dashed rgba(169,47,96,.34);border-radius:16px;background:#fff}
+.game-identity-add>div{align-self:center}.game-identity-add>div>*{display:block}.game-identity-add>div small{margin-top:3px;color:var(--muted);font-size:.7rem;line-height:1.35}
+.game-identity-add label{display:grid;gap:5px;font-size:.72rem;font-weight:800}.game-identity-add input{min-width:0;width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:11px;background:#fff}
+.game-identity-add .form-message{grid-column:1/-1;margin:0}.game-identity-add.identity-limit-reached{opacity:.72}.game-identity-add.identity-limit-reached>div small:after{content:" Grensen er nådd.";font-weight:800}
+.member-game-identities{display:grid;gap:7px;margin:16px 0 4px}
+.member-game-identities>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:12px;background:var(--cream)}
+.member-game-identities>div>span:first-child{display:grid}.member-game-identities small{color:var(--muted);font-size:.66rem}
+@media(max-width:900px){html.portal-menu-open,body.portal-menu-open{overflow:hidden;overscroll-behavior:none}body.portal-menu-open{position:fixed;left:0;right:0;width:100%}.sidebar{bottom:auto;height:calc(100vh - 76px);height:calc(100dvh - 76px);max-height:none;padding-bottom:max(24px,env(safe-area-inset-bottom))}}
+@media(max-width:620px){.sidebar{height:calc(100vh - 66px);height:calc(100dvh - 66px);padding-bottom:calc(92px + env(safe-area-inset-bottom))}.game-choice-grid,.game-identity-add{grid-template-columns:1fr}.game-identity-add .button{width:100%}.member-game-identities>div{align-items:flex-start}}
+.member-status.status-removed{background:#f5dce5;color:#8b234d}
+.admin-derby-participant-list{margin-top:20px;border-top:1px solid #eadce1;padding-top:14px;display:grid;gap:10px}
+.admin-derby-list-heading,.admin-derby-participant{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-derby-list-heading small,.admin-derby-participant small{display:block;color:#7c6d73;margin-top:3px}
+.admin-derby-participant{padding:12px 14px;border:1px solid #eadce1;border-radius:16px;background:#fffaf7}
+.admin-derby-participant .button{margin:0;flex:0 0 auto}

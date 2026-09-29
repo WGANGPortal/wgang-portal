@@ -1,0 +1,19 @@
+WGANG Portal v0.18.0.86 – synlig og samlet derbyavmelding
+
+Last opp disse filene til rotmappen i GitHub:
+
+1. app.js
+2. backend.js
+3. index.html
+4. main.css
+5. service-worker.js
+6. MIGRATION-v0.18.0.86-DERBY-REMOVAL-SYNC.sql
+
+Databasemigreringen er allerede kjørt. SQL-filen følger med som dokumentasjon.
+
+Rettelsen gjør at:
+- Hagen og andre manuelt avmeldte vises som «Meldt av», ikke «Deltar»
+- avmeldingen synkroniseres til alle brukerens spillprofiler
+- en avmeldt bruker kan ikke melde seg inn igjen selv
+- Eier/Admin får deltakerlisten og «Meld av»-knappen også mens derbyet pågår
+- manuelt avmeldte telles separat og ikke som innsendte svar

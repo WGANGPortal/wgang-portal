@@ -1,4 +1,4 @@
-/* v0.18.0.85 – riktig aktivt derby ved like starttider */
+/* v0.18.0.86 – synlig manuell derbyavmelding */
 (function () {
   "use strict";
 
@@ -268,6 +268,7 @@
     {group:"Derby",key:"derby.board.publish",label:"Publisere oppgavetavle",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Derby",key:"derby.task_library.edit",label:"Legge til/redigere oppgavemaler",defaults:{owner:1,admin:1,assistant_leader:1,member:0}},
     {group:"Derby",key:"derby.settings.publish",label:"Publisere neste derby",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
+    {group:"Derby",key:"derby.participation.remove",label:"Melde av derbydeltaker manuelt",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
 
     {group:"Chat",key:"chat.community.view",label:"Se vanlig chat/Derbyprat",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
     {group:"Chat",key:"chat.community.post",label:"Skrive i vanlig chat/Derbyprat",defaults:{owner:1,admin:1,assistant_leader:1,member:1}},
@@ -324,7 +325,7 @@
   }
   const ADMIN_MODULE_PERMISSIONS = {
     actions:["content.pending.view","members.approve","members.reject"],
-    derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish"],
+    derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish","derby.participation.remove"],
     applications:["members.approve","members.reject"],
     board:["derby.preferences.view"],
     roles:["members.view","members.change_role","members.remove","permissions.view"]
@@ -371,7 +372,7 @@
   }
   function approved() { return state.accounts.filter(a => a.approved); }
   function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role; }
-  function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar"}[choice] || choice; }
+  function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar",removed:"Meldt av"}[choice] || choice; }
   function gameIdentitiesFor(userId) {
     return (state.gameIdentities || []).filter(identity=>String(identity.userId)===String(userId));
   }
@@ -382,17 +383,25 @@
   function gameIdentityChoice(identityId,event=state.derbyManagement?.next) {
     return gameParticipationFor(identityId,event)?.choice || "waiting";
   }
+  function memberParticipationChoiceForEvent(account,event=state.derbyManagement?.next) {
+    if(!account||!event?.id)return account?.choice || "waiting";
+    const row=(state.derbyManagement?.participations || []).find(item=>String(item.event_id)===String(event.id)&&String(item.user_id)===String(account.id));
+    if(row?.choice)return row.choice;
+    if(String(account.activeDerbyEventId||"")===String(event.id))return account.activeDerbyChoice || "waiting";
+    return account.choice || "waiting";
+  }
   function gameIdentityRowsForAccount(account,event=state.derbyManagement?.next) {
     const rows=gameIdentitiesFor(account?.id);
-    if(rows.length)return rows.map(identity=>({...identity,choice:gameIdentityChoice(identity.id,event)}));
+    const memberChoice=memberParticipationChoiceForEvent(account,event);
+    if(rows.length)return rows.map(identity=>({...identity,choice:memberChoice==="removed"?"removed":gameIdentityChoice(identity.id,event)}));
     return account?[{id:`legacy-${account.id}`,userId:account.id,name:account.name,playerTag:"",isPrimary:true,choice:account.choice || "waiting",legacy:true}]:[];
   }
   function ownGameIdentitySummary(event=state.derbyManagement?.next) {
     const rows=gameIdentityRowsForAccount(current(),event);
     if(!rows.length)return choiceLabel(current()?.choice || "waiting");
-    const counts={joined:0,pause:0,unsure:0,waiting:0};
+    const counts={joined:0,pause:0,unsure:0,waiting:0,removed:0};
     rows.forEach(row=>counts[row.choice]=(counts[row.choice]||0)+1);
-    const parts=[["joined","deltar"],["pause","pause"],["unsure","usikker"],["waiting","mangler svar"]]
+    const parts=[["joined","deltar"],["pause","pause"],["unsure","usikker"],["waiting","mangler svar"],["removed","meldt av"]]
       .filter(([key])=>counts[key]).map(([key,label])=>`${counts[key]} ${label}`);
     return parts.join(" · ");
   }
@@ -2183,10 +2192,22 @@
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
       return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="senior" ${a.role === "senior" ? "selected" : ""}>Senior</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
     }).join("") : "";
-    const counts = {joined:0,pause:0,unsure:0,waiting:0};
-    all.forEach(a => counts[a.choice] = (counts[a.choice] || 0) + 1);
-    if($("adminStatusGrid")) $("adminStatusGrid").innerHTML = canViewDerbyStatus ? [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("") : "";
-    if($("adminResponseBadge")) $("adminResponseBadge").textContent = canViewDerbyStatus ? (all.length - counts.waiting) + " av " + all.length + " svar" : "";
+    const adminDerbyEvent=currentActiveDerbyEvent() || state.derbyManagement?.next;
+    const adminDerbyRows=all.map(account=>({account,choice:memberParticipationChoiceForEvent(account,adminDerbyEvent)}));
+    const counts = {joined:0,pause:0,unsure:0,waiting:0,removed:0};
+    adminDerbyRows.forEach(row => counts[row.choice] = (counts[row.choice] || 0) + 1);
+    if($("adminStatusGrid")) $("adminStatusGrid").innerHTML = canViewDerbyStatus ? [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting],["Meldt av",counts.removed]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("") : "";
+    if($("adminResponseBadge")) $("adminResponseBadge").textContent = canViewDerbyStatus ? (counts.joined+counts.pause+counts.unsure) + " av " + all.length + " svar" : "";
+    const participantList=$("adminDerbyParticipantList");
+    if(participantList){
+      const canRemove=hasPermission("derby.participation.remove");
+      const visibleRows=adminDerbyRows.filter(row=>row.choice!=="waiting").sort((a,b)=>{
+        const rank={joined:0,pause:1,unsure:2,removed:3};
+        return (rank[a.choice]??9)-(rank[b.choice]??9)||a.account.name.localeCompare(b.account.name,"nb");
+      });
+      const participantRowsHtml=visibleRows.map(row=>`<div class="admin-derby-participant"><span><strong>${esc(row.account.name)}</strong><small>${choiceLabel(row.choice)}</small></span>${canRemove&&row.choice==="joined"&&String(row.account.id)!==String(current()?.id)?`<button type="button" class="button button-small button-danger" data-derby-remove-user="${row.account.id}" data-derby-event="${adminDerbyEvent.id}">Meld av</button>`:""}</div>`).join("") || `<p class="empty-state">Ingen derby-svar er registrert.</p>`;
+      participantList.innerHTML=canViewDerbyStatus&&adminDerbyEvent ? `<div class="admin-derby-list-heading"><strong>${esc(adminDerbyEvent.name || "Derby")}</strong><small>${adminDerbyEvent===currentActiveDerbyEvent()?"Pågår nå":"Neste derby"}</small></div>${participantRowsHtml}` : "";
+    }
     $$('[data-approve]').forEach(b => b.onclick = async () => {
       if(!hasPermission("members.approve"))return alert("Du har ikke rettighet til å godkjenne medlemmer.");
       if (busy) return; setBusy(true);
@@ -2204,6 +2225,21 @@
       if (!confirm("Fjerne medlemmet fra portalen? Kontoen deaktiveres, men historikk beholdes.")) return;
       if (busy) return; setBusy(true);
       try { await backend.setMemberStatus(b.dataset.remove,"removed"); await refreshState(); } catch(e) { alert(humanError(e)); }
+      setBusy(false);
+    });
+    $$('[data-derby-remove-user]').forEach(button => button.onclick = async () => {
+      if(!hasPermission("derby.participation.remove"))return alert("Bare eier og admin kan melde av derbydeltakere.");
+      const account=state.accounts.find(item=>String(item.id)===String(button.dataset.derbyRemoveUser));
+      const defaultMessage="Du har ikke innfridd målene de siste ukene og er derfor meldt av dette derbyet.";
+      const message=prompt(`Melding til ${account?.name || "deltakeren"}:`,defaultMessage);
+      if(message===null)return;
+      if(message.trim().length<10)return alert("Begrunnelsen må være minst 10 tegn.");
+      if(!confirm(`Melde ${account?.name || "deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
+      if(busy)return;setBusy(true);
+      try{
+        await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,"insufficient_results",message.trim());
+        await refreshState();
+      }catch(error){alert(humanError(error));}
       setBusy(false);
     });
     renderPermissionMatrix();

@@ -1,4 +1,4 @@
-/* v0.18.0.85 – riktig aktivt derby ved like starttider */
+/* v0.18.0.86 – synlig manuell derbyavmelding */
 (function () {
   "use strict";
 
@@ -611,6 +611,19 @@
         },{onConflict:"user_id"});
         if (error) throw error;
       }
+    },
+    async adminRemoveDerbyParticipant(eventId,userId,reasonCode,message) {
+      if(!configured){
+        const rows=localState.derbyManagement?.participations || [];
+        const row=rows.find(item=>String(item.event_id)===String(eventId)&&String(item.user_id)===String(userId));
+        if(!row||row.choice!=="joined")throw new Error("Spillprofilen er ikke registrert som deltaker i dette derbyet.");
+        row.choice="removed";row.updated_at=new Date().toISOString();
+        (localState.derbyManagement?.gameParticipations || []).filter(item=>String(item.event_id)===String(eventId)&&String(item.user_id)===String(userId)).forEach(item=>{item.choice="removed";item.updated_at=row.updated_at;});
+        localSave(localState);return row;
+      }
+      const {data,error}=await client.rpc("wgang_admin_remove_derby_participant",{p_event_id:Number(eventId),p_user_id:userId,p_reason_code:reasonCode,p_message:message});
+      if(error)throw error;
+      return data;
     },
     async addGameIdentity(gameName, playerTag="") {
       const name=String(gameName || "").trim();
