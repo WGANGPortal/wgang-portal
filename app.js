@@ -1,4 +1,4 @@
-/* v0.18.0.86 – synlig manuell derbyavmelding */
+/* v0.18.0.87 – Chill Bunny-tavle under Admin > Oppgavetavle */
 (function () {
   "use strict";
 
@@ -32,7 +32,7 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const I18N_EN = {
     "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
-    "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Medlemmer og roller":"Members and roles",
+    "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Oppgavetavle":"Task board","Medlemmer og roller":"Members and roles",
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
     "Din status":"Your status","Svarfrist":"Response deadline","Har svart":"Responded","Neste derby":"Next derby",
@@ -325,9 +325,9 @@
   }
   const ADMIN_MODULE_PERMISSIONS = {
     actions:["content.pending.view","members.approve","members.reject"],
-    derby:["derby.board.update","derby.board.publish","derby.task_library.edit","derby.settings.publish","derby.participation.remove"],
+    derby:["derby.settings.publish","derby.participation.remove"],
     applications:["members.approve","members.reject"],
-    board:["derby.preferences.view"],
+    board:["derby.preferences.view","derby.board.update","derby.board.publish","derby.task_library.edit"],
     roles:["members.view","members.change_role","members.remove","permissions.view"]
   };
   function hasAnyPermission(keys,user=current()){ return (keys||[]).some(key=>hasPermission(key,user)); }
@@ -483,7 +483,7 @@
     actions: ["Til behandling", "Varsler, tips og andre saker som venter på gjennomgang."],
     derby: ["Derbyadministrasjon", "Publiser neste derby og registrer kontrollerte sluttresultater."],
     applications: ["Medlemssøknader", "Godkjenn eller avslå nye medlemsforespørsler."],
-    board: ["Oppslagstavla", "Se lagets oppgavepreferanser og planlegg hvilke oppgaver som bør beholdes."],
+    board: ["Oppgavetavle", "Oppdater derbyets oppgavetavle og se lagets oppgavepreferanser."],
     roles: ["Medlemmer og roller", "Administrer medlemmer, roller og tilgang."]
   };
 
@@ -498,6 +498,7 @@
     if ($("adminPageDescription")) $("adminPageDescription").textContent = meta[1];
     $$(".side-nav a").forEach(a => a.classList.remove("active"));
     document.querySelectorAll("[data-admin-route]").forEach(a => a.classList.toggle("active", a.dataset.adminRoute === name));
+    syncBunnyAdminCardVisibility();
     if (useHash) history.replaceState(null, "", "#admin-" + name);
     closeMenu();
     translateUi(document);
@@ -2180,6 +2181,7 @@
   function renderAdmin() {
     if (!canAccessAdmin()) return;
     applyPermissionVisibility();
+    syncBunnyAdminCardVisibility();
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
     const canHandleApplications=hasAnyPermission(["members.approve","members.reject"]);
@@ -2568,6 +2570,19 @@
     if(activeByStatus)return activeByStatus;
     const fallback=state.derbyManagement?.next;
     return fallback && derbyDashboardPhase(fallback)==="active" ? fallback : null;
+  }
+
+  function isChillBunnyDerbyEvent(event) {
+    const label=[event?.name,event?.type,event?.derby_type,event?.template_key].filter(Boolean).join(" ");
+    return /chill.*(?:bunny|harepus)|(?:bunny|harepus).*chill/i.test(label);
+  }
+
+  function syncBunnyAdminCardVisibility() {
+    const card=$("bunnyAdminBoardCard");
+    if(!card)return;
+    const event=currentActiveDerbyEvent() || state.derbyManagement?.next;
+    const allowed=hasAnyPermission(["derby.board.update","derby.board.publish","derby.task_library.edit"]);
+    card.classList.toggle("hidden", !allowed || !isChillBunnyDerbyEvent(event));
   }
 
   function activeCompletionDerby() {

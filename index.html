@@ -112,14 +112,14 @@
   </button>
   <div class="admin-subnav hidden" id="adminSubnav">
     <a href="#admin-actions" data-permission-any="content.pending.view,members.approve,members.reject" data-admin-route="actions"><span>🔔</span>Til behandling</a>
-    <a href="#admin-derby" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit,derby.settings.publish" data-admin-route="derby"><span>◇</span>Derbyadministrasjon</a>
+    <a href="#admin-derby" data-permission-any="derby.settings.publish,derby.participation.remove" data-admin-route="derby"><span>◇</span>Derbyadministrasjon</a>
     <a href="#admin-applications" data-permission-any="members.approve,members.reject" data-admin-route="applications"><span>◎</span>Medlemssøknader</a>
-    <a href="#admin-board" data-permission-any="derby.preferences.view" data-admin-route="board"><span>✓</span>Oppslagstavla</a>
+    <a href="#admin-board" data-permission-any="derby.preferences.view,derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-route="board"><span>✓</span>Oppgavetavle</a>
     <a href="#admin-roles" data-permission-any="members.view,members.change_role,members.remove,permissions.view" data-admin-route="roles"><span>⚙</span>Medlemmer og roller</a>
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.86</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.87</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -272,7 +272,7 @@
 <div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1 id="adminPageTitle">Admin</h1><p id="adminPageDescription"></p></div></div>
 <div class="admin-module-panel" id="adminModulePanel">
 <article class="portal-card admin-action-card admin-module" data-permission-any="content.pending.view,members.approve,members.reject" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">🔔 KREVER HANDLING</p><h2>Adminvarsler</h2><p class="helper-text">Nye medlemsforespørsler og tips til godkjenning vises her.</p></div></div><div id="adminActionList" class="admin-action-list"></div></article>
-<article class="portal-card derby-management-card admin-module" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
+<article id="bunnyAdminBoardCard" class="portal-card derby-management-card admin-module hidden" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
 <article class="portal-card derby-result-admin-card admin-module" data-permission-any="derby.settings.publish" data-result-manager-only data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">SLUTTRESULTAT</p><h2>Registrer derbyresultat</h2><p class="helper-text">Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.</p></div><button class="button button-primary" id="openDerbyResultButton">Registrer eller korriger</button></div><div class="result-registration-summary" id="resultRegistrationSummary"></div></article>
 <article class="portal-card admin-summary admin-module" data-permission-any="derby.settings.publish,derby.participation.remove" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">AKTUELT DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div><div class="admin-derby-participant-list" id="adminDerbyParticipantList"></div></article>

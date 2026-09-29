@@ -1,0 +1,11 @@
+WGANG Portal v0.18.0.87
+
+Last opp disse filene til roten av GitHub-repositoriet:
+
+- app.js
+- index.html
+- service-worker.js
+
+Endringen flytter Chill Bunny-administrasjonen fra Derbyadministrasjon til
+Admin > Oppgavetavle. Kortet vises bare når pågående eller neste aktuelle
+derby er Chill Bunny, og bare for roller med nødvendig tavletilgang.
