@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.92">
+  <link rel="stylesheet" href="main.css?v=0.18.0.83">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -98,10 +98,10 @@
       <aside class="sidebar" id="sidebar">
         <nav class="main-nav">
           <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span>Oversikt</a>
-          <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Derbypåmelding</a>
+          <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Derby</a>
           <a href="#history" data-permission-any="derby.view" data-route="history"><span>◷</span>Derbyhistorikk</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
-          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgavetavlen</a>
+          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgaver</a>
           <a href="#announcements" data-permission-any="chat.community.view" data-route="announcements"><span>▣</span>Kunngjøringer</a>
           <a href="#discussions" data-permission-any="chat.community.view" data-route="discussions"><span>□</span>Diskusjoner</a>
           <a href="#wiki" data-route="wiki"><span>▤</span>Wiki</a>
@@ -119,7 +119,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.92</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.83</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -137,19 +137,19 @@
               <small class="bunny-manual-status" id="bunnyManualStatus"></small>
             </div>
           </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne derby-senter</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
-          <div class="metric-grid"><article><span>Dine statuser</span><strong id="myStatusMetric">Mangler svar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>registrerte spillprofiler</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
+          <div class="metric-grid"><article><span>Din status</span><strong id="myStatusMetric">Deltar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>godkjente medlemmer</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">
             <article class="portal-card neighborhood-news-card" id="neighborhoodNewsCard"><div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>Ingen kunngjøringer ennå</h2></div></div><p class="neighborhood-news-preview">Den nyeste viktige kunngjøringen vises her når den er publisert.</p></article>
           </div>
         </section>
 
         <section class="page" data-page="derby">
-          <div class="page-heading"><div><p class="eyebrow">DERBYPÅMELDING</p><h1>Derbypåmelding</h1><p>Meld på spillprofilene dine og les reglene for ukens derby.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
+          <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegg deltakelsen og følg fremdriften.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
           <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk livefremdrift og scoreboard er ikke koblet til reelle data ennå. Kontrollerte sluttresultater og personlig historikk er tilgjengelig i Derbyhistorikk.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
           <article class="portal-card participation-card">
             <div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div>
-            <p class="card-kicker">DINE SPILLPROFILER</p>
-            <h2>Velg status for hver gård</h2>
+            <p class="card-kicker">DELTAR DU?</p>
+            <h2>Velg status for uken</h2>
             <div class="participation-commitment" id="participationCommitment">
               <strong>Før du velger «Jeg deltar»</strong>
               <p>Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.</p>
@@ -159,15 +159,12 @@
                 <span><b>0 tapte oppgaver</b><small>ingen sletting eller tidsutløp</small></span>
               </div>
             </div>
-            <div class="game-identity-list" id="gameIdentityParticipationList"></div>
+            <div class="choice-grid">
+              <button class="choice-button selected" data-choice="joined"><strong>Jeg deltar</strong><small>Krever regelbekreftelse</small></button>
+              <button class="choice-button" data-choice="pause"><strong>Jeg tar pause</strong><small>Ikke med denne uken</small></button>
+              <button class="choice-button" data-choice="unsure"><strong>Jeg er usikker</strong><small>Avklarer før fristen</small></button>
+            </div>
             <p class="helper-text" id="participationStatus">Velg status for neste derby.</p>
-            <form class="game-identity-add" id="gameIdentityAddForm">
-              <div><strong>Legg til en spillprofil</strong><small>For medlemmer som spiller med flere gårder. Maks fem profiler per innlogging.</small></div>
-              <label>Spillnavn<input id="gameIdentityName" maxlength="40" autocomplete="off" required></label>
-              <label>Spill-ID <small>valgfritt</small><input id="gameIdentityTag" maxlength="30" autocomplete="off" placeholder="#ABC123"></label>
-              <button class="button button-primary" id="addGameIdentityButton" type="submit">Legg til spillprofil</button>
-              <p class="form-message" id="gameIdentityStatus"></p>
-            </form>
             <p class="helper-text"><strong>Svar gjerne innen mandag kl. 23:00.</strong></p>
             <div id="nextDerbyInfo" class="derby-published-info"></div>
             <hr>
@@ -217,23 +214,9 @@
           <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 80 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
-        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se spillprofilene og derby-statusen til hver gård.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn eller spill-ID"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
+        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se hvem som deltar og hvordan laget ligger an.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option></select></div><div class="member-grid" id="memberGrid"></div></section>
         <section class="page" data-page="preferences">
-          <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVETAVLEN</p><h1 id="taskHubTitle">Oppgavetavlen</h1><p id="taskHubIntro">Oppgavetavlen tilpasses derbytypen som pågår.</p></div></div>
-          <div id="bingoTaskHub" class="hidden">
-            <article class="portal-card bingo-planner-card hidden" id="bingoPlannerCard">
-              <div class="card-header"><div><p class="card-kicker">🎯 BINGOPLAN</p><h2>Felles spillebrett og oppgavefordeling</h2><p class="helper-text" id="bingoPlannerIntro">Vent med å ta oppgaver til planen er publisert.</p></div><span class="bingo-plan-state" id="bingoPlanState">Utkast</span></div>
-              <div id="bingoStandbyNotice"></div>
-              <div id="bingoBoardScreenshot"></div>
-              <div class="bingo-plan-metrics" id="bingoPlanMetrics"></div>
-              <div class="bingo-planner-layout">
-                <div><div class="bingo-board" id="bingoBoard" aria-label="Bingobrett"></div><div class="bingo-line-legend"><span><i class="main"></i>Hovedlinje</span><span><i class="reserve"></i>Reservelinje</span><span><i class="free"></i>Fri makspoengoppgave</span></div></div>
-                <aside class="bingo-commitment-panel" id="bingoCommitmentPanel"></aside>
-              </div>
-              <div class="bingo-task-overview" id="bingoTaskOverview"></div>
-              <details class="bingo-admin-panel hidden" id="bingoAdminPanel"><summary>Administrer bingoplanen</summary><div id="bingoAdminContent"></div></details>
-            </article>
-          </div>
+          <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVER</p><h1 id="taskHubTitle">Oppgaver</h1><p id="taskHubIntro">Oppgaveverktøyet tilpasses derbyet som pågår.</p></div></div>
           <div id="standardTaskHub"><article class="portal-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div></div><div class="preference-list" id="preferenceList"></div><p class="helper-text">Marker hvilke oppgaver som passer deg. Lederne bruker oversikten til å vurdere hva som bør beholdes eller slettes fra tavla.</p></article></div>
           <div id="bunnyTaskHub" class="hidden"><section class="bunny-center" id="bunnyCenter">
             <div class="bunny-hero">
@@ -264,11 +247,6 @@
             <form id="leadershipMessageForm" class="leadership-message-form" data-permission-any="chat.leadership.post">
               <label for="leadershipMessageInput">Ny melding</label>
               <textarea id="leadershipMessageInput" rows="3" maxlength="5000" placeholder="Skriv en melding til ledelsen …" required></textarea>
-              <div class="mention-suggestions hidden" id="leadershipMentionSuggestions" role="listbox"></div>
-              <p class="chat-compose-hint">Skriv @ for å nevne en bruker og sende et personlig varsel.</p>
-              <label class="chat-image-picker">Legg ved skjermbilde <small>valgfritt · JPG, PNG eller WebP · maks 10 MB</small><input id="leadershipImage" type="file" accept="image/jpeg,image/png,image/webp"></label>
-              <div id="leadershipImagePreview" class="chat-image-preview hidden"><img id="leadershipImagePreviewImg" alt="Forhåndsvisning av valgt skjermbilde"><div><span id="leadershipImageFileName"></span><button type="button" class="text-button" id="removeLeadershipImage">Fjern bilde</button></div></div>
-              <div id="leadershipImageProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="leadershipImageProgressBar"></span></div><small id="leadershipImageProgressText">Laster opp skjermbilde … 0 %</small></div>
               <div class="leadership-message-actions"><button class="button button-primary" type="submit">Send melding</button></div>
               <p class="form-message" id="leadershipMessageStatus"></p>
             </form>
@@ -294,7 +272,7 @@
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
 <article class="portal-card derby-result-admin-card admin-module" data-permission-any="derby.settings.publish" data-result-manager-only data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">SLUTTRESULTAT</p><h2>Registrer derbyresultat</h2><p class="helper-text">Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.</p></div><button class="button button-primary" id="openDerbyResultButton">Registrer eller korriger</button></div><div class="result-registration-summary" id="resultRegistrationSummary"></div></article>
-<article class="portal-card admin-summary admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div></article>
+<article class="portal-card admin-summary admin-module" data-permission-any="derby.settings.publish,derby.participation.remove" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">NESTE DERBY</p><h2>Deltakelsesoversikt</h2><p class="helper-text">Eier og admin kan manuelt melde av en deltaker. Handlingen logges, låser deltakelsen og varsler brukeren.</p></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div><div id="adminParticipantList" class="derby-participant-admin-list"></div></article>
 <article class="portal-card admin-module" data-permission-any="members.approve,members.reject" data-admin-module="applications"><div class="card-header"><div><p class="card-kicker">VENTER PÅ GODKJENNING</p><h2>Medlemssøknader</h2></div></div><div id="pendingMembers" class="approval-list"></div></article>
 <article class="portal-card admin-preference-card admin-module" data-permission-any="derby.preferences.view" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Hva passer WGANG best?</h2><p class="helper-text">Bruk preferansene som støtte når du vurderer hvilke oppgaver som bør stå, og hvem som liker hva.</p><p class="helper-text" id="adminPreferenceScope"></p></div></div><div class="preference-summary-grid" id="adminPreferenceSummary"></div><div class="table-wrap"><table><thead><tr><th>Oppgavetype</th><th>❤️ Liker</th><th>👍 Kan ta</th><th>😐 Helst ikke</th><th>🚫 Kan ikke</th><th>Anbefaling</th></tr></thead><tbody id="adminPreferenceTable"></tbody></table></div><div class="preference-member-detail"><h3>Hvem foretrekker hva?</h3><div id="adminPreferenceMembers"></div></div></article>
 <article class="portal-card admin-module" data-permission-any="content.pending.view" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">INNHOLD</p><h2>Tips som venter på gjennomgang</h2></div><button class="button button-primary" data-permission-any="content.approve" id="openAdminTipForm">Publiser tips</button></div><div id="pendingTips" class="approval-list"></div></article>
@@ -316,7 +294,7 @@
       </main>
     </div>
 
-    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Påmelding</small></a><a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span><small>Oppgaver</small></a><a href="#members" data-route="members"><span>◎</span><small>Medlemmer</small></a><a href="#wiki" data-route="wiki"><span>▤</span><small>Wiki</small></a></nav>
+    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Derby</small></a><a href="#members" data-route="members"><span>◎</span><small>Medlemmer</small></a><a href="#wiki" data-route="wiki"><span>▤</span><small>Wiki</small></a></nav>
   </section>
 
 
@@ -399,7 +377,7 @@
   <dialog id="derbyParticipationDialog" class="derby-participation-dialog">
     <form id="derbyParticipationForm" class="dialog-card participation-confirm-card">
       <div class="card-header">
-        <div><p class="card-kicker">BEKREFT DELTAKELSE</p><h2 id="participationDialogTitle">Du melder spillprofilen på neste derby</h2></div>
+        <div><p class="card-kicker">BEKREFT DELTAKELSE</p><h2 id="participationDialogTitle">Du melder deg på neste derby</h2></div>
         <button type="button" class="icon-button" data-close-dialog="derbyParticipationDialog" aria-label="Lukk">×</button>
       </div>
       <p class="participation-confirm-intro" id="participationDialogIntro">Les hvert punkt før du bekrefter.</p>
@@ -419,7 +397,7 @@
       <p class="participation-loss-warning"><strong>Viktig:</strong> En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.</p>
       <div class="dialog-actions participation-dialog-actions">
         <button type="button" class="button button-ghost" data-close-dialog="derbyParticipationDialog">Avbryt</button>
-        <button type="submit" class="button button-primary" id="confirmDerbyParticipation" disabled>Bekreft at spillprofilen deltar</button>
+        <button type="submit" class="button button-primary" id="confirmDerbyParticipation" disabled>Bekreft at jeg deltar</button>
       </div>
       <p class="form-message" id="participationDialogStatus"></p>
     </form>
@@ -427,9 +405,9 @@
 
   <dialog id="bunnyTaskEditorDialog"><form id="bunnyTaskEditorForm" class="dialog-card bunny-task-editor-card"><div class="card-header"><div><p class="card-kicker">OPPGAVEKORT</p><h2>Rediger oppgave</h2></div><button type="button" class="icon-button" data-close-dialog="bunnyTaskEditorDialog">×</button></div><input type="hidden" id="bunnyEditTaskId"><div class="bunny-editor-preview" id="bunnyEditorPreview"></div><label>Oppgavenavn<input id="bunnyEditName" maxlength="80" required></label><label>Kategori<input id="bunnyEditCategory" maxlength="60" required></label><label>Kort beskrivelse <small>uten antall</small><textarea id="bunnyEditDescription" rows="3" maxlength="180" required></textarea></label><label>Antall som skal gjøres<div class="bunny-amount-stepper"><button type="button" id="bunnyAmountMinus">−</button><input id="bunnyEditAmount" type="number" min="1" max="999" required><button type="button" id="bunnyAmountPlus">+</button></div></label><p class="helper-text">Illustrasjonen beholdes selv om navn, beskrivelse eller antall justeres. Antallet ligger aldri i bildefilen.</p><div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="bunnyTaskEditorDialog">Avbryt</button><button type="submit" class="button button-primary">Lagre endringer</button></div><p class="form-message" id="bunnyTaskEditorStatus"></p></form></dialog>
 
-  <dialog id="announcementDialog"><form id="announcementForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2 id="announcementDialogTitle">Ny kunngjøring</h2></div><button type="button" class="icon-button" data-close-dialog="announcementDialog">×</button></div><input type="hidden" id="announcementEditId"><label>Tittel<input id="announcementTitle" maxlength="100" required></label><label>Beskjed<textarea id="announcementBody" rows="6" maxlength="3000" required></textarea></label><button class="button button-primary button-full" id="announcementSubmitButton" type="submit">Publiser kunngjøring</button><p class="form-message" id="announcementMessage" aria-live="polite"></p></form></dialog>
-  <dialog id="derbyPostDialog"><form id="derbyPostForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Nytt innlegg</h2></div><button type="button" class="icon-button" data-close-dialog="derbyPostDialog">×</button></div><label>Tittel<input id="derbyPostTitle" maxlength="100" required></label><label>Innlegg<textarea id="derbyPostBody" rows="6" maxlength="3000" required></textarea></label><div class="mention-suggestions hidden" id="derbyPostMentionSuggestions" role="listbox"></div><p class="chat-compose-hint">Skriv @ for å nevne en bruker og sende et personlig varsel.</p><label class="chat-image-picker">Legg ved skjermbilde <small>valgfritt · JPG, PNG eller WebP · maks 10 MB</small><input id="derbyPostImage" type="file" accept="image/jpeg,image/png,image/webp"></label><div id="derbyPostImagePreview" class="chat-image-preview hidden"><img id="derbyPostImagePreviewImg" alt="Forhåndsvisning av valgt skjermbilde"><div><span id="derbyPostImageFileName"></span><button type="button" class="text-button" id="removeDerbyPostImage">Fjern bilde</button></div></div><div id="derbyPostImageProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="derbyPostImageProgressBar"></span></div><small id="derbyPostImageProgressText">Laster opp skjermbilde … 0 %</small></div><button class="button button-primary button-full" type="submit">Publiser innlegg</button><p class="form-message" id="derbyPostMessage"></p></form></dialog>
-  <dialog id="tipDialog"><form id="tipForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">TIPS &amp; TRIKS</p><h2 id="tipDialogTitle">Send inn tips</h2></div><button type="button" class="icon-button" data-close-dialog="tipDialog">×</button></div><label>Kategori<select id="tipCategory"><option>Standard Derby</option><option>Oppgavetavla</option><option>Høsting</option><option>Produksjon</option><option>Byen</option><option>Fiske</option><option>Båt</option><option>Annet</option></select></label><label>Tittel<input id="tipTitle" maxlength="100" required></label><label>Tips<textarea id="tipBody" rows="6" maxlength="3000" required></textarea></label><label>Bilde eller film <small>valgfritt</small><input id="tipVideo" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"></label><p class="helper-text wiki-video-guidance">Ett valgfritt vedlegg: bilde (JPG, PNG eller WebP, maks 10 MB) eller film (MP4, MOV eller WebM, maks 50 MB). MP4 anbefales for best avspilling på iPhone og Android.</p><div id="tipVideoPreview" class="wiki-video-preview hidden"><img id="tipImagePreview" class="hidden" alt="Forhåndsvisning av valgt bilde"><video id="tipVideoPreviewPlayer" class="hidden" controls playsinline preload="metadata"></video><div><span id="tipVideoFileName"></span><button type="button" class="text-button" id="removeTipVideo">Fjern vedlegg</button></div></div><div id="tipVideoProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="tipVideoProgressBar"></span></div><small id="tipVideoProgressText">Laster opp vedlegg … 0 %</small></div><button class="button button-primary button-full" type="submit" id="tipSubmitButton">Send til godkjenning</button><p class="form-message" id="tipMessage"></p></form></dialog>
+  <dialog id="announcementDialog"><form id="announcementForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">ADMIN</p><h2>Ny kunngjøring</h2></div><button type="button" class="icon-button" data-close-dialog="announcementDialog">×</button></div><label>Tittel<input id="announcementTitle" maxlength="100" required></label><label>Beskjed<textarea id="announcementBody" rows="6" maxlength="2000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser kunngjøring</button><p class="form-message" id="announcementMessage"></p></form></dialog>
+  <dialog id="derbyPostDialog"><form id="derbyPostForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Nytt innlegg</h2></div><button type="button" class="icon-button" data-close-dialog="derbyPostDialog">×</button></div><label>Tittel<input id="derbyPostTitle" maxlength="100" required></label><label>Innlegg<textarea id="derbyPostBody" rows="6" maxlength="3000" required></textarea></label><button class="button button-primary button-full" type="submit">Publiser innlegg</button><p class="form-message" id="derbyPostMessage"></p></form></dialog>
+  <dialog id="tipDialog"><form id="tipForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">TIPS &amp; TRIKS</p><h2 id="tipDialogTitle">Send inn tips</h2></div><button type="button" class="icon-button" data-close-dialog="tipDialog">×</button></div><label>Kategori<select id="tipCategory"><option>Standard Derby</option><option>Oppgavetavla</option><option>Høsting</option><option>Produksjon</option><option>Byen</option><option>Fiske</option><option>Båt</option><option>Annet</option></select></label><label>Tittel<input id="tipTitle" maxlength="100" required></label><label>Tips<textarea id="tipBody" rows="6" maxlength="3000" required></textarea></label><label>Film <small>valgfritt</small><input id="tipVideo" type="file" accept="video/mp4,video/quicktime,video/webm"></label><p class="helper-text wiki-video-guidance">Én film, maks 50 MB. MP4 anbefales for best avspilling på både iPhone og Android. Korte filmer på 2–3 minutter fungerer best.</p><div id="tipVideoPreview" class="wiki-video-preview hidden"><video id="tipVideoPreviewPlayer" controls playsinline preload="metadata"></video><div><span id="tipVideoFileName"></span><button type="button" class="text-button" id="removeTipVideo">Fjern film</button></div></div><div id="tipVideoProgress" class="wiki-upload-progress hidden" role="status" aria-live="polite"><div class="progress-track"><span id="tipVideoProgressBar"></span></div><small id="tipVideoProgressText">Laster opp film … 0 %</small></div><button class="button button-primary button-full" type="submit" id="tipSubmitButton">Send til godkjenning</button><p class="form-message" id="tipMessage"></p></form></dialog>
 
 
   <dialog id="memberProfileDialog" class="profile-dialog">
@@ -506,7 +484,7 @@
             <div class="notification-setting-group">
               <div class="notification-group-heading"><strong>Personlige varsler</strong><small>Varsler som gjelder deg eller din egen aktivitet.</small></div>
               <div class="notification-setting-list">
-                <label><input type="checkbox" id="notifySocialActivity"> Kommentarer, likerklikk og @-omtaler</label>
+                <label><input type="checkbox" id="notifySocialActivity"> Kommentarer og likerklikk på mine innlegg</label>
                 <label><input type="checkbox" id="notifyPersonalDerbyReminder"> Påminn meg hvis jeg mangler derby-svar nær fristen</label>
                 <label><input type="checkbox" id="notifyBunnyStart"> Varsle på telefon/nettbrett når harepus starter</label>
               </div>
@@ -566,6 +544,7 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.92"></script><script src="app.js?v=0.18.0.92"></script>
+  <dialog id="derbyRemovalDialog"><form id="derbyRemovalForm" class="dialog-card"><div class="card-header"><div><p class="card-kicker">LEDERHANDLING</p><h2>Meld av derbydeltaker</h2></div><button type="button" class="icon-button" data-close-dialog="derbyRemovalDialog">×</button></div><p id="derbyRemovalIntro"></p><input type="hidden" id="derbyRemovalUserId"><label>Begrunnelse<select id="derbyRemovalReason" required><option value="insufficient_results">Målene er ikke innfridd de siste derbyene</option><option value="commitment_not_met">Forpliktelsene ved påmelding er ikke fulgt</option><option value="other">Annen begrunnelse</option></select></label><label>Varsel til brukeren<textarea id="derbyRemovalMessage" rows="5" minlength="10" maxlength="500" required></textarea></label><p class="warning-note">Avmeldingen låser deltakerens svar for dette derbyet. Handlingen og begrunnelsen lagres i lederloggen.</p><div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="derbyRemovalDialog">Avbryt</button><button type="submit" class="button button-danger">Bekreft avmelding</button></div><p class="form-message" id="derbyRemovalStatus"></p></form></dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.83"></script><script src="app.js?v=0.18.0.83"></script>
 </body>
 </html>

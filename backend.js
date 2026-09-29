@@ -1,4 +1,4 @@
-/* v0.18.0.92 – synkroniserte bingo-deltakere */
+/* v0.18.0.83 – manuell lederstyrt avmelding fra derby */
 (function () {
   "use strict";
 
@@ -18,8 +18,7 @@
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
-    derbyManagement: { templates: [], events: [], participations: [], gameParticipations: [], next: null, current: null, upcoming: null },
-    gameIdentities: [],
+    derbyManagement: { templates: [], events: [], participations: [], next: null, current: null, upcoming: null },
     derbyHistory: { archives: [], results: [], changeLog: [] },
     absence: { statuses: [], periods: [] },
     legalAcceptance: null,
@@ -31,14 +30,9 @@
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
   const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
-  const WIKI_MEDIA_BUCKET = "wiki-videos";
-  const CHAT_IMAGE_BUCKET = "chat-images";
-  const BINGO_BOARD_BUCKET = "bingo-boards";
-  const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-  const CHAT_IMAGE_TYPES = new Set(["image/jpeg","image/png","image/webp"]);
-  const WIKI_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+  const WIKI_VIDEO_BUCKET = "wiki-videos";
   const WIKI_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
-  const WIKI_MEDIA_TYPES = new Set(["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","video/webm"]);
+  const WIKI_VIDEO_TYPES = new Set(["video/mp4","video/quicktime","video/webm"]);
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -52,46 +46,18 @@
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
-  function wikiMediaExtension(file) {
+  function wikiVideoExtension(file) {
     const fromName=String(file?.name||"").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
-    const normalized=fromName==="jpeg"?"jpg":fromName;
-    if(["jpg","png","webp","mp4","mov","webm"].includes(normalized))return normalized;
-    return {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+    if(["mp4","mov","webm"].includes(fromName))return fromName;
+    return {"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
   }
 
-  async function validateWikiMedia(file) {
-    if(!(file instanceof File))throw new Error("Velg et bilde eller en film før opplasting.");
-    if(!WIKI_MEDIA_TYPES.has(file.type))throw new Error("Vedlegget må være JPG, PNG, WebP, MP4, MOV eller WebM.");
-    const image=file.type.startsWith("image/");
-    const limit=image?WIKI_IMAGE_MAX_BYTES:WIKI_VIDEO_MAX_BYTES;
-    if(!file.size || file.size > limit)throw new Error(image?"Bildet kan være maksimalt 10 MB.":"Filmen kan være maksimalt 50 MB.");
-    const extension=wikiMediaExtension(file);
-    const allowedByType={"image/jpeg":["jpg"],"image/png":["png"],"image/webp":["webp"],"video/mp4":["mp4"],"video/quicktime":["mov"],"video/webm":["webm"]};
-    if(!extension || !allowedByType[file.type]?.includes(extension))throw new Error("Filendelsen stemmer ikke med filtypen.");
-    const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
-    const ascii=(start,end)=>String.fromCharCode(...bytes.slice(start,end));
-    const signatureOk=(file.type==="image/jpeg"&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)
-      ||(file.type==="image/png"&&[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((value,index)=>bytes[index]===value))
-      ||(file.type==="image/webp"&&ascii(0,4)==="RIFF"&&ascii(8,12)==="WEBP")
-      ||(["video/mp4","video/quicktime"].includes(file.type)&&ascii(4,8)==="ftyp")
-      ||(file.type==="video/webm"&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3);
-    if(!signatureOk)throw new Error("Filinnholdet stemmer ikke med valgt bilde- eller filmtype.");
-    return extension;
-  }
-
-  async function validateChatImage(file) {
-    if(!(file instanceof File))throw new Error("Velg et skjermbilde før opplasting.");
-    if(!CHAT_IMAGE_TYPES.has(file.type))throw new Error("Bildet må være JPG, PNG eller WebP.");
-    if(!file.size || file.size>CHAT_IMAGE_MAX_BYTES)throw new Error("Bildet kan være maksimalt 10 MB.");
-    const extension=wikiMediaExtension(file);
-    const allowedByType={"image/jpeg":["jpg"],"image/png":["png"],"image/webp":["webp"]};
-    if(!extension || !allowedByType[file.type]?.includes(extension))throw new Error("Filendelsen stemmer ikke med filtypen.");
-    const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
-    const ascii=(start,end)=>String.fromCharCode(...bytes.slice(start,end));
-    const signatureOk=(file.type==="image/jpeg"&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)
-      ||(file.type==="image/png"&&[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((value,index)=>bytes[index]===value))
-      ||(file.type==="image/webp"&&ascii(0,4)==="RIFF"&&ascii(8,12)==="WEBP");
-    if(!signatureOk)throw new Error("Filinnholdet stemmer ikke med valgt bildetype.");
+  function validateWikiVideo(file) {
+    if(!(file instanceof File))throw new Error("Velg en filmfil før opplasting.");
+    if(!WIKI_VIDEO_TYPES.has(file.type))throw new Error("Filmen må være MP4, MOV eller WebM. MP4 anbefales.");
+    if(!file.size || file.size > WIKI_VIDEO_MAX_BYTES)throw new Error("Filmen kan være maksimalt 50 MB.");
+    const extension=wikiVideoExtension(file);
+    if(!extension)throw new Error("Filtypen støttes ikke. Bruk MP4, MOV eller WebM.");
     return extension;
   }
 
@@ -244,6 +210,8 @@
       choice: rawChoice === "joined" && !participationAcknowledged ? "waiting" : rawChoice,
       participationNeedsConfirmation: rawChoice === "joined" && !participationAcknowledged,
       participationRulesAcknowledgedAt: participationAcknowledged ? part?.rules_acknowledged_at || null : null,
+      participationRemovedAt: part?.removed_at || null,
+      participationRemovedBy: part?.removed_by || null,
       preferences: prefMap,
       createdAt: row.created_at || null,
       updatedAt: row.updated_at || null
@@ -262,17 +230,11 @@
       category: row.category || "",
       status: row.status,
       createdAt: row.created_at,
-      updatedAt: row.updated_at || row.created_at,
       publishedAt: row.published_at || row.created_at,
       videoPath: row.video_path || null,
       videoMimeType: row.video_mime_type || null,
       videoSizeBytes: Number(row.video_size_bytes || 0),
-      videoOriginalName: row.video_original_name || null,
-      attachmentPath: row.attachment_path || null,
-      attachmentMimeType: row.attachment_mime_type || null,
-      attachmentSizeBytes: Number(row.attachment_size_bytes || 0),
-      attachmentOriginalName: row.attachment_original_name || null,
-      mentionedUserIds: Array.isArray(row.mentioned_user_ids) ? row.mentioned_user_ids : []
+      videoOriginalName: row.video_original_name || null
     }));
   }
 
@@ -318,36 +280,34 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
-      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,updated_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name,attachment_path,attachment_mime_type,attachment_size_bytes,attachment_original_name,mentioned_user_ids").order("created_at", {ascending:false}),
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
-      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
-      client.from("member_game_identities").select("id,user_id,game_name,player_tag,is_primary,created_at,updated_at").order("is_primary",{ascending:false}).order("game_name"),
-      client.from("derby_game_participation").select("event_id,game_identity_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
+      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points,removed_at,removed_by"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
-      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at,attachment_path,attachment_mime_type,attachment_size_bytes,attachment_original_name,mentioned_user_ids").order("created_at", {ascending:true}).limit(300),
+      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("social_likes").select("user_id,target_type,target_id,created_at"),
-      client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at,attachment_path,attachment_mime_type,attachment_size_bytes,attachment_original_name,mentioned_user_ids").order("created_at", {ascending:true}),
+      client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at").order("created_at", {ascending:true}),
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
-      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
+      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,title,body,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
       client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
@@ -356,7 +316,7 @@
       client.rpc("wgang_touch_my_portal_activity"),
       loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -407,12 +367,7 @@
       authorName: nameById[row.user_id] || "WGANG-ledelse",
       message: row.message,
       createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      attachmentPath: row.attachment_path || null,
-      attachmentMimeType: row.attachment_mime_type || null,
-      attachmentSizeBytes: Number(row.attachment_size_bytes || 0),
-      attachmentOriginalName: row.attachment_original_name || null,
-      mentionedUserIds: Array.isArray(row.mentioned_user_ids) ? row.mentioned_user_ids : []
+      updatedAt: row.updated_at
     }));
     let rolePermissions = [], permissionAudit = [], chatReadState = [];
     try {
@@ -429,13 +384,7 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages,
-      gameIdentities:(gameIdentitiesRes.data || []).map(row=>({
-        id:row.id,userId:row.user_id,name:String(row.game_name || "").toUpperCase(),
-        playerTag:row.player_tag || "",isPrimary:!!row.is_primary,
-        createdAt:row.created_at || null,updatedAt:row.updated_at || null
-      })),
-      derbyManagement:{templates,events,participations:eventParticipationRes.data || [],gameParticipations:gameParticipationRes.data || [],next,current,upcoming},
+      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next,current,upcoming},
       derbyHistory:{
         archives:archivesRes.data || [],
         results:memberResultsRes.data || [],
@@ -604,6 +553,9 @@
       if (eventError) throw eventError;
       const event = selectDerbyContexts(events).next;
       if (event) {
+        const {data:existing,error:existingError}=await client.from("derby_event_participation").select("choice").eq("event_id",event.id).eq("user_id",userId).maybeSingle();
+        if(existingError)throw existingError;
+        if(existing?.choice==="removed")throw new Error("Du er meldt av dette derbyet av ledelsen. Kontakt ledelsen hvis du mener dette er feil.");
         const now = Date.now();
         const lockAt = derbyParticipationLockAt(event)?.getTime();
         if (Number.isFinite(lockAt) && now >= lockAt) {
@@ -634,43 +586,10 @@
         if (error) throw error;
       }
     },
-    async addGameIdentity(gameName, playerTag="") {
-      const name=String(gameName || "").trim();
-      const tag=String(playerTag || "").trim();
-      if(!name || name.length>40)throw new Error("Spillnavnet må inneholde 1–40 tegn.");
-      if(tag && (tag.length<2 || tag.length>30))throw new Error("Spill-ID må inneholde 2–30 tegn.");
-      if(!configured){
-        const userId=localState.currentUserId;
-        localState.gameIdentities=localState.gameIdentities || [];
-        if(localState.gameIdentities.filter(item=>String(item.userId)===String(userId)).length>=5)throw new Error("Du kan registrere maksimalt fem spillprofiler.");
-        const row={id:Date.now(),userId,name:name.toUpperCase(),playerTag:tag.toUpperCase(),isPrimary:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-        localState.gameIdentities.push(row);localSave(localState);return row;
-      }
-      const {data,error}=await client.rpc("wgang_add_game_identity",{p_game_name:name,p_player_tag:tag || null});
-      if(error)throw error;
-      return data;
-    },
-    async setGameParticipation(gameIdentityId, choice, acknowledgement={}) {
-      if(!new Set(["joined","pause","unsure"]).has(choice))throw new Error("Ugyldig derby-svar.");
-      if(choice==="joined"&&acknowledgement.accepted!==true)throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
-      const eventResult=await (configured
-        ? client.from("derby_events").select("id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(20)
-        : Promise.resolve({data:localState.derbyManagement?.events || [],error:null}));
-      if(eventResult.error)throw eventResult.error;
-      const nextEvent=selectDerbyContexts(eventResult.data || []).next;
-      if(!nextEvent)throw new Error("Det finnes ikke et publisert derby som er åpent for påmelding.");
-      const lockAt=derbyParticipationLockAt(nextEvent)?.getTime();
-      if(Number.isFinite(lockAt)&&Date.now()>=lockAt)throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
-      if(!configured){
-        localState.derbyManagement.gameParticipations=localState.derbyManagement.gameParticipations || [];
-        const rows=localState.derbyManagement.gameParticipations;
-        const existing=rows.find(item=>String(item.event_id)===String(nextEvent.id)&&String(item.game_identity_id)===String(gameIdentityId));
-        const value={event_id:nextEvent.id,game_identity_id:gameIdentityId,user_id:localState.currentUserId,choice,updated_at:new Date().toISOString()};
-        if(existing)Object.assign(existing,value);else rows.push(value);
-        localSave(localState);return value;
-      }
-      const {data,error}=await client.rpc("wgang_set_game_participation",{
-        p_event_id:Number(nextEvent.id),p_game_identity_id:Number(gameIdentityId),p_choice:choice,p_rules_accepted:choice==="joined"&&acknowledgement.accepted===true
+    async removeDerbyParticipant(eventId,userId,reasonCode,message){
+      if(!configured)throw new Error("Lederstyrt avmelding krever Supabase.");
+      const {data,error}=await client.rpc("wgang_admin_remove_derby_participant",{
+        p_event_id:Number(eventId),p_user_id:userId,p_reason_code:reasonCode,p_message:message
       });
       if(error)throw error;
       return data;
@@ -777,74 +696,6 @@
         p_other_languages: profile.otherLanguages || null
       });
       if (error) throw error;
-    },
-    async getBingoData(eventId) {
-      if (!eventId) return {plan:null,cells:[],assignments:[],standby:[]};
-      if (!configured) {
-        try { return JSON.parse(localStorage.getItem(`wgang_bingo_${eventId}`) || "null") || {plan:null,cells:[],assignments:[],standby:[]}; }
-        catch { return {plan:null,cells:[],assignments:[],standby:[]}; }
-      }
-      const {data:plan,error:planError}=await client.from("bingo_plans").select("*").eq("event_id",eventId).maybeSingle();
-      if(planError){
-        if(planError.code==="42P01"||/bingo_plans/i.test(planError.message||""))return {plan:null,cells:[],assignments:[],standby:[]};
-        throw planError;
-      }
-      if(!plan)return {plan:null,cells:[],assignments:[],standby:[]};
-      const [cells,assignments,standby]=await Promise.all([
-        client.from("bingo_board_cells").select("*").eq("plan_id",plan.id).order("position"),
-        client.from("bingo_assignments").select("*").eq("plan_id",plan.id).order("cell_id").order("slot_number"),
-        client.from("bingo_standby").select("*").eq("plan_id",plan.id).order("created_at")
-      ]);
-      for(const result of [cells,assignments,standby])if(result.error)throw result.error;
-      return {plan,cells:cells.data||[],assignments:assignments.data||[],standby:standby.data||[]};
-    },
-    async saveBingoPlan(eventId,planPatch,cells) {
-      if(!eventId)throw new Error("Mangler derbyhendelse.");
-      if(!configured){
-        const plan=Object.assign({id:`local-${eventId}`,event_id:eventId},planPatch);
-        const data={plan,cells:(cells||[]).map((cell,index)=>Object.assign({id:`local-${eventId}-${index+1}`,plan_id:plan.id},cell)),assignments:[],standby:[]};
-        localStorage.setItem(`wgang_bingo_${eventId}`,JSON.stringify(data));return data;
-      }
-      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
-      const payload=Object.assign({},planPatch,{event_id:eventId,updated_by:user.id,updated_at:new Date().toISOString()});
-      if(payload.status==="published"&&!payload.published_at)payload.published_at=new Date().toISOString();
-      const {data:plan,error}=await client.from("bingo_plans").upsert(payload,{onConflict:"event_id"}).select().single();if(error)throw error;
-      if(Array.isArray(cells)&&cells.length){
-        const rows=cells.map((cell,index)=>({plan_id:plan.id,position:index+1,task_name:String(cell.task_name||"Oppgave").trim(),task_type:cell.task_type||null,icon:cell.icon||null,image_key:cell.image_key||null,required_count:Number(cell.required_count||0),classification:cell.classification||"free",is_blocked:!!cell.is_blocked,updated_at:new Date().toISOString()}));
-        const {error:cellError}=await client.from("bingo_board_cells").upsert(rows,{onConflict:"plan_id,position"});if(cellError)throw cellError;
-      }
-      return this.getBingoData(eventId);
-    },
-    async claimBingoSlots(planId,gameIdentityId,cellIds) {
-      if(!planId||!gameIdentityId||!Array.isArray(cellIds)||!cellIds.length)throw new Error("Velg oppgavene først.");
-      if(!configured)return;
-      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
-      const rows=cellIds.map(cellId=>({plan_id:planId,cell_id:cellId,game_identity_id:gameIdentityId,user_id:user.id,status:"waiting"}));
-      const {error}=await client.from("bingo_assignments").insert(rows);if(error)throw error;
-    },
-    async updateBingoAssignment(id,patch) {
-      if(!configured)return;
-      const allowed={status:patch.status,actual_details:patch.actual_details,actual_deadline:patch.actual_deadline,points:patch.points,updated_at:new Date().toISOString()};
-      Object.keys(allowed).forEach(key=>allowed[key]===undefined&&delete allowed[key]);
-      const {error}=await client.from("bingo_assignments").update(allowed).eq("id",id);if(error)throw error;
-    },
-    async deleteBingoAssignment(id) {
-      if(!configured)return;
-      const {error}=await client.from("bingo_assignments").delete().eq("id",id);if(error)throw error;
-    },
-    async saveBingoStandby(planId,gameIdentityId,reservedSlots,privateNote) {
-      if(!configured)return;
-      const {data:{user},error:userError}=await client.auth.getUser();if(userError||!user)throw userError||new Error("Du må være logget inn.");
-      const {error}=await client.from("bingo_standby").upsert({plan_id:planId,game_identity_id:gameIdentityId,user_id:user.id,reserved_slots:Number(reservedSlots||3),private_note:privateNote||null,status:"selected",selected_by:user.id,updated_at:new Date().toISOString()},{onConflict:"plan_id,game_identity_id"});if(error)throw error;
-    },
-    async updateBingoStandby(id,status) {
-      if(!configured)return;
-      const patch={status,updated_at:new Date().toISOString()};if(status==="activated")patch.activated_at=new Date().toISOString();
-      const {error}=await client.from("bingo_standby").update(patch).eq("id",id);if(error)throw error;
-    },
-    async deleteBingoStandby(id) {
-      if(!configured)return;
-      const {error}=await client.from("bingo_standby").delete().eq("id",id);if(error)throw error;
     },
     async getBunnyData() {
       if (!configured) {
@@ -1078,10 +929,10 @@
       if (error) throw error;
       return data;
     },
-    async uploadWikiMedia(file, onProgress) {
-      if (!configured) throw new Error("Opplasting av bilde eller film krever tilkobling til medlemsportalen.");
+    async uploadWikiVideo(file, onProgress) {
+      if (!configured) throw new Error("Filmopplasting krever tilkobling til medlemsportalen.");
       if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
-      const extension=await validateWikiMedia(file);
+      const extension=validateWikiVideo(file);
       const { data:{session}, error:sessionError }=await client.auth.getSession();
       if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
       const objectId=globalThis.crypto?.randomUUID?.();
@@ -1099,7 +950,7 @@
           uploadDataDuringCreation:true,
           removeFingerprintOnSuccess:true,
           metadata:{
-            bucketName:WIKI_MEDIA_BUCKET,
+            bucketName:WIKI_VIDEO_BUCKET,
             objectName:path,
             contentType:file.type,
             cacheControl:"3600"
@@ -1117,109 +968,24 @@
         path,
         mimeType:file.type,
         sizeBytes:file.size,
-        originalName:String(file.name||`vedlegg.${extension}`).slice(0,255)
+        originalName:String(file.name||`film.${extension}`).slice(0,255)
       };
     },
-    async getWikiMediaUrl(path) {
+    async getWikiVideoUrl(path) {
       if(!configured || !path)return null;
-      const {data,error}=await client.storage.from(WIKI_MEDIA_BUCKET).createSignedUrl(path,3600);
+      const {data,error}=await client.storage.from(WIKI_VIDEO_BUCKET).createSignedUrl(path,3600);
       if(error)throw error;
       return data?.signedUrl || null;
     },
-    async deleteWikiMedia(path) {
+    async deleteWikiVideo(path) {
       if(!configured || !path)return;
-      const {error}=await client.storage.from(WIKI_MEDIA_BUCKET).remove([path]);
+      const {error}=await client.storage.from(WIKI_VIDEO_BUCKET).remove([path]);
       if(error)throw error;
     },
-    async uploadChatImage(file, onProgress) {
-      if (!configured) throw new Error("Opplasting av skjermbilde krever tilkobling til medlemsportalen.");
-      if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
-      const extension=await validateChatImage(file);
-      const { data:{session}, error:sessionError }=await client.auth.getSession();
-      if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
-      const objectId=globalThis.crypto?.randomUUID?.();
-      if(!objectId)throw new Error("Denne nettleseren kan ikke opprette en sikker filidentifikator.");
-      const path=`${session.user.id}/${objectId}.${extension}`;
-      const projectId=new URL(cfg.url).hostname.split(".")[0];
-      await new Promise((resolve,reject)=>{
-        const upload=new window.tus.Upload(file,{
-          endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
-          retryDelays:[0,3000,5000,10000,20000],
-          headers:{authorization:`Bearer ${session.access_token}`,apikey:cfg.anonKey},
-          uploadDataDuringCreation:true,
-          removeFingerprintOnSuccess:true,
-          metadata:{bucketName:CHAT_IMAGE_BUCKET,objectName:path,contentType:file.type,cacheControl:"3600"},
-          chunkSize:6 * 1024 * 1024,
-          onError:error=>reject(error),
-          onProgress:(uploaded,total)=>{if(typeof onProgress==="function")onProgress(total?Math.round(uploaded*100/total):0);},
-          onSuccess:()=>resolve()
-        });
-        upload.start();
-      });
-      return {path,mimeType:file.type,sizeBytes:file.size,originalName:String(file.name||`skjermbilde.${extension}`).slice(0,255)};
-    },
-    async getChatImageUrl(path) {
-      if(!configured || !path)return null;
-      const {data,error}=await client.storage.from(CHAT_IMAGE_BUCKET).createSignedUrl(path,3600);
-      if(error)throw error;
-      return data?.signedUrl || null;
-    },
-    async deleteChatImage(path) {
-      if(!configured || !path)return;
-      const {error}=await client.storage.from(CHAT_IMAGE_BUCKET).remove([path]);
-      if(error)throw error;
-    },
-    async uploadBingoBoardImage(eventId,planId,file,oldPath=null,onProgress) {
-      if(!configured)throw new Error("Opplasting av bingobrett krever tilkobling til medlemsportalen.");
-      if(!window.tus?.Upload)throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
-      if(!eventId||!planId)throw new Error("Lagre bingoplanen før skjermbildet lastes opp.");
-      const extension=await validateChatImage(file);
-      const {data:{session},error:sessionError}=await client.auth.getSession();
-      if(sessionError||!session?.access_token||!session?.user?.id)throw sessionError||new Error("Du må være logget inn.");
-      const objectId=globalThis.crypto?.randomUUID?.();
-      if(!objectId)throw new Error("Denne nettleseren kan ikke opprette en sikker filidentifikator.");
-      const path=`${eventId}/${objectId}.${extension}`;
-      const projectId=new URL(cfg.url).hostname.split(".")[0];
-      await new Promise((resolve,reject)=>{
-        const upload=new window.tus.Upload(file,{
-          endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
-          retryDelays:[0,3000,5000,10000,20000],
-          headers:{authorization:`Bearer ${session.access_token}`,apikey:cfg.anonKey},
-          uploadDataDuringCreation:true,
-          removeFingerprintOnSuccess:true,
-          metadata:{bucketName:BINGO_BOARD_BUCKET,objectName:path,contentType:file.type,cacheControl:"3600"},
-          chunkSize:6*1024*1024,
-          onError:error=>reject(error),
-          onProgress:(uploaded,total)=>{if(typeof onProgress==="function")onProgress(total?Math.round(uploaded*100/total):0);},
-          onSuccess:()=>resolve()
-        });
-        upload.start();
-      });
-      const patch={board_image_path:path,board_image_mime_type:file.type,board_image_size_bytes:file.size,board_image_original_name:String(file.name||`bingobrett.${extension}`).slice(0,255),board_image_updated_at:new Date().toISOString(),updated_by:session.user.id,updated_at:new Date().toISOString()};
-      const {error:updateError}=await client.from("bingo_plans").update(patch).eq("id",planId);
-      if(updateError){try{await client.storage.from(BINGO_BOARD_BUCKET).remove([path]);}catch{}throw updateError;}
-      if(oldPath&&oldPath!==path){try{await client.storage.from(BINGO_BOARD_BUCKET).remove([oldPath]);}catch{}}
-      return Object.assign({path},patch);
-    },
-    async getBingoBoardImageUrl(path) {
-      if(!configured||!path)return null;
-      const {data,error}=await client.storage.from(BINGO_BOARD_BUCKET).createSignedUrl(path,3600);
-      if(error)throw error;
-      return data?.signedUrl||null;
-    },
-    async deleteBingoBoardImage(planId,path) {
-      if(!configured||!planId||!path)return;
-      const {data:{user},error:userError}=await client.auth.getUser();
-      if(userError||!user)throw userError||new Error("Du må være logget inn.");
-      const {error:updateError}=await client.from("bingo_plans").update({board_image_path:null,board_image_mime_type:null,board_image_size_bytes:null,board_image_original_name:null,board_image_updated_at:null,updated_by:user.id,updated_at:new Date().toISOString()}).eq("id",planId);
-      if(updateError)throw updateError;
-      const {error:removeError}=await client.storage.from(BINGO_BOARD_BUCKET).remove([path]);
-      if(removeError)throw removeError;
-    },
-    async createContent(kind, title, body, category="", publishNow=false, video=null, attachment=null, mentionedUserIds=[]) {
+    async createContent(kind, title, body, category="", publishNow=false, video=null) {
       if (!configured) {
         const me = localState.accounts.find(x => x.id === localState.currentUserId);
-        const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString(),videoPath:video?.path||null,videoMimeType:video?.mimeType||null,videoSizeBytes:Number(video?.sizeBytes||0),videoOriginalName:video?.originalName||null,attachmentPath:attachment?.path||null,attachmentMimeType:attachment?.mimeType||null,attachmentSizeBytes:Number(attachment?.sizeBytes||0),attachmentOriginalName:attachment?.originalName||null,mentionedUserIds:[...new Set(mentionedUserIds||[])].slice(0,10)};
+        const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString(),videoPath:video?.path||null,videoMimeType:video?.mimeType||null,videoSizeBytes:Number(video?.sizeBytes||0),videoOriginalName:video?.originalName||null};
         localState.content = localState.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
         if (kind === "announcement") localState.content.announcements.unshift(item);
         else if (kind === "derby") localState.content.derbyPosts.unshift(item);
@@ -1231,20 +997,12 @@
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
       if(video?.path){
-        if(kind!=="tip")throw new Error("Bilde eller film kan bare knyttes til Tips og triks.");
+        if(kind!=="tip")throw new Error("Film kan bare knyttes til Tips og triks.");
         payload.video_path=video.path;
         payload.video_mime_type=video.mimeType;
         payload.video_size_bytes=Number(video.sizeBytes);
         payload.video_original_name=String(video.originalName||"").slice(0,255);
       }
-      if(attachment?.path){
-        if(kind!=="derby")throw new Error("Skjermbilde kan bare knyttes til Derbyprat her.");
-        payload.attachment_path=attachment.path;
-        payload.attachment_mime_type=attachment.mimeType;
-        payload.attachment_size_bytes=Number(attachment.sizeBytes);
-        payload.attachment_original_name=String(attachment.originalName||"").slice(0,255);
-      }
-      if(kind==="derby")payload.mentioned_user_ids=[...new Set((mentionedUserIds||[]).map(String))].slice(0,10);
       const { data, error } = await client.from("community_content").insert(payload).select().single();
       if (error) throw error;
       return data;
@@ -1262,48 +1020,21 @@
       const { error } = await client.rpc("wgang_moderate_content",{p_content_id:Number(id),p_status:status});
       if (error) throw error;
     },
-    async updateAnnouncement(id, title, body) {
-      const cleanTitle=String(title||"").trim();
-      const cleanBody=String(body||"").trim();
-      if(!cleanTitle || cleanTitle.length>100)throw new Error("Tittelen må inneholde mellom 1 og 100 tegn.");
-      if(!cleanBody || cleanBody.length>3000)throw new Error("Beskjeden må inneholde mellom 1 og 3000 tegn.");
-      if (!configured) {
-        const item=(localState.content?.announcements||[]).find(x=>String(x.id)===String(id));
-        if(!item)throw new Error("Kunngjøringen finnes ikke.");
-        item.title=cleanTitle;
-        item.body=cleanBody;
-        item.updatedAt=new Date().toISOString();
-        localSave(localState);
-        return item;
-      }
-      const { data, error } = await client.rpc("wgang_update_announcement",{
-        p_content_id:Number(id),p_title:cleanTitle,p_body:cleanBody
-      });
-      if (error) throw error;
-      return data;
-    },
     async deleteContent(id) {
       if (!configured) return;
       const { error } = await client.from("community_content").delete().eq("id",id);
       if (error) throw error;
     },
-    async sendLeadershipMessage(message, attachment=null, mentionedUserIds=[]) {
+    async sendLeadershipMessage(message) {
       if (!configured) {
         localState.leadershipMessages = localState.leadershipMessages || [];
         const me = localState.accounts.find(x => x.id === localState.currentUserId);
-        const item = {id:Date.now(),userId:me?.id,authorName:me?.name||"WGANG-ledelse",message,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),attachmentPath:attachment?.path||null,attachmentMimeType:attachment?.mimeType||null,attachmentSizeBytes:Number(attachment?.sizeBytes||0),attachmentOriginalName:attachment?.originalName||null,mentionedUserIds:[...new Set(mentionedUserIds||[])].slice(0,10)};
+        const item = {id:Date.now(),userId:me?.id,authorName:me?.name||"WGANG-ledelse",message,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
         localState.leadershipMessages.push(item); localSave(localState); return item;
       }
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
-      const payload={user_id:user.id,message,mentioned_user_ids:[...new Set((mentionedUserIds||[]).map(String))].slice(0,10)};
-      if(attachment?.path){
-        payload.attachment_path=attachment.path;
-        payload.attachment_mime_type=attachment.mimeType;
-        payload.attachment_size_bytes=Number(attachment.sizeBytes);
-        payload.attachment_original_name=String(attachment.originalName||"").slice(0,255);
-      }
-      const { data, error } = await client.from("leadership_messages").insert(payload).select().single();
+      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message}).select().single();
       if (error) throw error;
       return data;
     },
@@ -1396,20 +1127,14 @@
         if (error) throw error;
       }
     },
-    async addComment(targetType, targetId, body, attachment=null, mentionedUserIds=[]) {
+    async addComment(targetType, targetId, body) {
       if(!["community","leadership"].includes(targetType)||!String(targetId||"").trim())throw new Error("Ugyldig kommentar-mål.");
       if (!configured) return;
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
-      const payload={user_id:user.id,target_type:targetType,target_id:String(targetId),body,
-        mentioned_user_ids:[...new Set((mentionedUserIds||[]).map(String))].slice(0,10)};
-      if(attachment?.path){
-        payload.attachment_path=attachment.path;
-        payload.attachment_mime_type=attachment.mimeType;
-        payload.attachment_size_bytes=Number(attachment.sizeBytes);
-        payload.attachment_original_name=String(attachment.originalName||"").slice(0,255);
-      }
-      const { error } = await client.from("social_comments").insert(payload);
+      const { error } = await client.from("social_comments").insert({
+        user_id:user.id,target_type:targetType,target_id:String(targetId),body
+      });
       if (error) throw error;
     },
     async deleteComment(id) {
