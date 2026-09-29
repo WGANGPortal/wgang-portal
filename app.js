@@ -1,4 +1,4 @@
-/* v0.18.0.87 – Chill Bunny-tavle under Admin > Oppgavetavle */
+/* v0.18.0.88 – fast rollelås på sensitive adminområder */
 (function () {
   "use strict";
 
@@ -330,8 +330,14 @@
     board:["derby.preferences.view","derby.board.update","derby.board.publish","derby.task_library.edit"],
     roles:["members.view","members.change_role","members.remove","permissions.view"]
   };
+  const OWNER_ADMIN_ONLY_MODULES = new Set(["actions","derby","applications","roles"]);
+  function isOwnerOrAdmin(user=current()){ return !!user && ["owner","admin"].includes(user.role); }
   function hasAnyPermission(keys,user=current()){ return (keys||[]).some(key=>hasPermission(key,user)); }
-  function canAccessAdminModule(name,user=current()){ return !!user && hasAnyPermission(ADMIN_MODULE_PERMISSIONS[name]||[],user); }
+  function canAccessAdminModule(name,user=current()){
+    if(!user)return false;
+    if(OWNER_ADMIN_ONLY_MODULES.has(name) && !isOwnerOrAdmin(user))return false;
+    return hasAnyPermission(ADMIN_MODULE_PERMISSIONS[name]||[],user);
+  }
   function canAccessAdmin(user=current()){ return !!user && Object.keys(ADMIN_MODULE_PERMISSIONS).some(name=>canAccessAdminModule(name,user)); }
   function firstAccessibleAdminModule(user=current()){ return ["actions","derby","applications","board","roles"].find(name=>canAccessAdminModule(name,user)) || null; }
   const ROUTE_PERMISSIONS = {
@@ -361,6 +367,9 @@
     });
     document.querySelectorAll("[data-result-leadership-only]").forEach(el=>{
       el.classList.toggle("hidden",!canViewDerbyLeadership());
+    });
+    document.querySelectorAll("[data-owner-admin-only]").forEach(el=>{
+      el.classList.toggle("hidden",!isOwnerOrAdmin());
     });
     const group=document.querySelector(".admin-nav-group");
     if(group) group.classList.toggle("hidden",!canAccessAdmin());
@@ -2184,9 +2193,10 @@
     syncBunnyAdminCardVisibility();
     const pending = state.accounts.filter(a => a.status === "pending");
     const all = approved();
-    const canHandleApplications=hasAnyPermission(["members.approve","members.reject"]);
-    const canManageMembers=hasAnyPermission(["members.view","members.change_role","members.remove"]);
-    const canViewDerbyStatus=hasPermission("derby.settings.publish");
+    const ownerAdmin=isOwnerOrAdmin();
+    const canHandleApplications=ownerAdmin&&hasAnyPermission(["members.approve","members.reject"]);
+    const canManageMembers=ownerAdmin&&hasAnyPermission(["members.view","members.change_role","members.remove"]);
+    const canViewDerbyStatus=ownerAdmin&&hasPermission("derby.settings.publish");
     if($("pendingMembers")) $("pendingMembers").innerHTML = canHandleApplications ? (pending.length ? pending.map(a => `<div class="approval-item"><div><strong>${esc(a.name)}</strong><small>Hay Day-navn</small></div><div class="approval-actions">${hasPermission("members.approve")?`<button class="button button-primary button-small" data-approve="${a.id}">Godkjenn</button>`:""}${hasPermission("members.reject")?`<button class="button button-small button-danger" data-reject="${a.id}">Avslå</button>`:""}</div></div>`).join("") : `<p class="empty-state">Ingen søknader venter på godkjenning.</p>`) : "";
     if($("accountAdminTable")) $("accountAdminTable").innerHTML = canManageMembers ? all.map(a => {
       const lockedOwner = a.role === "owner" && !isOwner();
@@ -2202,7 +2212,7 @@
     if($("adminResponseBadge")) $("adminResponseBadge").textContent = canViewDerbyStatus ? (counts.joined+counts.pause+counts.unsure) + " av " + all.length + " svar" : "";
     const participantList=$("adminDerbyParticipantList");
     if(participantList){
-      const canRemove=hasPermission("derby.participation.remove");
+      const canRemove=ownerAdmin&&hasPermission("derby.participation.remove");
       const visibleRows=adminDerbyRows.filter(row=>row.choice!=="waiting").sort((a,b)=>{
         const rank={joined:0,pause:1,unsure:2,removed:3};
         return (rank[a.choice]??9)-(rank[b.choice]??9)||a.account.name.localeCompare(b.account.name,"nb");
