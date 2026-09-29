@@ -1,4 +1,4 @@
-/* v0.18.0.83 – manuell lederstyrt avmelding fra derby */
+/* v0.18.0.85 – riktig aktivt derby ved like starttider */
 (function () {
   "use strict";
 
@@ -18,7 +18,8 @@
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
-    derbyManagement: { templates: [], events: [], participations: [], next: null, current: null, upcoming: null },
+    derbyManagement: { templates: [], events: [], participations: [], gameParticipations: [], next: null, current: null, upcoming: null },
+    gameIdentities: [],
     derbyHistory: { archives: [], results: [], changeLog: [] },
     absence: { statuses: [], periods: [] },
     legalAcceptance: null,
@@ -30,9 +31,10 @@
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
   const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
-  const WIKI_VIDEO_BUCKET = "wiki-videos";
+  const WIKI_MEDIA_BUCKET = "wiki-videos";
+  const WIKI_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
   const WIKI_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
-  const WIKI_VIDEO_TYPES = new Set(["video/mp4","video/quicktime","video/webm"]);
+  const WIKI_MEDIA_TYPES = new Set(["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","video/webm"]);
   const initialHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const initialQueryParams = new URLSearchParams(window.location.search);
   const initialAuthType = initialHashParams.get("type") || initialQueryParams.get("type") || "";
@@ -46,18 +48,30 @@
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
-  function wikiVideoExtension(file) {
+  function wikiMediaExtension(file) {
     const fromName=String(file?.name||"").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1];
-    if(["mp4","mov","webm"].includes(fromName))return fromName;
-    return {"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+    const normalized=fromName==="jpeg"?"jpg":fromName;
+    if(["jpg","png","webp","mp4","mov","webm"].includes(normalized))return normalized;
+    return {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
   }
 
-  function validateWikiVideo(file) {
-    if(!(file instanceof File))throw new Error("Velg en filmfil før opplasting.");
-    if(!WIKI_VIDEO_TYPES.has(file.type))throw new Error("Filmen må være MP4, MOV eller WebM. MP4 anbefales.");
-    if(!file.size || file.size > WIKI_VIDEO_MAX_BYTES)throw new Error("Filmen kan være maksimalt 50 MB.");
-    const extension=wikiVideoExtension(file);
-    if(!extension)throw new Error("Filtypen støttes ikke. Bruk MP4, MOV eller WebM.");
+  async function validateWikiMedia(file) {
+    if(!(file instanceof File))throw new Error("Velg et bilde eller en film før opplasting.");
+    if(!WIKI_MEDIA_TYPES.has(file.type))throw new Error("Vedlegget må være JPG, PNG, WebP, MP4, MOV eller WebM.");
+    const image=file.type.startsWith("image/");
+    const limit=image?WIKI_IMAGE_MAX_BYTES:WIKI_VIDEO_MAX_BYTES;
+    if(!file.size || file.size > limit)throw new Error(image?"Bildet kan være maksimalt 10 MB.":"Filmen kan være maksimalt 50 MB.");
+    const extension=wikiMediaExtension(file);
+    const allowedByType={"image/jpeg":["jpg"],"image/png":["png"],"image/webp":["webp"],"video/mp4":["mp4"],"video/quicktime":["mov"],"video/webm":["webm"]};
+    if(!extension || !allowedByType[file.type]?.includes(extension))throw new Error("Filendelsen stemmer ikke med filtypen.");
+    const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
+    const ascii=(start,end)=>String.fromCharCode(...bytes.slice(start,end));
+    const signatureOk=(file.type==="image/jpeg"&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)
+      ||(file.type==="image/png"&&[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a].every((value,index)=>bytes[index]===value))
+      ||(file.type==="image/webp"&&ascii(0,4)==="RIFF"&&ascii(8,12)==="WEBP")
+      ||(["video/mp4","video/quicktime"].includes(file.type)&&ascii(4,8)==="ftyp")
+      ||(file.type==="video/webm"&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3);
+    if(!signatureOk)throw new Error("Filinnholdet stemmer ikke med valgt bilde- eller filmtype.");
     return extension;
   }
 
@@ -74,20 +88,29 @@
   function selectDerbyContexts(events, now=new Date()) {
     const rows = Array.isArray(events) ? events : [];
     const nowMs = now.getTime();
-    const byNewest = (a,b) => new Date(b.start_at || 0) - new Date(a.start_at || 0);
+    const selectable = rows.filter(event => ["published","active"].includes(event?.status));
+    const byNewest = (a,b) => {
+      const statusDifference = Number(b?.status === "active") - Number(a?.status === "active");
+      if(statusDifference)return statusDifference;
+      const startDifference = new Date(b.start_at || 0) - new Date(a.start_at || 0);
+      if(startDifference)return startDifference;
+      const publishedDifference = new Date(b.published_at || b.created_at || 0) - new Date(a.published_at || a.created_at || 0);
+      if(publishedDifference)return publishedDifference;
+      return Number(b.id || 0) - Number(a.id || 0);
+    };
     const bySoonest = (a,b) => new Date(a.start_at || 0) - new Date(b.start_at || 0);
-    const currentByTime = rows.filter(event => {
+    const currentByTime = selectable.filter(event => {
       const start = event?.start_at ? new Date(event.start_at).getTime() : NaN;
       const end = event?.end_at ? new Date(event.end_at).getTime() : NaN;
       return Number.isFinite(start) && nowMs >= start && (!Number.isFinite(end) || nowMs < end);
     }).sort(byNewest)[0] || null;
-    const current = currentByTime || rows.filter(event => {
+    const current = currentByTime || selectable.filter(event => {
       if(event?.status !== "active")return false;
       const start=event?.start_at?new Date(event.start_at).getTime():NaN;
       const end=event?.end_at?new Date(event.end_at).getTime():NaN;
       return (!Number.isFinite(start)||nowMs>=start)&&(!Number.isFinite(end)||nowMs<end);
     }).sort(byNewest)[0] || null;
-    const upcoming = rows.filter(event => {
+    const upcoming = selectable.filter(event => {
       const start = event?.start_at ? new Date(event.start_at).getTime() : NaN;
       return event?.status === "published" && Number.isFinite(start) && start > nowMs;
     }).sort(bySoonest)[0] || null;
@@ -210,8 +233,6 @@
       choice: rawChoice === "joined" && !participationAcknowledged ? "waiting" : rawChoice,
       participationNeedsConfirmation: rawChoice === "joined" && !participationAcknowledged,
       participationRulesAcknowledgedAt: participationAcknowledged ? part?.rules_acknowledged_at || null : null,
-      participationRemovedAt: part?.removed_at || null,
-      participationRemovedBy: part?.removed_by || null,
       preferences: prefMap,
       createdAt: row.created_at || null,
       updatedAt: row.updated_at || null
@@ -280,18 +301,18 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -299,7 +320,9 @@
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
-      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points,removed_at,removed_by"),
+      client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
+      client.from("member_game_identities").select("id,user_id,game_name,player_tag,is_primary,created_at,updated_at").order("is_primary",{ascending:false}).order("game_name"),
+      client.from("derby_game_participation").select("event_id,game_identity_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
@@ -307,7 +330,7 @@
       client.from("social_likes").select("user_id,target_type,target_id,created_at"),
       client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at").order("created_at", {ascending:true}),
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
-      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,title,body,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
+      client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
       client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
@@ -316,7 +339,7 @@
       client.rpc("wgang_touch_my_portal_activity"),
       loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -384,7 +407,13 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbyManagement:{templates,events,participations:eventParticipationRes.data || [],next,current,upcoming},
+      accounts, derby, content, leadershipMessages,
+      gameIdentities:(gameIdentitiesRes.data || []).map(row=>({
+        id:row.id,userId:row.user_id,name:String(row.game_name || "").toUpperCase(),
+        playerTag:row.player_tag || "",isPrimary:!!row.is_primary,
+        createdAt:row.created_at || null,updatedAt:row.updated_at || null
+      })),
+      derbyManagement:{templates,events,participations:eventParticipationRes.data || [],gameParticipations:gameParticipationRes.data || [],next,current,upcoming},
       derbyHistory:{
         archives:archivesRes.data || [],
         results:memberResultsRes.data || [],
@@ -553,9 +582,6 @@
       if (eventError) throw eventError;
       const event = selectDerbyContexts(events).next;
       if (event) {
-        const {data:existing,error:existingError}=await client.from("derby_event_participation").select("choice").eq("event_id",event.id).eq("user_id",userId).maybeSingle();
-        if(existingError)throw existingError;
-        if(existing?.choice==="removed")throw new Error("Du er meldt av dette derbyet av ledelsen. Kontakt ledelsen hvis du mener dette er feil.");
         const now = Date.now();
         const lockAt = derbyParticipationLockAt(event)?.getTime();
         if (Number.isFinite(lockAt) && now >= lockAt) {
@@ -586,10 +612,43 @@
         if (error) throw error;
       }
     },
-    async removeDerbyParticipant(eventId,userId,reasonCode,message){
-      if(!configured)throw new Error("Lederstyrt avmelding krever Supabase.");
-      const {data,error}=await client.rpc("wgang_admin_remove_derby_participant",{
-        p_event_id:Number(eventId),p_user_id:userId,p_reason_code:reasonCode,p_message:message
+    async addGameIdentity(gameName, playerTag="") {
+      const name=String(gameName || "").trim();
+      const tag=String(playerTag || "").trim();
+      if(!name || name.length>40)throw new Error("Spillnavnet må inneholde 1–40 tegn.");
+      if(tag && (tag.length<2 || tag.length>30))throw new Error("Spill-ID må inneholde 2–30 tegn.");
+      if(!configured){
+        const userId=localState.currentUserId;
+        localState.gameIdentities=localState.gameIdentities || [];
+        if(localState.gameIdentities.filter(item=>String(item.userId)===String(userId)).length>=5)throw new Error("Du kan registrere maksimalt fem spillprofiler.");
+        const row={id:Date.now(),userId,name:name.toUpperCase(),playerTag:tag.toUpperCase(),isPrimary:false,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        localState.gameIdentities.push(row);localSave(localState);return row;
+      }
+      const {data,error}=await client.rpc("wgang_add_game_identity",{p_game_name:name,p_player_tag:tag || null});
+      if(error)throw error;
+      return data;
+    },
+    async setGameParticipation(gameIdentityId, choice, acknowledgement={}) {
+      if(!new Set(["joined","pause","unsure"]).has(choice))throw new Error("Ugyldig derby-svar.");
+      if(choice==="joined"&&acknowledgement.accepted!==true)throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
+      const eventResult=await (configured
+        ? client.from("derby_events").select("id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(20)
+        : Promise.resolve({data:localState.derbyManagement?.events || [],error:null}));
+      if(eventResult.error)throw eventResult.error;
+      const nextEvent=selectDerbyContexts(eventResult.data || []).next;
+      if(!nextEvent)throw new Error("Det finnes ikke et publisert derby som er åpent for påmelding.");
+      const lockAt=derbyParticipationLockAt(nextEvent)?.getTime();
+      if(Number.isFinite(lockAt)&&Date.now()>=lockAt)throw new Error("Svarfristen er utløpt. Derby-svaret er låst og kan ikke registreres eller endres.");
+      if(!configured){
+        localState.derbyManagement.gameParticipations=localState.derbyManagement.gameParticipations || [];
+        const rows=localState.derbyManagement.gameParticipations;
+        const existing=rows.find(item=>String(item.event_id)===String(nextEvent.id)&&String(item.game_identity_id)===String(gameIdentityId));
+        const value={event_id:nextEvent.id,game_identity_id:gameIdentityId,user_id:localState.currentUserId,choice,updated_at:new Date().toISOString()};
+        if(existing)Object.assign(existing,value);else rows.push(value);
+        localSave(localState);return value;
+      }
+      const {data,error}=await client.rpc("wgang_set_game_participation",{
+        p_event_id:Number(nextEvent.id),p_game_identity_id:Number(gameIdentityId),p_choice:choice,p_rules_accepted:choice==="joined"&&acknowledgement.accepted===true
       });
       if(error)throw error;
       return data;
@@ -929,10 +988,10 @@
       if (error) throw error;
       return data;
     },
-    async uploadWikiVideo(file, onProgress) {
-      if (!configured) throw new Error("Filmopplasting krever tilkobling til medlemsportalen.");
+    async uploadWikiMedia(file, onProgress) {
+      if (!configured) throw new Error("Opplasting av bilde eller film krever tilkobling til medlemsportalen.");
       if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
-      const extension=validateWikiVideo(file);
+      const extension=await validateWikiMedia(file);
       const { data:{session}, error:sessionError }=await client.auth.getSession();
       if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
       const objectId=globalThis.crypto?.randomUUID?.();
@@ -950,7 +1009,7 @@
           uploadDataDuringCreation:true,
           removeFingerprintOnSuccess:true,
           metadata:{
-            bucketName:WIKI_VIDEO_BUCKET,
+            bucketName:WIKI_MEDIA_BUCKET,
             objectName:path,
             contentType:file.type,
             cacheControl:"3600"
@@ -968,18 +1027,18 @@
         path,
         mimeType:file.type,
         sizeBytes:file.size,
-        originalName:String(file.name||`film.${extension}`).slice(0,255)
+        originalName:String(file.name||`vedlegg.${extension}`).slice(0,255)
       };
     },
-    async getWikiVideoUrl(path) {
+    async getWikiMediaUrl(path) {
       if(!configured || !path)return null;
-      const {data,error}=await client.storage.from(WIKI_VIDEO_BUCKET).createSignedUrl(path,3600);
+      const {data,error}=await client.storage.from(WIKI_MEDIA_BUCKET).createSignedUrl(path,3600);
       if(error)throw error;
       return data?.signedUrl || null;
     },
-    async deleteWikiVideo(path) {
+    async deleteWikiMedia(path) {
       if(!configured || !path)return;
-      const {error}=await client.storage.from(WIKI_VIDEO_BUCKET).remove([path]);
+      const {error}=await client.storage.from(WIKI_MEDIA_BUCKET).remove([path]);
       if(error)throw error;
     },
     async createContent(kind, title, body, category="", publishNow=false, video=null) {
@@ -997,7 +1056,7 @@
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
       if(video?.path){
-        if(kind!=="tip")throw new Error("Film kan bare knyttes til Tips og triks.");
+        if(kind!=="tip")throw new Error("Bilde eller film kan bare knyttes til Tips og triks.");
         payload.video_path=video.path;
         payload.video_mime_type=video.mimeType;
         payload.video_size_bytes=Number(video.sizeBytes);

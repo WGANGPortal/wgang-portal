@@ -1,0 +1,17 @@
+WGANG Portal v0.18.0.85 – riktig aktivt Power Derby
+
+Last opp disse filene til rotmappen i GitHub:
+
+1. app.js
+2. backend.js
+3. index.html
+4. service-worker.js
+5. MIGRATION-v0.18.0.85-POWER-DERBY-SELECTION.sql
+
+Databasemigreringen er allerede kjørt. SQL-filen følger med som dokumentasjon.
+
+Rettelsen gjør at:
+- avsluttede derby ikke kan velges som pågående bare fordi tidspunktet overlapper
+- aktiv status prioriteres når flere rader har samme starttid
+- nyeste publiserte spesialderby prioriteres ved lik starttid
+- ukesovergangen peker på spesialderbyet når det publiseres etter standardderbyet
