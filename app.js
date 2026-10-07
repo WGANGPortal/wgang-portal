@@ -1,4 +1,4 @@
-/* v0.18.0.89 – lederprat blir tilgjengelig fra tidspunktet ledertilgang gis */
+/* v0.18.0.90 – nye ledermeldinger kan lagres med tidsavgrenset historikk */
 (function () {
   "use strict";
 

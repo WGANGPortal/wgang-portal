@@ -1,4 +1,4 @@
-const CACHE_NAME = "wgang-v0.18.0.89-leadership-access-from";
+const CACHE_NAME = "wgang-v0.18.0.90-leadership-message-insert-fix";
 const APP_SHELL = [
   "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.84",
   "/app.js?v=0.18.0.84", "/backend.js?v=0.18.0.84", "/config.js?v=0.18.0.60",

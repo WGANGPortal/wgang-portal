@@ -1,0 +1,17 @@
+WGANG Portal v0.18.0.90
+
+LAST OPP KUN DISSE FILENE TIL GITHUB:
+
+1. app.js
+2. index.html
+3. service-worker.js
+4. MIGRATION-v0.18.0.90-LEADERSHIP-MESSAGE-INSERT-FIX.sql
+5. 00-LAST-OPP-KUN-v0.18.0.90.txt
+
+Databasemigreringen er lagt inn og kontrollert i Supabase. SQL-filen følger med
+slik at GitHub også inneholder komplett historikk for oppdateringen.
+
+RETTET:
+- Nye meldinger kan igjen sendes i Lederprat.
+- Den nye meldingen kan returneres av databasen etter lagring.
+- Nye ledere er fortsatt sperret fra meldinger publisert før ledertilgangen ble gitt.
