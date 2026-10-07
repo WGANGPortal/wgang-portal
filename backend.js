@@ -1,4 +1,4 @@
-/* v0.18.0.86 – synlig manuell derbyavmelding */
+/* v0.18.0.91 – private én-til-én-meldinger med deltakerstyrt innsyn */
 (function () {
   "use strict";
 
@@ -23,6 +23,7 @@
     derbyHistory: { archives: [], results: [], changeLog: [] },
     absence: { statuses: [], periods: [] },
     legalAcceptance: null,
+    privateMessages: [],
     currentUserId: null
   };
 
@@ -148,6 +149,7 @@
       parsed.derbyManagement.participations = parsed.derbyManagement.participations || [];
       Object.assign(parsed.derbyManagement,selectDerbyContexts(parsed.derbyManagement.events || []));
       parsed.derbyHistory = parsed.derbyHistory || { archives: [], results: [], changeLog: [] };
+      parsed.privateMessages = parsed.privateMessages || [];
       return parsed;
     } catch (_) { return clone(EMPTY_LOCAL_STATE); }
   }
@@ -301,18 +303,18 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], []);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("task_preferences").select("user_id,task_type,preference"),
@@ -325,6 +327,7 @@
       client.from("derby_game_participation").select("event_id,game_identity_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
       client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
+      client.from("private_messages").select("id,sender_id,recipient_id,body,created_at,read_at").order("created_at", {ascending:true}).limit(1000),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("social_likes").select("user_id,target_type,target_id,created_at"),
@@ -339,7 +342,7 @@
       client.rpc("wgang_touch_my_portal_activity"),
       loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
-    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
+    for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
     }
     const d = derbyRes.data;
@@ -408,6 +411,10 @@
 
     return {
       accounts, derby, content, leadershipMessages,
+      privateMessages:(privateMessagesRes.data || []).map(row=>({
+        id:row.id,senderId:row.sender_id,recipientId:row.recipient_id,
+        body:row.body,createdAt:row.created_at,readAt:row.read_at
+      })),
       gameIdentities:(gameIdentitiesRes.data || []).map(row=>({
         id:row.id,userId:row.user_id,name:String(row.game_name || "").toUpperCase(),
         playerTag:row.player_tag || "",isPrimary:!!row.is_primary,
@@ -1119,6 +1126,40 @@
       if (!configured) return;
       const { error } = await client.from("leadership_messages").delete().eq("id",id);
       if (error) throw error;
+    },
+    async sendPrivateMessage(recipientId, body) {
+      const cleanBody=String(body||"").trim();
+      if(!recipientId || !cleanBody)throw new Error("Velg mottaker og skriv en melding.");
+      if(cleanBody.length>4000)throw new Error("Meldingen kan være maksimalt 4000 tegn.");
+      if (!configured) {
+        const senderId=localState.currentUserId;
+        if(String(senderId)===String(recipientId))throw new Error("Du kan ikke sende privat melding til deg selv.");
+        const recipient=localState.accounts.find(x=>String(x.id)===String(recipientId)&&x.approved);
+        if(!recipient)throw new Error("Mottakeren er ikke et godkjent medlem.");
+        const item={id:Date.now(),senderId,recipientId,body:cleanBody,createdAt:new Date().toISOString(),readAt:null};
+        localState.privateMessages=localState.privateMessages||[];
+        localState.privateMessages.push(item); localSave(localState); return item;
+      }
+      const { data:{user}, error:userError } = await client.auth.getUser();
+      if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const {data,error}=await client.from("private_messages").insert({sender_id:user.id,recipient_id:recipientId,body:cleanBody}).select().single();
+      if(error)throw error;
+      return data;
+    },
+    async markPrivateConversationRead(otherUserId) {
+      if(!otherUserId)return;
+      if (!configured) {
+        const now=new Date().toISOString(), me=localState.currentUserId;
+        (localState.privateMessages||[]).forEach(message=>{
+          if(String(message.recipientId)===String(me)&&String(message.senderId)===String(otherUserId)&&!message.readAt)message.readAt=now;
+        });
+        localSave(localState); return;
+      }
+      const { data:{user}, error:userError }=await client.auth.getUser();
+      if(userError||!user)throw userError||new Error("Du må være logget inn.");
+      const {error}=await client.from("private_messages").update({read_at:new Date().toISOString()})
+        .eq("recipient_id",user.id).eq("sender_id",otherUserId).is("read_at",null);
+      if(error)throw error;
     },
     async saveNotificationPreferences(changes) {
       if (!configured) {

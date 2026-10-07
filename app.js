@@ -1,4 +1,4 @@
-/* v0.18.0.90 – nye ledermeldinger kan lagres med tidsavgrenset historikk */
+/* v0.18.0.91 – private én-til-én-meldinger for godkjente medlemmer */
 (function () {
   "use strict";
 
@@ -200,10 +200,11 @@
     });
   }
 
-  let state = { accounts:[], gameIdentities:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
+  let state = { accounts:[], gameIdentities:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
   let activePortalRoute = "";
   let chatFocusToken = 0;
+  let activePrivateUserId = null;
   const openSocialThreads = new Set();
   const chatReadTimers = new Map();
   const chatReadWrites = new Map();
@@ -485,6 +486,7 @@
     if (useHash) location.hash = route;
     portalMain.focus();
     if(route==="leadership"||route==="discussions") scheduleChatEntryFocus(route,previousRoute!==route);
+    else if(route==="messages") { renderPrivateMessages(); if(activePrivateUserId) markActivePrivateConversationRead(); window.scrollTo({top:0,behavior:"smooth"}); }
     else window.scrollTo({top:0, behavior:"smooth"});
   }
 
@@ -553,6 +555,7 @@
     sidebar.classList.remove("open");
     location.hash = "landing";
     activePortalRoute="landing";
+    activePrivateUserId=null;
     chatFocusToken++;
     window.scrollTo(0, 0);
     setBusy(false);
@@ -690,6 +693,12 @@
     });
     if(hasPermission("notifications.admin.membership") && hasAnyPermission(["members.approve","members.reject"]) && prefs.in_app_membership_requests) { const pending=state.accounts.filter(a=>a.status==="pending"); if(pending.length && newerThan(Math.max(...pending.map(x=>new Date(x.createdAt||Date.now()).getTime())),read.membership_requests_seen_at)) items.push({group:"leadership",category:"membership_requests",title:"Nye medlemssøknader",text:`${pending.length} venter på behandling`,admin:"applications",count:pending.length}); }
     if(hasPermission("notifications.admin.pending_content") && hasPermission("content.pending.view") && prefs.in_app_pending_tips) { const tips=state.content?.pendingTips||[]; const latest=tips[0]; if(latest && newerThan(latest.createdAt,read.pending_tips_seen_at)) items.push({group:"leadership",category:"pending_tips",title:"Tips venter på behandling",text:`${tips.length} tips venter`,admin:"actions",time:latest.createdAt,count:tips.length}); }
+    const unreadPrivate=(state.privateMessages||[]).filter(message=>String(message.recipientId)===String(current()?.id)&&!message.readAt);
+    if(unreadPrivate.length){
+      const latest=unreadPrivate.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
+      const sender=state.accounts.find(account=>String(account.id)===String(latest.senderId));
+      items.push({group:"personal",category:"private_message",title:"Ny privat melding",text:`${sender?.name||"Et medlem"} har sendt deg ${unreadPrivate.length>1?`${unreadPrivate.length} uleste meldinger`:"en melding"}.`,route:"messages",time:latest.createdAt,count:unreadPrivate.length,privateUserId:latest.senderId});
+    }
     if(prefs.in_app_social_activity){
       const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
       activity.forEach(n=>{
@@ -749,9 +758,10 @@
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
-    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);const activity=(socialData().activityNotifications||[]).find(row=>String(row.id)===String(item.activityId));if(activity)activity.read_at=new Date().toISOString();} else {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
+    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);const activity=(socialData().activityNotifications||[]).find(row=>String(row.id)===String(item.activityId));if(activity)activity.read_at=new Date().toISOString();} else if(item.category!=="private_message") {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
     if(item.admin) showAdminModule(item.admin);
+    else if(item.privateUserId) openPrivateConversation(item.privateUserId);
     else if(item.focusEntryId||item.focusCommentId) openNotificationTarget(item.route||"dashboard",item.focusEntryId,item.focusCommentId);
     else navigate(item.route||"dashboard");
     renderNotifications();
@@ -1004,6 +1014,7 @@
     renderMembers();
     renderPreferences();
     renderContent();
+    renderPrivateMessages();
     renderLeadershipChat();
     renderDerbyHistory();
     renderResultManagement();
@@ -1301,12 +1312,14 @@
         const absenceBadge=a.temporarilyInactive?`<span class="member-status status-inactive">Midlertidig inaktiv</span>`:"";
         const absenceDates=isLeadership()&&a.absencePeriod?`<div class="member-absence-dates"><span>Inaktiv periode · kun ledelsen</span><strong>${formatAbsenceDate(a.absencePeriod.starts_on)}–${formatAbsenceDate(a.absencePeriod.ends_on)}</strong></div>`:"";
         const lastActive=isLeadership()?`<div><span>Sist aktiv i portalen</span><strong>${esc(formatLastActive(a.lastActiveAt))}</strong></div>`:"";
-        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack">${absenceBadge}</div></div>${identityList}<div class="member-info"><div><span>Spillprofiler</span><strong>${identities.length}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${lastActive}${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<span class="profile-open-hint">Se profil →</span></article>`;
+        const privateButton=String(a.id)!==String(current()?.id)?`<button type="button" class="text-button member-message-button" data-private-message-user="${a.id}">✉ Send privat melding</button>`:"";
+        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack">${absenceBadge}</div></div>${identityList}<div class="member-info"><div><span>Spillprofiler</span><strong>${identities.length}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${lastActive}${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<div class="member-card-actions"><span class="profile-open-hint">Se profil →</span>${privateButton}</div></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
     $$('[data-profile-id]').forEach(card => {
       card.onclick = () => openMemberProfile(card.dataset.profileId);
       card.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMemberProfile(card.dataset.profileId); } };
     });
+    $$('[data-private-message-user]').forEach(button=>button.onclick=event=>{event.preventDefault();event.stopPropagation();openPrivateConversation(button.dataset.privateMessageUser);});
     translateUi(grid);
   }
 
@@ -2152,6 +2165,71 @@
     });
     bindSocialActions(document);
     hydrateWikiMedia(document);
+  }
+
+  function privateMessagesFor(userId){
+    const me=String(current()?.id||""), other=String(userId||"");
+    return (state.privateMessages||[]).filter(message=>
+      (String(message.senderId)===me&&String(message.recipientId)===other)||
+      (String(message.senderId)===other&&String(message.recipientId)===me)
+    ).sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  }
+
+  function privateUnreadCount(userId=null){
+    const me=String(current()?.id||"");
+    return (state.privateMessages||[]).filter(message=>String(message.recipientId)===me&&!message.readAt&&(!userId||String(message.senderId)===String(userId))).length;
+  }
+
+  function openPrivateConversation(userId){
+    const account=approved().find(item=>String(item.id)===String(userId));
+    if(!account||String(account.id)===String(current()?.id))return;
+    activePrivateUserId=account.id;
+    $("memberProfileDialog")?.close();
+    navigate("messages");
+    setTimeout(()=>$("privateMessageInput")?.focus(),120);
+  }
+
+  async function markActivePrivateConversationRead(){
+    if(!activePrivateUserId||!privateUnreadCount(activePrivateUserId))return;
+    try{
+      await backend.markPrivateConversationRead(activePrivateUserId);
+      const now=new Date().toISOString();
+      (state.privateMessages||[]).forEach(message=>{
+        if(String(message.recipientId)===String(current()?.id)&&String(message.senderId)===String(activePrivateUserId)&&!message.readAt)message.readAt=now;
+      });
+      renderPrivateMessages(); renderNotifications();
+    }catch(error){console.warn("Kunne ikke markere private meldinger som lest",error);}
+  }
+
+  function renderPrivateMessages(){
+    const recipientSelect=$("privateMessageRecipientSelect"), conversationList=$("privateConversationList"), messageList=$("privateMessageList");
+    if(!recipientSelect||!conversationList||!messageList||!current())return;
+    const others=approved().filter(account=>String(account.id)!==String(current().id)).sort((a,b)=>a.name.localeCompare(b.name,"nb"));
+    const previousValue=recipientSelect.value;
+    recipientSelect.innerHTML=`<option value="">Velg medlem …</option>${others.map(account=>`<option value="${account.id}">${esc(account.name)}</option>`).join("")}`;
+    recipientSelect.value=others.some(account=>String(account.id)===String(previousValue))?previousValue:"";
+
+    const conversationUsers=others.map(account=>{
+      const messages=privateMessagesFor(account.id), latest=messages[messages.length-1];
+      return {account,messages,latest,unread:privateUnreadCount(account.id)};
+    }).filter(row=>row.latest).sort((a,b)=>new Date(b.latest.createdAt)-new Date(a.latest.createdAt));
+    conversationList.innerHTML=conversationUsers.length?conversationUsers.map(row=>`<button type="button" class="private-conversation-row ${String(row.account.id)===String(activePrivateUserId)?"active":""}" data-private-conversation="${row.account.id}"><span class="avatar">${esc(row.account.name[0])}</span><span><strong>${esc(row.account.name)}</strong><small>${esc(row.latest.body)}</small></span>${row.unread?`<b>${row.unread}</b>`:""}</button>`).join(""):`<p class="empty-state">Ingen private samtaler ennå.</p>`;
+    conversationList.querySelectorAll("[data-private-conversation]").forEach(button=>button.onclick=()=>openPrivateConversation(button.dataset.privateConversation));
+
+    const totalUnread=privateUnreadCount();
+    const navBadge=$("privateMessageNavBadge");
+    if(navBadge){navBadge.textContent=totalUnread;navBadge.classList.toggle("hidden",!totalUnread);}
+    const account=others.find(item=>String(item.id)===String(activePrivateUserId));
+    $("privateConversationEmpty")?.classList.toggle("hidden",!!account);
+    $("privateConversationActive")?.classList.toggle("hidden",!account);
+    if(!account){messageList.innerHTML="";return;}
+    $("privateConversationName").textContent=account.name;
+    const messages=privateMessagesFor(account.id);
+    messageList.innerHTML=messages.length?messages.map(message=>{
+      const own=String(message.senderId)===String(current().id);
+      return `<article class="private-message-bubble ${own?"own":"received"}"><p>${esc(message.body).replace(/\n/g,"<br>")}</p><small>${esc(formatDate(message.createdAt))}${own?` · ${message.readAt?"Lest":"Sendt"}`:""}</small></article>`;
+    }).join(""):`<p class="empty-state">Ingen meldinger ennå. Skriv den første meldingen.</p>`;
+    requestAnimationFrame(()=>{messageList.scrollTop=messageList.scrollHeight;});
   }
 
   function renderLeadershipChat() {
@@ -3210,6 +3288,30 @@
     setBusy(false);
   };
 
+  if($("openPrivateConversation")) $("openPrivateConversation").onclick=()=>{
+    const recipientId=$("privateMessageRecipientSelect")?.value;
+    if(recipientId)openPrivateConversation(recipientId);
+  };
+  if($("privateChatBack")) $("privateChatBack").onclick=()=>{
+    activePrivateUserId=null;
+    renderPrivateMessages();
+  };
+  if($("privateMessageForm")) $("privateMessageForm").onsubmit=async event=>{
+    event.preventDefault();
+    if(busy||!activePrivateUserId)return;
+    const input=$("privateMessageInput"), status=$("privateMessageStatus"), body=input.value.trim();
+    if(!body)return;
+    setBusy(true); status.textContent=""; status.classList.remove("success");
+    try{
+      await backend.sendPrivateMessage(activePrivateUserId,body);
+      input.value="";
+      await refreshState();
+      status.textContent="Meldingen er sendt."; status.classList.add("success");
+      renderPrivateMessages();
+    }catch(error){status.textContent=humanError(error,"Kunne ikke sende meldingen.");}
+    setBusy(false);
+  };
+
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
 
@@ -3535,7 +3637,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.84").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.91").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
