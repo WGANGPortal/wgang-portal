@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.91-private-messages";
+const CACHE_NAME = "wgang-v0.18.0.92-private-message-push";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.84",
-  "/app.js?v=0.18.0.84", "/backend.js?v=0.18.0.84", "/config.js?v=0.18.0.60",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.92",
+  "/app.js?v=0.18.0.92", "/backend.js?v=0.18.0.92", "/config.js?v=0.18.0.60",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -175,6 +175,7 @@ self.addEventListener("push", event => {
     data: {
       url: data.url || "/",
       route: data.route || null,
+      privateUserId: data.privateUserId || null,
       entryId: data.entryId || null,
       commentId: data.commentId || null
     }
@@ -199,7 +200,8 @@ self.addEventListener("notificationclick", event => {
   const d = event.notification.data || {};
   const url = new URL(d.url || "/", self.location.origin);
   if (d.route) url.hash = d.route;
-  if (d.entryId) url.searchParams.set("focusEntry", d.entryId);
+  if (d.privateUserId) url.searchParams.set("privateUser", d.privateUserId);
+  else if (d.entryId) url.searchParams.set("focusEntry", d.entryId);
   if (d.commentId) url.searchParams.set("focusComment", d.commentId);
 
   event.waitUntil((async()=>{
@@ -210,6 +212,7 @@ self.addEventListener("notificationclick", event => {
         client.postMessage({
           type:"WGANG_NOTIFICATION_FOCUS",
           route:d.route,
+          privateUserId:d.privateUserId,
           entryId:d.entryId,
           commentId:d.commentId
         });

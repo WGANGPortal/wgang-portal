@@ -1,4 +1,4 @@
-/* v0.18.0.91 – private én-til-én-meldinger med deltakerstyrt innsyn */
+/* v0.18.0.92 – private meldinger med valgfritt push-varsel */
 (function () {
   "use strict";
 

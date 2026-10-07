@@ -1,4 +1,4 @@
-/* v0.18.0.91 – private én-til-én-meldinger for godkjente medlemmer */
+/* v0.18.0.92 – push-varsel for private én-til-én-meldinger */
 (function () {
   "use strict";
 
@@ -573,7 +573,7 @@
   const NOTIFICATION_DEFAULTS = {
     in_app_announcements:true,in_app_derby_chat:true,in_app_leadership_chat:true,
     in_app_membership_requests:true,in_app_pending_tips:true,in_app_derby_published:true,
-    in_app_derby_deadline_reminders:true,in_app_social_activity:true,push_bunny_starts:true,email_enabled:false
+    in_app_derby_deadline_reminders:true,in_app_social_activity:true,push_private_messages:true,push_bunny_starts:true,email_enabled:false
   };
   function notificationPrefs() { return Object.assign({}, NOTIFICATION_DEFAULTS, state.notifications?.preferences || {}); }
   function notificationRead() { return state.notifications?.readState || {}; }
@@ -637,10 +637,13 @@
       const q=new URLSearchParams(location.search);
       const entryId=q.get("focusEntry");
       const commentId=q.get("focusComment");
-      if(!entryId&&!commentId) return;
+      const privateUserId=q.get("privateUser");
+      if(!entryId&&!commentId&&!privateUserId) return;
       const route=(location.hash||"#dashboard").replace(/^#/,"").split(/[/?]/)[0]||"dashboard";
-      openNotificationTarget(route,entryId,commentId);
+      if(route==="messages"&&privateUserId)openPrivateConversation(privateUserId);
+      else openNotificationTarget(route,entryId,commentId);
       q.delete("focusEntry"); q.delete("focusComment");
+      q.delete("privateUser");
       const clean=location.pathname+(q.toString()?`?${q.toString()}`:"")+location.hash;
       history.replaceState(null,"",clean);
     }catch(e){console.warn(e);}
@@ -966,6 +969,7 @@
     set("notifyImportantDerby","in_app_derby_published");
     set("notifyPersonalDerbyReminder","in_app_derby_deadline_reminders");
     set("notifySocialActivity","in_app_social_activity");
+    set("notifyPrivateMessages","push_private_messages");
     set("notifyBunnyStart","push_bunny_starts");
     set("emailNotificationsEnabled","email_enabled");
   }
@@ -3169,6 +3173,7 @@
       in_app_derby_published:!!$("notifyImportantDerby")?.checked,
       in_app_derby_deadline_reminders:!!$("notifyPersonalDerbyReminder")?.checked,
       in_app_social_activity:!!$("notifySocialActivity")?.checked,
+      push_private_messages:!!$("notifyPrivateMessages")?.checked,
       push_bunny_starts:!!$("notifyBunnyStart")?.checked,
       email_enabled:!!$("emailNotificationsEnabled")?.checked
     };
@@ -3637,11 +3642,12 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.91").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.92").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
-      if(d.entryId||d.commentId) openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
+      if(d.route==="messages"&&d.privateUserId) openPrivateConversation(d.privateUserId);
+      else if(d.entryId||d.commentId) openNotificationTarget(d.route||"dashboard",d.entryId||null,d.commentId||null);
       else navigate(d.route||"dashboard");
     });
   }
