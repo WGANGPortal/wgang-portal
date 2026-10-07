@@ -1,4 +1,4 @@
-/* v0.18.0.88 – fast rollelås på sensitive adminområder */
+/* v0.18.0.89 – lederprat blir tilgjengelig fra tidspunktet ledertilgang gis */
 (function () {
   "use strict";
 

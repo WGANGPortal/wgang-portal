@@ -1,0 +1,18 @@
+WGANG Portal v0.18.0.89
+
+LAST OPP KUN DISSE FILENE TIL GITHUB:
+
+1. app.js
+2. index.html
+3. service-worker.js
+4. MIGRATION-v0.18.0.89-LEADERSHIP-CHAT-ACCESS-FROM.sql
+5. 00-LAST-OPP-KUN-v0.18.0.89.txt
+
+Databasemigreringen er lagt inn og kontrollert i Supabase. SQL-filen følger med
+slik at GitHub også inneholder komplett historikk for oppdateringen.
+
+ENDRING:
+- Nye ledere ser lederprat fra tidspunktet de får ledertilgang.
+- Eldre ledermeldinger, kommentarer, reaksjoner, oversettelser, varsler og bilder er sperret.
+- Eksisterende ledere beholder historikken de allerede hadde.
+- Ved nedgradering og senere nytt opprykk starter tilgangen fra det nye tidspunktet.
