@@ -1,4 +1,4 @@
-/* v0.18.0.98 – enklere og tydeligere derbypåmelding */
+/* v0.18.0.99 – bare nyeste aktivitetsvarsel per innlegg */
 (function () {
   "use strict";
 
@@ -787,7 +787,8 @@
       items.push({group:"personal",category:"private_message",title:"Ny privat melding",text:`${sender?.name||"Et medlem"} har sendt deg ${unreadPrivate.length>1?`${unreadPrivate.length} uleste meldinger`:"en melding"}.`,route:"messages",time:latest.createdAt,count:unreadPrivate.length,privateUserId:latest.senderId});
     }
     if(prefs.in_app_social_activity){
-      const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at);
+      const activity=(socialData().activityNotifications||[]).filter(x=>!x.read_at).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      const groupedActivity=new Map();
       activity.forEach(n=>{
         const actor=state.accounts.find(a=>String(a.id)===String(n.actor_id));
         const likedComment=n.target_type==="comment"
@@ -800,15 +801,20 @@
           ? (socialData().comments||[]).filter(c=>String(c.target_type)===String(n.target_type)&&String(c.target_id)===String(n.target_id)&&String(c.user_id)===String(n.actor_id)).sort((x,y)=>Math.abs(new Date(x.created_at)-new Date(n.created_at))-Math.abs(new Date(y.created_at)-new Date(n.created_at)))[0]
           : likedComment;
         const commentLike=n.target_type==="comment";
-        items.push({
-          group:"personal",category:"social_activity",activityId:n.id,
+        const rootEntryId=commentLike?likedComment?.target_id||null:n.target_id||null;
+        const activityKey=`${parentType}:${rootEntryId||n.target_id||n.id}`;
+        const existing=groupedActivity.get(activityKey);
+        if(existing){existing.activityIds.push(n.id);existing.groupedCount+=1;return;}
+        groupedActivity.set(activityKey,{
+          group:"personal",category:"social_activity",activityId:n.id,activityIds:[n.id],groupedCount:1,
           title:n.activity_type==="comment"?"Ny kommentar":commentLike?"Noen likte kommentaren din":"Ny likerklikk",
           text:`${actor?.name||"Et medlem"} ${n.activity_type==="comment"?"kommenterte innlegget ditt":commentLike?"likte kommentaren din":"likte innlegget ditt"}`,
           route:parentType==="leadership"?"leadership":"discussions",time:n.created_at,
-          focusEntryId:commentLike?likedComment?.target_id||null:n.target_id||null,
+          focusEntryId:rootEntryId,
           focusCommentId:matchingComment?.id||null
         });
       });
+      items.push(...groupedActivity.values());
     }
 
     const next=state.derbyManagement?.next;
@@ -845,7 +851,7 @@
     return items.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0));
   }
   async function openNotification(item) {
-    try { if(item.category==="social_activity"&&item.activityId){await backend.markActivityNotificationRead(item.activityId);const activity=(socialData().activityNotifications||[]).find(row=>String(row.id)===String(item.activityId));if(activity)activity.read_at=new Date().toISOString();} else if(item.category!=="private_message") {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
+    try { if(item.category==="social_activity"&&item.activityId){const ids=item.activityIds?.length?item.activityIds:[item.activityId];await backend.markActivityNotificationsRead(ids);const readAt=new Date().toISOString();(socialData().activityNotifications||[]).filter(row=>ids.some(id=>String(id)===String(row.id))).forEach(activity=>activity.read_at=readAt);} else if(item.category!=="private_message") {await backend.markNotificationSeen(item.category);} if(!state.notifications) state.notifications={}; if(!state.notifications.readState) state.notifications.readState={}; const map={announcements:"announcements_seen_at",derby_chat:"derby_chat_seen_at",leadership_chat:"leadership_chat_seen_at",membership_requests:"membership_requests_seen_at",pending_tips:"pending_tips_seen_at",derby_published:"derby_published_seen_at",derby_deadline:"derby_deadline_seen_at"}; if(map[item.category]) state.notifications.readState[map[item.category]]=new Date().toISOString(); } catch(e){ console.warn(e); }
     $("memberProfileDialog")?.close();
     if(item.admin) showAdminModule(item.admin);
     else if(item.privateUserId) openPrivateConversation(item.privateUserId);
@@ -881,7 +887,7 @@
     if($("whatsNewCount")) $("whatsNewCount").textContent=notificationCount;
     if(card) card.classList.toggle("hidden",!items.length);
     const menuBadge=$("profileMenuNotificationBadge"); if(menuBadge){menuBadge.textContent=notificationCount;menuBadge.classList.toggle("hidden",!notificationCount);}
-    const renderList=(target)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span></button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
+    const renderList=(target)=>{ if(!target)return; target.innerHTML=items.length?items.map((x,i)=>`<button class="notification-item" data-notification-index="${i}"><strong>${esc(tText(x.title))}</strong><span>${esc(x.text)}</span>${x.groupedCount>1?`<small>${currentLanguage==="en"?`Latest of ${x.groupedCount} notifications from this post`:`Siste av ${x.groupedCount} varsler fra dette innlegget`}</small>`:""}</button>`).join(""):`<p class="empty-state">${currentLanguage==="en"?"No new notifications.":"Ingen nye varsler."}</p>`; target.querySelectorAll("[data-notification-index]").forEach(b=>b.onclick=()=>openNotification(items[+b.dataset.notificationIndex])); };
     renderList($("profileNotificationList")); renderList($("whatsNewList"));
   }
 
@@ -3814,7 +3820,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.98").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.99").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

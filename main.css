@@ -849,3 +849,7 @@ body:not(.admin-mode) .admin-only {
   .derby-signup-facts{grid-template-columns:1fr 1fr;margin-top:14px}.derby-signup-facts>div:first-child{grid-column:1/-1}.derby-signup-facts>div{padding:11px}
   .participation-card .game-identity-card{padding:15px}.participation-card .game-choice-grid{grid-template-columns:1fr;gap:7px}.participation-card .choice-button{min-height:58px}.participation-card .game-identity-add{padding:14px}
 }
+
+/* v0.18.0.99 – bare nyeste aktivitetsvarsel per innlegg */
+.notification-item{position:relative;border-bottom:1px solid rgba(88,55,67,.08)}.notification-item:last-child{border-bottom:0}
+.notification-item small{display:inline-flex;align-self:flex-start;margin-top:3px;padding:4px 7px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.64rem;font-weight:800;line-height:1.25}

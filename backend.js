@@ -1,4 +1,4 @@
-/* v0.18.0.93 – derbykrav 95 prosent med kvalifiseringssperre */
+/* v0.18.0.99 – samle aktivitetsvarsler per innlegg */
 (function () {
   "use strict";
 
@@ -1259,9 +1259,13 @@
       if (error) throw error;
     },
     async markActivityNotificationRead(id) {
-      if (!configured) return;
+      return this.markActivityNotificationsRead([id]);
+    },
+    async markActivityNotificationsRead(ids) {
+      const notificationIds=[...new Set((ids||[]).filter(id=>id!==null&&id!==undefined))];
+      if (!configured || !notificationIds.length) return;
       const { error } = await client.from("activity_notifications")
-        .update({read_at:new Date().toISOString()}).eq("id",id);
+        .update({read_at:new Date().toISOString()}).in("id",notificationIds);
       if (error) throw error;
     },
     async requestTranslation(targetType, targetId, title, body) {
