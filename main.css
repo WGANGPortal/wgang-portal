@@ -782,3 +782,15 @@ body:not(.admin-mode) .admin-only {
   .page-heading h1{font-size:2rem}.portal-card{padding:16px}
   .admin-module .table-wrap,.content-section .post-list{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
 }
+
+/* v0.18.0.96 – meldinger og bekreftelser i portalens stil */
+.portal-message-dialog{width:min(460px,calc(100% - 28px));padding:0;border:0;border-radius:24px;background:transparent;box-shadow:0 24px 70px rgba(50,29,38,.28)}
+.portal-message-dialog::backdrop{background:rgba(50,29,38,.52);backdrop-filter:blur(3px)}
+.portal-message-card{padding:28px;border:1px solid rgba(88,55,67,.12);border-radius:24px;background:#fffdfa;text-align:center}
+.portal-message-symbol{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 15px;border-radius:18px;background:var(--pink-soft);color:var(--pink);font-size:1.45rem;font-weight:950}
+.portal-message-card .card-kicker{margin-bottom:7px}.portal-message-card h2{margin:0;font-size:1.45rem}.portal-message-card>p:last-of-type{margin:11px 0 0;color:var(--muted);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+.portal-message-actions{display:flex;justify-content:center;gap:10px;margin-top:24px}.portal-message-actions .button{min-width:120px}
+.portal-message-dialog[data-tone="success"] .portal-message-symbol{background:#e4f3e8;color:#287346}
+.portal-message-dialog[data-tone="error"] .portal-message-symbol,.portal-message-dialog[data-tone="danger"] .portal-message-symbol{background:#f8e5e8;color:#a13b51}
+.portal-message-dialog[data-tone="danger"] .button-danger{border-color:#a13b51;background:#a13b51;color:#fff}
+@media(max-width:620px){.portal-message-card{padding:24px 20px}.portal-message-actions{display:grid;grid-template-columns:1fr 1fr}.portal-message-actions .button{min-width:0;width:100%}}

@@ -1,4 +1,4 @@
-/* v0.18.0.95 – ryddigere sider og konsekvent portaldesign */
+/* v0.18.0.96 – meldinger og bekreftelser i portalens stil */
 (function () {
   "use strict";
 
@@ -471,6 +471,52 @@
   }
   function showDialog(dialog) { if (dialog && typeof dialog.showModal === "function") dialog.showModal(); else if (dialog) dialog.setAttribute("open", ""); }
   function closeDialog(dialog) { if (dialog && typeof dialog.close === "function") dialog.close(); else if (dialog) dialog.removeAttribute("open"); }
+  function portalMessageTone(message, confirmMode=false) {
+    const value=String(message||"");
+    if(confirmMode&&/(slett|fjern|melde .* av|deaktiv)/i.test(value))return "danger";
+    if(/kunne ikke|feil|ugyldig|mangler|ikke rettighet|utløpt|må være|må ha|ikke funnet/i.test(value))return "error";
+    if(/lagret|publisert|sendt|aktivert|oppdatert|takk|ferdig/i.test(value))return "success";
+    return "info";
+  }
+  function openPortalMessage(message,{confirmMode=false,title="",confirmLabel=""}={}) {
+    const dialog=$("portalMessageDialog");
+    if(!dialog){
+      if(confirmMode)return Promise.resolve(window.confirm(String(message||"")));
+      window.alert(String(message||""));return Promise.resolve(true);
+    }
+    if(dialog.open)dialog.close();
+    const tone=portalMessageTone(message,confirmMode), english=currentLanguage==="en";
+    const defaults={
+      info:[english?"MESSAGE":"BESKJED",english?"Message":"Beskjed","i"],
+      success:[english?"COMPLETED":"FULLFØRT",english?"Done":"Ferdig","✓"],
+      error:[english?"NOTICE":"VIKTIG",english?"Could not complete":"Dette gikk ikke","!"],
+      danger:[english?"CONFIRM":"BEKREFT",english?"Confirm action":"Bekreft handling","!"]
+    }[tone];
+    dialog.dataset.tone=tone;
+    setText("portalMessageKicker",defaults[0]);
+    setText("portalMessageTitle",title||defaults[1]);
+    setText("portalMessageSymbol",defaults[2]);
+    setText("portalMessageText",String(message||""));
+    const cancel=$("portalMessageCancel"),confirm=$("portalMessageConfirm");
+    cancel.classList.toggle("hidden",!confirmMode);
+    cancel.textContent=english?"Cancel":"Avbryt";
+    confirm.textContent=confirmLabel||(confirmMode?(english?"Confirm":"Bekreft"):(english?"Close":"Lukk"));
+    confirm.classList.toggle("button-danger",tone==="danger");
+    confirm.classList.toggle("button-primary",tone!=="danger");
+    return new Promise(resolve=>{
+      let finished=false;
+      const finish=value=>{if(finished)return;finished=true;closeDialog(dialog);resolve(value);};
+      confirm.onclick=()=>finish(true);
+      cancel.onclick=()=>finish(false);
+      dialog.oncancel=event=>{event.preventDefault();finish(false);};
+      dialog.onclick=event=>{if(event.target===dialog&&!confirmMode)finish(true);};
+      showDialog(dialog);
+      setTimeout(()=>confirm.focus(),0);
+    });
+  }
+  function portalAlert(message,title="") { return openPortalMessage(message,{title}); }
+  function portalConfirm(message,options={}) { return openPortalMessage(message,{...options,confirmMode:true}); }
+  function alert(message) { void portalAlert(message); }
   function setBusy(value) { busy = value; document.body.classList.toggle("is-busy", value); }
   function humanError(error, fallback="Noe gikk galt. Prøv igjen.") {
     const code=String(error?.code || "").toLowerCase();
@@ -1944,7 +1990,7 @@
     root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
       const comment=socialData().comments.find(x=>String(x.id)===String(btn.dataset.deleteComment));
       if(String(comment?.user_id)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
-      if(!confirm(currentLanguage==="en"?"Delete this comment?":"Slette denne kommentaren?")) return;
+      if(!await portalConfirm(currentLanguage==="en"?"Delete this comment?":"Slette denne kommentaren?")) return;
       try { await backend.deleteComment(btn.dataset.deleteComment); await refreshState(); } catch(err) { alert(humanError(err)); }
     });
   }
@@ -2195,7 +2241,7 @@
     }
 
     $$('[data-delete-content]').forEach(b => b.onclick = async () => {
-      if (!hasPermission("chat.moderate") || !confirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
+      if (!hasPermission("chat.moderate") || !await portalConfirm(currentLanguage==="en"?"Delete this content?":"Slette dette innholdet?")) return;
       if (busy) return; setBusy(true);
       try {
         const item=findContentItem(b.dataset.deleteContent);
@@ -2301,7 +2347,7 @@
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
       const message=messages.find(x=>String(x.id)===String(button.dataset.leadershipDelete));
       if(String(message?.userId)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
-      if (!confirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
+      if (!await portalConfirm(currentLanguage === "en" ? "Delete this message?" : "Slette denne meldingen?")) return;
       if (busy) return; setBusy(true);
       try { await backend.deleteLeadershipMessage(button.dataset.leadershipDelete); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
@@ -2356,7 +2402,7 @@
     });
     $$('[data-remove]').forEach(b => b.onclick = async () => {
       if(!hasPermission("members.remove"))return alert("Du har ikke rettighet til å fjerne medlemmer.");
-      if (!confirm("Fjerne medlemmet fra portalen? Kontoen deaktiveres, men historikk beholdes.")) return;
+      if (!await portalConfirm("Fjerne medlemmet fra portalen? Kontoen deaktiveres, men historikk beholdes.")) return;
       if (busy) return; setBusy(true);
       try { await backend.setMemberStatus(b.dataset.remove,"removed"); await refreshState(); } catch(e) { alert(humanError(e)); }
       setBusy(false);
@@ -2368,7 +2414,7 @@
       const message=prompt(`Melding til ${account?.name || "deltakeren"}:`,defaultMessage);
       if(message===null)return;
       if(message.trim().length<10)return alert("Begrunnelsen må være minst 10 tegn.");
-      if(!confirm(`Melde ${account?.name || "deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
+      if(!await portalConfirm(`Melde ${account?.name || "deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
       if(busy)return;setBusy(true);
       try{
         await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,"insufficient_results",message.trim());
@@ -2409,7 +2455,7 @@
     }));
     if(!changes.length){cancelPermissionEdit();return;}
     const summary=changes.map(c=>`${roleLabel(c.role)} – ${c.label}: ${c.before?"På":"Av"} → ${c.after?"På":"Av"}`).join("\n");
-    if(!confirm(`Lagre endringer i rettigheter?\n\n${changes.length} rettighet${changes.length===1?"":"er"} endres:\n\n${summary}`))return;
+    if(!await portalConfirm(`Lagre endringer i rettigheter?\n\n${changes.length} rettighet${changes.length===1?"":"er"} endres:\n\n${summary}`))return;
     try{
       for(const c of changes)await backend.saveRolePermission(c.role,c.key,c.after);
       permissionEditMode=false;permissionDraft=null;await refreshState();
@@ -2617,7 +2663,7 @@
     const btn=$("bunnyRoundCompleteButton");
     if(btn)btn.onclick=async()=>{
       const round=Number(btn.dataset.round); if(!round||!hasPermission("derby.board.update"))return; if(!bunnyRoundEventId){alert("Pågående derby mangler Derby-ID. Publiser derbyet i Derbyadministrasjon først.");return;}
-      if(!confirm(`Bekreft at harepus ${round} er tatt. Da avsluttes denne runden for alle medlemmer.`))return;
+      if(!await portalConfirm(`Bekreft at harepus ${round} er tatt. Da avsluttes denne runden for alle medlemmer.`))return;
       btn.disabled=true;
       try{await backend.completeBunnyRound(bunnyRoundEventId,round);bunnyRoundRows=await backend.getBunnyRoundState(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre harepusstatus. Kontroller at SQL-oppdateringen er kjørt."));}
       btn.disabled=false;
@@ -2626,11 +2672,11 @@
     if(save) save.onclick=async()=>{
       if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
       const nextAt=new Date(raw); if(Number.isNaN(nextAt.getTime())){alert("Tidspunktet er ikke gyldig.");return;}
-      if(!confirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
+      if(!await portalConfirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
       save.disabled=true; try{await backend.setBunnyRoundSchedule(bunnyRoundEventId,model.round,nextAt.toISOString());bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre manuelt harepusttidspunkt. Kontroller at SQL-oppdateringen er kjørt."));} save.disabled=false;
     };
     if(clear) clear.onclick=async()=>{
-      if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!confirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
+      if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); if(!await portalConfirm(`Fjerne manuell tidsjustering for runde ${model.round} og gå tilbake til automatisk beregning?`))return;
       clear.disabled=true; try{await backend.clearBunnyRoundSchedule(bunnyRoundEventId,model.round);bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke fjerne tidsjusteringen."));} clear.disabled=false;
     };
   }
@@ -2799,7 +2845,7 @@
     const message=next
       ? `Registrere at du er ferdig med oppgavene i ${derbyLabel}? Oppgavepreferansene dine tas da ut av den aktive statistikken.`
       : `Angre ferdigstatus for ${derbyLabel}? Oppgavepreferansene dine tas da med i den aktive statistikken igjen.`;
-    if(!confirm(message)) return;
+    if(!await portalConfirm(message)) return;
     setBusy(true);
     try{
       await backend.setDerbyCompleted(user.id,next);
@@ -3545,7 +3591,7 @@
     if (busy || !isOwner()) return;
     const event = derbyEditorPayload();
     if (!event.template_id) { alert("Velg en grunnmal først."); return; }
-    if (!confirm("Lagre disse opplysningene som ny standard for denne derbytypen?")) return;
+    if (!await portalConfirm("Lagre disse opplysningene som ny standard for denne derbytypen?")) return;
     setBusy(true);
     try {
       await backend.updateDerbyTemplate({
@@ -3582,7 +3628,7 @@
       const archive=(derbyHistoryData().archives||[]).find(item=>String(item.event_id)===String(payload.eventId));
       if(archive&&payload.correctionReason.length<5)throw new Error("Skriv en kort begrunnelse for korreksjonen.");
       const memberTotal=payload.results.reduce((sum,row)=>sum+row.points_earned,0);
-      if(payload.neighborhoodPoints!==null&&memberTotal!==payload.neighborhoodPoints&&!confirm(`Deltakersummen er ${historyNumber(memberTotal)} poeng, mens lagets total er ${historyNumber(payload.neighborhoodPoints)} poeng. Vil du lagre det kontrollerte avviket?`))return;
+      if(payload.neighborhoodPoints!==null&&memberTotal!==payload.neighborhoodPoints&&!await portalConfirm(`Deltakersummen er ${historyNumber(memberTotal)} poeng, mens lagets total er ${historyNumber(payload.neighborhoodPoints)} poeng. Vil du lagre det kontrollerte avviket?`))return;
       setBusy(true); status.textContent=currentLanguage==="en"?"Saving the complete result …":"Lagrer hele resultatet …";
       await backend.saveDerbyResult(payload);
       await refreshState();
@@ -3730,7 +3776,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.95").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.96").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

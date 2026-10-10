@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.95">
+  <link rel="stylesheet" href="main.css?v=0.18.0.96">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.95</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.96</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -327,6 +327,18 @@
     <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Påmelding</small></a><a href="#preferences" data-permission-any="derby.plan" data-route="preferences" aria-label="Oppgavetavle"><span>✓</span><small>Tavle</small></a><a href="#messages" data-route="messages"><span>✉</span><small>Meldinger</small><em id="privateMessageBottomBadge" class="hidden">0</em></a><button class="bottom-more-button" id="mobileMoreButton" type="button" aria-label="Åpne mer-meny" aria-expanded="false"><span>☰</span><small>Mer</small></button></nav>
   </section>
 
+  <dialog id="portalMessageDialog" class="portal-message-dialog" aria-labelledby="portalMessageTitle" aria-describedby="portalMessageText">
+    <div class="portal-message-card">
+      <div class="portal-message-symbol" id="portalMessageSymbol" aria-hidden="true">i</div>
+      <p class="card-kicker" id="portalMessageKicker">BESKJED</p>
+      <h2 id="portalMessageTitle">Beskjed</h2>
+      <p id="portalMessageText"></p>
+      <div class="portal-message-actions">
+        <button class="button" id="portalMessageCancel" type="button">Avbryt</button>
+        <button class="button button-primary" id="portalMessageConfirm" type="button">OK</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="authDialog" class="auth-dialog">
     <div class="auth-card">
@@ -576,6 +588,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.95"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.96"></script>
 </body>
 </html>
