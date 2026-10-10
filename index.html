@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.96">
+  <link rel="stylesheet" href="main.css?v=0.18.0.97">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.96</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.97</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -223,7 +223,8 @@
         <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Finn naboene og se status for pågående derby.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn eller spill-ID"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></div><div class="member-grid" id="memberGrid"></div></section>
         <section class="page" data-page="preferences">
           <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVETAVLE</p><h1 id="taskHubTitle">Oppgavetavle</h1><p id="taskHubIntro">Planlegg og koordiner oppgavene i derbyet.</p></div></div>
-          <div id="standardTaskHub"><article class="portal-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div></div><div class="preference-list" id="preferenceList"></div><p class="helper-text">Marker hvilke oppgaver som passer deg. Lederne bruker oversikten til å vurdere hva som bør beholdes eller slettes fra tavla.</p></article></div>
+          <section class="task-board-guide" aria-label="Slik bruker du oppgavetavla"><div class="task-board-guide-heading"><div><p class="card-kicker">DIN ARBEIDSFLATE</p><h2 id="taskBoardGuideTitle">Slik bruker du tavla</h2></div><span class="task-board-status" id="taskBoardStatus">Normal Derby</span></div><div class="task-board-steps"><div><b>1</b><span><strong id="taskBoardStepOneTitle">Finn oppgavene</strong><small id="taskBoardStepOneText">Se hva som passer deg.</small></span></div><div><b>2</b><span><strong id="taskBoardStepTwoTitle">Registrer valgene</strong><small id="taskBoardStepTwoText">Velg ærlig og realistisk.</small></span></div><div><b>3</b><span><strong id="taskBoardStepThreeTitle">Følg felles plan</strong><small id="taskBoardStepThreeText">Lederne bruker svarene til å rydde tavla.</small></span></div></div></section>
+          <div id="standardTaskHub"><article class="portal-card task-preference-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div><strong class="task-board-counter" id="preferenceSelectionSummary">0 av 0 vurdert</strong></div><div class="preference-legend" aria-label="Forklaring"><span class="pref-like">♥ Liker</span><span class="pref-can">✓ Kan ta</span><span class="pref-avoid">– Helst ikke</span><span class="pref-no">× Kan ikke</span></div><div class="task-board-progress" aria-hidden="true"><span id="preferenceSelectionProgress"></span></div><div class="preference-list" id="preferenceList"></div><p class="helper-text task-board-footer-note">Svarene lagres med én gang. Lederne bruker oversikten til å beholde aktuelle oppgaver og rydde bort resten.</p></article></div>
           <div id="bunnyTaskHub" class="hidden"><section class="bunny-center" id="bunnyCenter">
             <div class="bunny-hero">
               <div><p class="card-kicker">🐰 CHILL BUNNY DERBY</p><h2>Oppgaver i neste harepus</h2><p>Velg oppgavene du planlegger å ta i neste harepus. Valgene gjelder bare denne harepusen.</p></div>
@@ -588,6 +589,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.96"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.97"></script>
 </body>
 </html>

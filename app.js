@@ -1,4 +1,4 @@
-/* v0.18.0.96 – meldinger og bekreftelser i portalens stil */
+/* v0.18.0.97 – tydeligere oppgavetavle og mobilvalg */
 (function () {
   "use strict";
 
@@ -1178,7 +1178,7 @@
     $("bunnyReadyCount").textContent=`${planned.length} valgt`;$("bunnyPlanCount").textContent=`${planned.length} valgt`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
     const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}`:""}`;}
     const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png","Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"};
-    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const img=bunnyTaskImageUrl(t)||images[t.name];const desc=String(t.description||t.name||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card"><div class="bunny-task-type">${esc(t.category)}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">${esc(bunnyAmountLabel(t))}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${["ready","preparing"].includes(my)?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${my==="skip"?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
+    grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const plannedByMe=["ready","preparing"].includes(my),skippedByMe=my==="skip";const img=bunnyTaskImageUrl(t)||images[t.name];const desc=String(t.description||t.name||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card ${plannedByMe?"is-planned":skippedByMe?"is-skipped":""}"><div class="bunny-task-type">${esc(t.category)}${plannedByMe?`<span>DIN PLAN</span>`:""}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">${esc(bunnyAmountLabel(t))}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${plannedByMe?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" aria-pressed="${plannedByMe?"true":"false"}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${skippedByMe?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" aria-pressed="${skippedByMe?"true":"false"}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
     grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{const fallback=document.createElement("div");fallback.className="bunny-task-icon";fallback.textContent=img.dataset.fallbackIcon||"🐰";img.replaceWith(fallback);},{once:true}));
     grid.querySelectorAll("[data-bunny-status]").forEach(b=>b.onclick=async()=>{if(!bunnyData.board||!cycle)return;const old=mine.find(x=>String(x.task_id)===String(b.dataset.taskId));try{if(old?.status===b.dataset.bunnyStatus||(b.dataset.bunnyStatus==="preparing"&&old?.status==="ready"))await backend.clearBunnyStatus(bunnyData.board.id,b.dataset.taskId);else await backend.setBunnyStatus(bunnyData.board.id,b.dataset.taskId,b.dataset.bunnyStatus,cycle.key,cycle.eventId,cycle.round,cycle.start.toISOString(),cycle.end.toISOString());await loadBunny();}catch(e){alert(humanError(e));}});
     const plan=$("bunnyMyPlan");plan.innerHTML=planned.length?planned.sort((a,b)=>{const ca=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(a.task_id)&&["ready","preparing"].includes(x.status)).length,cb=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(b.task_id)&&["ready","preparing"].includes(x.status)).length;return cb-ca;}).map(x=>{const t=(bunnyData.library||[]).find(z=>String(z.id)===String(x.task_id));return t?`<span class="bunny-plan-chip">${esc(t.name)} ${esc(bunnyAmountLabel(t))}</span>`:"";}).join(""):`<span class="helper-text">Ingen oppgaver valgt til neste harepus ennå.</span>`;renderBunnyAdmin();
@@ -1453,7 +1453,12 @@
     const user = current();
     const list = $("preferenceList");
     if (!user || !list) return;
-    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>Velg hva som passer deg best.</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${user.preferences?.[task] === key ? "selected" : ""}">${label}</button>`).join("")}</div></div>`).join("")}</section>`).join("");
+    const preferenceIcons={like:"♥",can:"✓",avoid:"–",no:"×"};
+    const selectedCount=TASK_TYPES.filter(task=>!!user.preferences?.[task]).length;
+    setText("preferenceSelectionSummary",`${selectedCount} av ${TASK_TYPES.length} vurdert`);
+    const progress=$("preferenceSelectionProgress");
+    if(progress)progress.style.width=`${TASK_TYPES.length?selectedCount/TASK_TYPES.length*100:0}%`;
+    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>${group.tasks.length} ${group.tasks.length===1?"oppgavetype":"oppgavetyper"}</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => {const selected=user.preferences?.[task]===key;return `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${selected?"selected":""}" aria-pressed="${selected?"true":"false"}"><span aria-hidden="true">${preferenceIcons[key]}</span><span>${label}</span></button>`;}).join("")}</div></div>`).join("")}</section>`).join("");
     $$('[data-pref-task]').forEach(button => button.onclick = async () => {
       if (busy || !hasPermission("derby.plan")) return;
       const me = current();
@@ -2862,9 +2867,26 @@
     $("standardTaskHub")?.classList.toggle("hidden",!preferenceBased);
     $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
     $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
-    if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgavetavle – neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg sammen og se hva naboene klargjør før neste harepus.":"Klargjør oppgaver og se felles interesse før derbyet starter.");}
-    else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
-    else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgavetavle – ${type}`);setText("taskHubIntro","Oppgavetavla tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
+    if(bunny){
+      const active=derbyDashboardPhase(event)==="active";
+      setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgavetavle – neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg sammen og se hva naboene klargjør før neste harepus.":"Klargjør oppgaver og se felles interesse før derbyet starter.");
+      setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle","Planlegg neste harepus");
+      setText("taskBoardStepOneTitle","Se dagens 12 oppgaver");setText("taskBoardStepOneText","Kontroller oppgave og antall.");
+      setText("taskBoardStepTwoTitle","Velg hva du klargjør");setText("taskBoardStepTwoText","Valget gjelder neste harepus.");
+      setText("taskBoardStepThreeTitle","Vær klar til å starte");setText("taskBoardStepThreeText","Populære oppgaver må tas raskt.");
+    }else if(preferenceBased){
+      setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);
+      setText("taskBoardStatus",derbyScope.label);setText("taskBoardGuideTitle","Prioriter dine oppgaver");
+      setText("taskBoardStepOneTitle","Vurder oppgavetypene");setText("taskBoardStepOneText","Tenk på tid og kapasitet.");
+      setText("taskBoardStepTwoTitle","Registrer ett valg");setText("taskBoardStepTwoText","Liker, kan ta eller bør unngås.");
+      setText("taskBoardStepThreeTitle","Hold tavla i bevegelse");setText("taskBoardStepThreeText","Lederne rydder etter felles behov.");
+    }else{
+      setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgavetavle – ${type}`);setText("taskHubIntro","Oppgavetavla tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);
+      setText("taskBoardStatus",type);setText("taskBoardGuideTitle","Følg planen for derbyet");
+      setText("taskBoardStepOneTitle","Se aktuelle oppgaver");setText("taskBoardStepOneText","Kontroller hva derbyet krever.");
+      setText("taskBoardStepTwoTitle","Avklar ansvar");setText("taskBoardStepTwoText","Velg bare det du kan fullføre.");
+      setText("taskBoardStepThreeTitle","Fullfør som avtalt");setText("taskBoardStepThreeText","Gi beskjed hvis planen endres.");
+    }
   }
 
   function derbyCommitmentDetails() {
@@ -3776,7 +3798,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.96").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.97").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

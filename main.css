@@ -794,3 +794,34 @@ body:not(.admin-mode) .admin-only {
 .portal-message-dialog[data-tone="error"] .portal-message-symbol,.portal-message-dialog[data-tone="danger"] .portal-message-symbol{background:#f8e5e8;color:#a13b51}
 .portal-message-dialog[data-tone="danger"] .button-danger{border-color:#a13b51;background:#a13b51;color:#fff}
 @media(max-width:620px){.portal-message-card{padding:24px 20px}.portal-message-actions{display:grid;grid-template-columns:1fr 1fr}.portal-message-actions .button{min-width:0;width:100%}}
+
+/* v0.18.0.97 – tydeligere oppgavetavle og mobilvalg */
+.task-board-guide{margin-bottom:16px;padding:22px;border:1px solid rgba(88,55,67,.12);border-radius:22px;background:linear-gradient(135deg,#fffdfa,#fff5f7);box-shadow:0 8px 24px rgba(72,43,53,.045)}
+.task-board-guide-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+.task-board-guide-heading h2{margin:0;font-size:1.3rem}
+.task-board-status,.task-board-counter{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 12px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.78rem;font-weight:900;white-space:nowrap}
+.task-board-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.task-board-steps>div{display:flex;align-items:flex-start;gap:11px;min-width:0;padding:14px;border:1px solid rgba(88,55,67,.09);border-radius:16px;background:rgba(255,255,255,.74)}
+.task-board-steps b{display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:10px;background:var(--pink);color:#fff;font-size:.78rem}
+.task-board-steps span{display:grid;gap:3px;min-width:0}.task-board-steps strong{font-size:.88rem;line-height:1.25}.task-board-steps small{color:var(--muted);font-size:.75rem;line-height:1.4}
+.task-preference-card>.card-header{padding-bottom:16px;border-bottom:1px solid rgba(88,55,67,.09)}
+.preference-legend{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 10px}.preference-legend span{padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:850}
+.preference-legend .pref-like{background:#f8e4ec;color:#9e2d5d}.preference-legend .pref-can{background:#e5f3e9;color:#287346}.preference-legend .pref-avoid{background:#fff3d9;color:#805c16}.preference-legend .pref-no{background:#f2ecee;color:#705d64}
+.task-board-progress{height:7px;margin-bottom:18px;overflow:hidden;border-radius:999px;background:#f0e8eb}.task-board-progress>span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--pink),#d8628f);transition:width .25s ease}
+.task-preference-card .preference-list{display:grid;gap:12px}.task-preference-card .preference-group{margin:0;padding:17px;border:1px solid rgba(88,55,67,.11);border-radius:17px;background:#fffdfa;box-shadow:0 5px 16px rgba(72,43,53,.035)}
+.task-preference-card .preference-group h3{margin-bottom:4px}.task-preference-card .preference-group>.helper-text{margin:0 0 12px;font-size:.76rem}
+.task-preference-card .preference-row{gap:12px;padding:12px 0;border-top:1px solid rgba(88,55,67,.08)}.task-preference-card .preference-row:first-of-type{border-top:0}
+.task-preference-card .preference-actions button{display:grid;grid-template-columns:20px 1fr;align-items:center;gap:5px;min-height:44px;padding:8px 10px;text-align:left}
+.task-preference-card .preference-actions button>span:first-child{font-size:1rem;font-weight:950;text-align:center}.task-preference-card .preference-actions button.selected{box-shadow:0 0 0 2px rgba(169,47,96,.18),0 5px 13px rgba(72,43,53,.08)}
+.task-board-footer-note{margin:18px 0 0;padding:13px 15px;border-radius:14px;background:#fbf4ed}
+.bunny-designer-card.is-planned{border-color:rgba(40,115,70,.42);box-shadow:0 0 0 2px rgba(40,115,70,.09),0 8px 22px rgba(72,43,53,.06)}
+.bunny-designer-card.is-skipped{opacity:.7}.bunny-task-type{display:flex;align-items:center;justify-content:space-between;gap:8px}.bunny-task-type span{padding:4px 7px;border-radius:999px;background:#e5f3e9;color:#287346;font-size:.58rem;font-weight:950;letter-spacing:.04em}
+.bunny-actions-two button.selected{box-shadow:inset 0 0 0 2px currentColor,0 5px 12px rgba(72,43,53,.07)}
+
+@media(max-width:620px){
+  .task-board-guide{padding:18px;border-radius:19px}.task-board-guide-heading{align-items:stretch;flex-direction:column;gap:10px;margin-bottom:13px}.task-board-status{align-self:flex-start}
+  .task-board-steps{grid-template-columns:1fr;gap:7px}.task-board-steps>div{padding:11px 12px}.task-board-steps b{width:26px;height:26px}.task-board-steps span{grid-template-columns:minmax(105px,.7fr) 1fr;align-items:center;column-gap:8px}.task-board-steps small{font-size:.72rem}
+  .task-board-counter{align-self:flex-start}.preference-legend{display:grid;grid-template-columns:1fr 1fr}.preference-legend span{text-align:center}
+  .task-preference-card .preference-group{padding:14px}.task-preference-card .preference-row{align-items:stretch;flex-direction:column}.task-preference-card .preference-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.task-preference-card .preference-actions button{width:100%}
+}
+@media(max-width:390px){.task-board-steps span{display:grid;grid-template-columns:1fr}.task-preference-card .preference-actions button{grid-template-columns:17px 1fr;padding:7px;font-size:.75rem}}
