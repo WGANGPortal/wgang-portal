@@ -1,4 +1,4 @@
-/* v0.18.0.93 – derbykrav 95 prosent, mål 100 prosent */
+/* v0.18.0.94 – visuell portalforbedring og mobilflyt */
 (function () {
   "use strict";
 
@@ -39,7 +39,7 @@
   const LANG_KEY = "wgangLanguage";
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const I18N_EN = {
-    "Oversikt":"Overview","Derby":"Derby","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
+    "Oversikt":"Overview","Derby":"Derby","Påmelding":"Registration","Derbypåmelding":"Derby registration","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
     "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Oppgavetavle":"Task board","Medlemmer og roller":"Members and roles",
     "Her er det viktigste for neste derby.":"Here is the most important information for the next derby.",
     "NESTE DERBY":"NEXT DERBY","Deltar":"Participating","Tar pause":"Taking a break","Usikker":"Unsure","Mangler svar":"No response",
@@ -240,6 +240,8 @@
   }
   function closeMenu() {
     if (sidebar) sidebar.classList.remove("open");
+    $("menuToggle")?.setAttribute("aria-expanded", "false");
+    $("mobileMoreButton")?.setAttribute("aria-expanded", "false");
     setPortalMenuOpen(false);
   }
   const portalMain = $("portalMain");
@@ -515,6 +517,8 @@
     activePortalRoute=route;
     $$(".page").forEach(p => p.classList.toggle("active", p.dataset.page === route));
     $$('[data-route]').forEach(a => a.classList.toggle("active", a.dataset.route === route));
+    const primaryMobileRoutes=new Set(["dashboard","derby","preferences","messages"]);
+    $("mobileMoreButton")?.classList.toggle("active",!primaryMobileRoutes.has(route));
     sidebar.classList.remove("open");
     if (useHash) location.hash = route;
     portalMain.focus();
@@ -542,6 +546,7 @@
     if ($("adminPageDescription")) $("adminPageDescription").textContent = meta[1];
     $$(".side-nav a").forEach(a => a.classList.remove("active"));
     document.querySelectorAll("[data-admin-route]").forEach(a => a.classList.toggle("active", a.dataset.adminRoute === name));
+    $("mobileMoreButton")?.classList.add("active");
     syncBunnyAdminCardVisibility();
     if (useHash) history.replaceState(null, "", "#admin-" + name);
     closeMenu();
@@ -1046,6 +1051,7 @@
       : user.choice;
     $("myStatusMetric").textContent = (state.gameIdentities || []).length ? ownGameIdentitySummary(currentActiveDerbyEvent() || state.derbyManagement?.next) : choiceLabel(dashboardChoice);
     renderDerbyConfig();
+    renderDashboardPrimaryAction();
     renderDerbyCompletion();
     renderMetrics();
     renderMembers();
@@ -2255,6 +2261,8 @@
     const totalUnread=privateUnreadCount();
     const navBadge=$("privateMessageNavBadge");
     if(navBadge){navBadge.textContent=totalUnread;navBadge.classList.toggle("hidden",!totalUnread);}
+    const bottomBadge=$("privateMessageBottomBadge");
+    if(bottomBadge){bottomBadge.textContent=totalUnread;bottomBadge.classList.toggle("hidden",!totalUnread);}
     const account=others.find(item=>String(item.id)===String(activePrivateUserId));
     $("privateConversationEmpty")?.classList.toggle("hidden",!!account);
     $("privateConversationActive")?.classList.toggle("hidden",!account);
@@ -2646,7 +2654,7 @@
     setText("nextDerbyStart", active
       ? "Pågår nå"
       : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00"));
-    setText("dashboardDerbyAction", bunny && active ? "Åpne oppslagstavla" : (bunny ? "Åpne påmelding" : "Åpne derby-senter"));
+    setText("dashboardDerbyAction", bunny && active ? "Åpne oppgavetavla" : "Åpne påmelding");
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
@@ -2663,6 +2671,34 @@
     setText("dashboardDerbyMetricLabel", active ? "Pågående derby" : "Neste derby");
     setText("dashboardNextDerbyName", shortType);
     setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
+  }
+
+  function renderDashboardPrimaryAction() {
+    const user=current(), activeEvent=currentActiveDerbyEvent();
+    const upcomingEvent=state.derbyManagement?.upcoming || state.derbyManagement?.next;
+    if(!user)return;
+    const signupEvent=upcomingEvent && derbyDashboardPhase(upcomingEvent)!=="active" ? upcomingEvent : null;
+    const identities=signupEvent ? gameIdentityRowsForAccount(user,signupEvent) : [];
+    const missingSignup=!!signupEvent && (identities.length
+      ? identities.some(identity=>identity.choice==="waiting")
+      : memberParticipationChoiceForEvent(user,signupEvent)==="waiting");
+    let icon="✓", title="Du er ajour", text="Ingen handling kreves akkurat nå.", label="Se kunngjøringer", route="announcements";
+    if(missingSignup){
+      icon="◇"; title="Svar på derbypåmeldingen"; text="Kontroller spillprofilene dine og registrer om de deltar før svarfristen."; label="Åpne påmelding"; route="derby";
+    }else if(activeEvent){
+      const bunny=/bunny|harepus/i.test(String(activeEvent.name||state.derby?.type||""));
+      icon=bunny?"🐰":"✓"; title=bunny?"Planlegg neste harepus":"Åpne ukens oppgavetavle";
+      text=bunny?"Se hva naboene klargjør, og oppdater planen før neste harepus.":"Se strategi, oppgaver og koordinering for derbyet som pågår.";
+      label="Åpne oppgavetavla"; route="preferences";
+    }else if(signupEvent){
+      icon="✓"; title="Påmeldingen din er registrert"; text="Du kan kontrollere svarene dine frem til svarfristen."; label="Se påmeldingen"; route="derby";
+    }
+    setText("dashboardNextActionIcon",icon);
+    setText("dashboardNextActionTitle",title);
+    setText("dashboardNextActionText",text);
+    setText("dashboardNextActionButton",label);
+    const button=$("dashboardNextActionButton");
+    if(button)button.dataset.route=route;
   }
 
   function currentActiveDerbyEvent() {
@@ -3159,8 +3195,17 @@
 
   $("menuToggle").onclick = () => {
     const open=sidebar.classList.toggle("open");
+    $("menuToggle").setAttribute("aria-expanded",open?"true":"false");
+    $("mobileMoreButton")?.setAttribute("aria-expanded",open?"true":"false");
     setPortalMenuOpen(open);
   };
+  if($("mobileMoreButton")) $("mobileMoreButton").onclick=()=>{
+    const open=sidebar.classList.toggle("open");
+    $("menuToggle")?.setAttribute("aria-expanded",open?"true":"false");
+    $("mobileMoreButton").setAttribute("aria-expanded",open?"true":"false");
+    setPortalMenuOpen(open);
+  };
+  if($("sidebarBackdrop")) $("sidebarBackdrop").onclick=closeMenu;
   window.addEventListener("resize", () => {
     if (window.innerWidth > 900 && sidebar.classList.contains("open")) closeMenu();
   }, {passive:true});
@@ -3685,7 +3730,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.93").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.94").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

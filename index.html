@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.93">
+  <link rel="stylesheet" href="main.css?v=0.18.0.94">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -37,7 +37,7 @@
             <button class="button button-cream button-large" id="openPortalHero">Logg inn i portalen</button>
             <a class="button button-ghost button-large" href="#join">Bli kjent med oss</a>
           </div>
-          <div class="hero-proof"><span><b>27</b> aktive naboer</span><span><b>90 %</b> felles mål</span><span><b>1</b> samlet portal</span></div>
+          <div class="hero-proof"><span><b>30</b> aktive naboer</span><span><b>95 %</b> minimumsmål</span><span><b>1</b> samlet portal</span></div>
         </div>
         <div class="hero-visual">
           <picture><source media="(max-width:620px)" srcset="hero-farm-mobile.webp"><img src="hero-farm-desktop.webp" alt="Illustrert gårdslandskap"></picture>
@@ -98,10 +98,10 @@
       <aside class="sidebar" id="sidebar">
         <nav class="main-nav">
           <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span>Oversikt</a>
-          <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Derby</a>
+          <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Påmelding</a>
           <a href="#history" data-permission-any="derby.view" data-route="history"><span>◷</span>Derbyhistorikk</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
-          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgaver</a>
+          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgavetavle</a>
           <a href="#announcements" data-permission-any="chat.community.view" data-route="announcements"><span>▣</span>Kunngjøringer</a>
           <a href="#discussions" data-permission-any="chat.community.view" data-route="discussions"><span>□</span>Diskusjoner</a>
           <a href="#messages" data-route="messages"><span>✉</span>Private meldinger <em id="privateMessageNavBadge" class="hidden">0</em></a>
@@ -120,13 +120,15 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.93</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.94</span></div></div>
       </aside>
+      <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
         <section class="page active" data-page="dashboard">
           <div class="page-heading"><div><p class="eyebrow">OVERSIKT</p><h1 id="welcomeHeading">Hei, Nabo 👋</h1><p id="dashboardIntro">Her er det viktigste for neste derby.</p></div><span class="account-label" id="accountBadge">MEDLEM</span></div>
           <article class="portal-card whats-new-card hidden" id="whatsNewCard"><div class="card-header"><div><p class="card-kicker">NYTT SIDEN SIST</p><h2>Du har nye varsler</h2></div><span class="notification-count-pill" id="whatsNewCount">0</span></div><div id="whatsNewList"></div></article>
+          <article class="portal-card dashboard-next-action" id="dashboardNextAction"><div class="dashboard-next-action-copy"><span class="dashboard-action-icon" id="dashboardNextActionIcon">✓</span><div><p class="card-kicker">DETTE BØR DU GJØRE NÅ</p><h2 id="dashboardNextActionTitle">Svar på derbypåmeldingen</h2><p id="dashboardNextActionText">Kontroller spillprofilene dine og registrer om de deltar.</p></div></div><button class="button button-primary" id="dashboardNextActionButton" data-route="derby">Åpne påmelding</button></article>
           <div class="spotlight-card" id="dashboardDerbySpotlight"><div><p class="eyebrow light" id="dashboardDerbyPhase">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 10:00</p><div class="dashboard-countdown hidden" id="dashboardCountdownWrap"><span id="dashboardCountdownLabel">Starter om</span><strong id="dashboardCountdown">–</strong></div><p id="dashboardDerbyFocusText">Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="bunny-dashboard-panel hidden" id="bunnyDashboardPanel">
             <div class="bunny-dashboard-countdown"><div><span id="bunnyCountdownKicker">NESTE HAREPUST</span><strong id="bunnyCountdownValue">–</strong><small id="bunnyCountdownUnits">timer · minutter · sekunder</small></div><div class="bunny-countdown-meta"><strong id="bunnyCountdownStart">Starter –</strong><span id="bunnyCountdownDuration">Varer i 10 min</span></div></div>
             <div class="bunny-dashboard-rounds"><div><span>RUNDE</span><strong id="bunnyRoundNumber">1 av 3</strong></div><div><span>MÅL</span><strong>3 harepus</strong></div><div><span>HAREPUSER TATT</span><strong id="bunnyRoundsTaken">0 av 3</strong></div></div>
@@ -137,7 +139,7 @@
               <div class="bunny-manual-controls"><input id="bunnyManualNextAt" type="datetime-local" aria-label="Tidspunkt for neste harepust"><button class="button" id="bunnyManualSave" type="button">Sett tidspunkt</button><button class="button button-ghost hidden" id="bunnyManualClear" type="button">Bruk automatikk</button></div>
               <small class="bunny-manual-status" id="bunnyManualStatus"></small>
             </div>
-          </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne derby-senter</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
+          </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne påmelding</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
           <div class="metric-grid"><article><span>Dine statuser</span><strong id="myStatusMetric">Mangler svar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>registrerte spillprofiler</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">
             <article class="portal-card neighborhood-news-card" id="neighborhoodNewsCard"><div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>Ingen kunngjøringer ennå</h2></div></div><p class="neighborhood-news-preview">Den nyeste viktige kunngjøringen vises her når den er publisert.</p></article>
@@ -145,7 +147,7 @@
         </section>
 
         <section class="page" data-page="derby">
-          <div class="page-heading"><div><p class="eyebrow">DERBY</p><h1>Derby-senter</h1><p>Planlegg deltakelsen og følg fremdriften.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
+          <div class="page-heading"><div><p class="eyebrow">PÅMELDING</p><h1>Derbypåmelding</h1><p>Meld på spillprofilene dine og se reglene for derbyet.</p></div><button class="button button-primary" data-permission-any="derby.settings.publish" id="openDerbyEditor">Rediger derby</button></div>
           <div class="derby-layout"><article class="portal-card derby-main development-card"><div class="card-header"><div><p class="card-kicker">DERBYFREMGANG</p><h2 id="derbyType">Standard Derby</h2></div><span class="development-badge">Under utvikling</span></div><p class="development-copy">Automatisk livefremdrift og scoreboard er ikke koblet til reelle data ennå. Kontrollerte sluttresultater og personlig historikk er tilgjengelig i Derbyhistorikk.</p><div class="hidden-development-metric" aria-hidden="true"><div class="derby-score"><strong><span id="tasksDone">0</span>/<span id="tasksTotal">9</span></strong><span>oppgaver fullført</span></div><div class="progress-track"><span id="derbyProgress"></span></div><input id="taskRange" type="range" min="0" max="9" value="0" aria-label="Fullførte oppgaver" disabled><div class="derby-facts"><div><span>Maks poeng</span><strong id="derbyMaxPoints">320</strong></div><div><span>Oppgaver</span><strong id="derbyTaskTotalLabel">9</strong></div><div><span>Status</span><select id="derbyStatus" disabled><option>I gang</option><option>Ferdig</option></select></div></div><button class="button button-primary button-full" id="finishDerby" disabled>Marker som ferdig</button><p class="helper-text" id="finishStatus"></p></div></article>
           <article class="portal-card participation-card">
             <div id="normalDerbyCompletionCard" class="normal-derby-completion hidden"><p class="card-kicker">DINE OPPGAVER</p><h2 id="normalDerbyCompletionTitle">Har du fullført ukens oppgaver?</h2><p id="normalDerbyCompletionText">Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.</p><button class="button button-primary" id="derbyCompleteButton" type="button">Jeg er ferdig med ukens oppgaver</button><p class="helper-text" id="derbyCompletionStatus"></p><hr></div>
@@ -322,7 +324,7 @@
       </main>
     </div>
 
-    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Derby</small></a><a href="#members" data-route="members"><span>◎</span><small>Medlemmer</small></a><a href="#wiki" data-route="wiki"><span>▤</span><small>Wiki</small></a></nav>
+    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Påmelding</small></a><a href="#preferences" data-permission-any="derby.plan" data-route="preferences" aria-label="Oppgavetavle"><span>✓</span><small>Tavle</small></a><a href="#messages" data-route="messages"><span>✉</span><small>Meldinger</small><em id="privateMessageBottomBadge" class="hidden">0</em></a><button class="bottom-more-button" id="mobileMoreButton" type="button" aria-label="Åpne mer-meny" aria-expanded="false"><span>☰</span><small>Mer</small></button></nav>
   </section>
 
 
@@ -574,6 +576,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.93"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.94"></script>
 </body>
 </html>
