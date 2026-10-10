@@ -573,6 +573,8 @@ body:not(.admin-mode) .admin-only {
 .button.is-completed{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:.12rem;line-height:1.15}
 .button.is-completed .completion-main{font-weight:700}
 .button.is-completed .completion-sub{font-size:.74em;font-style:italic;font-weight:500;opacity:.82}
+.button-completed-soft{border-color:rgba(169,47,96,.30);background:var(--pink-soft);color:var(--pink-dark);box-shadow:none}
+.button-completed-soft:hover{border-color:rgba(169,47,96,.48);background:#f3d9e4}
 .normal-derby-completion{margin-bottom:1.2rem}
 .normal-derby-completion .button{margin-top:.5rem}
 .preferences-inactive{opacity:.58;pointer-events:none}

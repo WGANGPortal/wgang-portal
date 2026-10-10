@@ -1,4 +1,4 @@
-/* v0.18.0.103 – sikkerhetsoppdatering: MFA, CAPTCHA og metadatafrie bilder */
+/* v0.18.0.104 – sikkerhetsoppdatering videreført */
 (function () {
   "use strict";
 

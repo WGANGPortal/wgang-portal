@@ -1,4 +1,4 @@
-/* v0.18.0.103 – sikkerhetsoppdatering */
+/* v0.18.0.104 – synlig ferdigstatus for derby */
 (function () {
   "use strict";
 
@@ -2935,7 +2935,9 @@
     setText("normalDerbyCompletionText",completed?"Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.":"Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.");
     const button=$("derbyCompleteButton");
     if(button){
-      button.classList.toggle("button-ghost",completed);
+      button.classList.toggle("button-primary",!completed);
+      button.classList.toggle("button-completed-soft",completed);
+      button.classList.remove("button-ghost");
       button.classList.toggle("is-completed",completed);
       button.innerHTML=completed
         ? '<span class="completion-main">Ferdig registrert ✓</span><span class="completion-sub">Angre valg?</span>'
@@ -3962,7 +3964,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.103").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.104").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
