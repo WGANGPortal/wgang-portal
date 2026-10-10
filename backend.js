@@ -1,4 +1,4 @@
-/* v0.18.0.104 – sikkerhetsoppdatering videreført */
+/* v0.18.0.105 – medlemsoversikt, sikkerhetsoppdatering videreført */
 (function () {
   "use strict";
 

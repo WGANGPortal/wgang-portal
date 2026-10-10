@@ -1,4 +1,4 @@
-/* v0.18.0.104 – synlig ferdigstatus for derby */
+/* v0.18.0.105 – forbedret medlemsoversikt */
 (function () {
   "use strict";
 
@@ -1457,25 +1457,43 @@
   function renderMembers() {
     const grid = $("memberGrid");
     if (!grid) return;
-    const q = $("memberSearch").value.trim().toLowerCase();
-    const filter = $("memberFilter").value;
+    const q = $("memberSearch")?.value.trim().toLowerCase()||"";
+    const filter = $("memberFilter")?.value||"all";
+    const roleFilter = $("memberRoleFilter")?.value||"all";
+    const sort = $("memberSort")?.value||"name";
     const event=state.derbyManagement?.next;
-    grid.innerHTML = approved()
+    const members=approved();
+    const allIdentities=members.flatMap(account=>gameIdentityRowsForAccount(account,event));
+    setText("memberOverviewTotal",members.length);
+    setText("memberOverviewProfiles",allIdentities.length);
+    setText("memberOverviewJoined",allIdentities.filter(identity=>identity.choice==="joined").length);
+    setText("memberOverviewInactive",members.filter(account=>account.temporarilyInactive).length);
+    const roleRank={owner:0,admin:1,assistant_leader:2,senior:3,member:4};
+    const filtered=members
       .filter(a => {
         const identities=gameIdentityRowsForAccount(a,event);
         const matchesSearch=!q||a.name.toLowerCase().includes(q)||identities.some(identity=>`${identity.name} ${identity.playerTag || ""}`.toLowerCase().includes(q));
         const matchesFilter=filter==="all"||(filter==="inactive"?a.temporarilyInactive:identities.some(identity=>identity.choice===filter));
-        return matchesSearch&&matchesFilter;
+        const matchesRole=roleFilter==="all"||a.role===roleFilter;
+        return matchesSearch&&matchesFilter&&matchesRole;
       })
+      .sort((a,b)=>{
+        if(sort==="role")return (roleRank[a.role]??9)-(roleRank[b.role]??9)||a.name.localeCompare(b.name,"nb");
+        if(sort==="activity")return (new Date(b.lastActiveAt||0).getTime()||0)-(new Date(a.lastActiveAt||0).getTime()||0)||a.name.localeCompare(b.name,"nb");
+        return a.name.localeCompare(b.name,"nb");
+      });
+    setText("memberResultCount",filtered.length===members.length?`${members.length} medlemmer`:`Viser ${filtered.length} av ${members.length} medlemmer`);
+    grid.innerHTML = filtered
       .map(a => {
         const prefs = topPreferences(a);
         const identities=gameIdentityRowsForAccount(a,event);
-        const identityList=`<div class="member-game-identities">${identities.map(identity=>`<div><span><strong>${esc(identity.name)}</strong>${identity.isPrimary?` <small>Hovedprofil</small>`:""}${identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:""}</span><span class="member-status status-${identity.choice === "unsure" ? "waiting" : identity.choice}">${choiceLabel(identity.choice)}</span></div>`).join("")}</div>`;
+        const identityList=`<div class="member-profiles"><div class="member-section-label"><span>Spillprofiler</span><strong>${identities.length}</strong></div><div class="member-game-identities">${identities.map(identity=>`<div><span><strong>${esc(identity.name)}</strong>${identity.isPrimary?` <small>Hovedprofil</small>`:""}${identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:""}</span><span class="member-status status-${identity.choice === "unsure" ? "waiting" : identity.choice}">${choiceLabel(identity.choice)}</span></div>`).join("")}</div></div>`;
         const absenceBadge=a.temporarilyInactive?`<span class="member-status status-inactive">Midlertidig inaktiv</span>`:"";
         const absenceDates=isLeadership()&&a.absencePeriod?`<div class="member-absence-dates"><span>Inaktiv periode · kun ledelsen</span><strong>${formatAbsenceDate(a.absencePeriod.starts_on)}–${formatAbsenceDate(a.absencePeriod.ends_on)}</strong></div>`:"";
-        const lastActive=isLeadership()?`<div><span>Sist aktiv i portalen</span><strong>${esc(formatLastActive(a.lastActiveAt))}</strong></div>`:"";
+        const lastActive=isLeadership()?`<div class="member-activity"><span>Sist aktiv i portalen</span><strong>${esc(formatLastActive(a.lastActiveAt))}</strong></div>`:"";
         const privateButton=String(a.id)!==String(current()?.id)?`<button type="button" class="text-button member-message-button" data-private-message-user="${a.id}">✉ Send privat melding</button>`:"";
-        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role">${roleLabel(a.role)}</span></div></div><div class="member-status-stack">${absenceBadge}</div></div>${identityList}<div class="member-info"><div><span>Spillprofiler</span><strong>${identities.length}</strong></div><div><span>Tilgang</span><strong>Godkjent</strong></div>${lastActive}${absenceDates}</div>${prefs.length ? `<div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div>` : `<p class="helper-text">Ingen oppgavepreferanser registrert ennå.</p>`}<div class="member-card-actions"><span class="profile-open-hint">Se profil →</span>${privateButton}</div></article>`;
+        const preferenceBlock=prefs.length?`<div class="member-preferences"><span>Oppgaver jeg liker</span><div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div></div>`:`<p class="member-no-preferences">Ingen oppgaveønsker registrert.</p>`;
+        return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role member-role-${esc(a.role)}">${roleLabel(a.role)}</span></div></div><div class="member-status-stack">${absenceBadge}</div></div>${identityList}${lastActive||absenceDates?`<div class="member-leadership-meta">${lastActive}${absenceDates}</div>`:""}${preferenceBlock}<div class="member-card-actions"><span class="profile-open-hint">Se profil →</span>${privateButton}</div></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
     $$('[data-profile-id]').forEach(card => {
       card.onclick = () => openMemberProfile(card.dataset.profileId);
@@ -3641,6 +3659,8 @@
 
   $("memberSearch").oninput = renderMembers;
   $("memberFilter").onchange = renderMembers;
+  $("memberRoleFilter").onchange = renderMembers;
+  $("memberSort").onchange = renderMembers;
 
   if($("absencePeriodForm")) $("absencePeriodForm").onsubmit=async event=>{
     event.preventDefault();
@@ -3964,7 +3984,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.104").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.105").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
