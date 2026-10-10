@@ -8,5 +8,8 @@
 */
 window.WGANG_SUPABASE = {
   url: "https://aunhfvxfllurhbnahdnb.supabase.co",
-  anonKey: "sb_publishable_6E8yQFV4igpawFei2lIZvw_rFKUPdvP"
+  anonKey: "sb_publishable_6E8yQFV4igpawFei2lIZvw_rFKUPdvP",
+  // Valgfri Cloudflare Turnstile site key. Nøkkelen er offentlig og kan stå her.
+  // CAPTCHA håndheves først når samme Turnstile-oppsett er aktivert i Supabase Auth.
+  turnstileSiteKey: ""
 };

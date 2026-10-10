@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.101">
+  <link rel="stylesheet" href="main.css?v=0.18.0.103">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.102</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.103</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -369,21 +369,47 @@
       <form id="loginForm" class="auth-form">
         <label>E-post<input id="loginEmail" type="email" autocomplete="email" required></label>
         <label>Passord<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+        <div id="loginCaptcha" class="registration-captcha hidden" aria-label="Sikkerhetskontroll"></div>
         <button class="button button-primary button-full" type="submit">Logg inn</button>
         <button class="text-button" id="forgotPassword" type="button">Glemt passord?</button>
         <p class="form-message" id="loginMessage"></p>
         <p class="auth-hint"><strong>Velkommen til WGANG Portal</strong><br>Logg inn for å få tilgang til nabolagets medlemsportal.</p>
       </form>
       <form id="registerForm" class="auth-form hidden">
+        <label class="registration-honeypot" aria-hidden="true">Ikke fyll ut dette feltet<input id="registerWebsite" tabindex="-1" autocomplete="off"></label>
         <label>Hay Day-spillnavn<input id="registerName" required maxlength="30" placeholder="Navnet ditt i Hay Day"></label>
         <label>E-post<input id="registerEmail" type="email" autocomplete="email" required></label>
         <label>Passord<input id="registerPassword" type="password" minlength="8" autocomplete="new-password" required></label>
         <label class="check-label"><input id="memberConfirm" type="checkbox" required><span>Jeg bekrefter at jeg er medlem av WGANG-nabolaget.</span></label>
         <p class="legal-registration-note">E-postadressen brukes til brukerkonto, innlogging og administrasjon av medlemskapet. Les dokumentene før du sender søknaden.</p>
         <label class="check-label"><input id="legalConfirm" type="checkbox" required><span>Jeg bekrefter at jeg har lest <a href="privacy.html" target="_blank" rel="noopener">personverninformasjonen</a> og godtar <a href="rules.html" target="_blank" rel="noopener">bruksreglene</a>.</span></label>
+        <div id="registerCaptcha" class="registration-captcha hidden" aria-label="Sikkerhetskontroll"></div>
         <button class="button button-primary button-full" type="submit">Send søknad</button>
         <p class="form-message" id="registerMessage"></p>
       </form>
+    </div>
+  </dialog>
+
+  <dialog id="mfaDialog" class="auth-dialog mfa-dialog">
+    <div class="auth-card">
+      <img src="wgang-icon-pink.webp" alt="" class="auth-logo">
+      <p class="eyebrow">SIKKER ADMIN-TILGANG</p>
+      <h2 id="mfaTitle">Bekreft innloggingen</h2>
+      <p class="auth-intro" id="mfaIntro">Eier og administrator bruker en ekstra kode for å beskytte portalen.</p>
+      <div id="mfaEnrollment" class="hidden">
+        <button type="button" class="button button-primary button-full" id="startMfaEnrollment">Koble til autentiseringsapp</button>
+        <div id="mfaSetupDetails" class="mfa-setup-details hidden">
+          <img id="mfaQrCode" alt="QR-kode for autentiseringsapp">
+          <p>Skann QR-koden i Microsoft Authenticator, Google Authenticator, 1Password eller tilsvarende app.</p>
+          <p class="mfa-secret-wrap">Kan du ikke skanne? Skriv inn nøkkelen: <code id="mfaSecret"></code></p>
+        </div>
+      </div>
+      <form id="mfaVerifyForm" class="auth-form hidden">
+        <label>Sekssifret kode<input id="mfaCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+        <button class="button button-primary button-full" type="submit">Bekreft og åpne portalen</button>
+      </form>
+      <button type="button" class="text-button" id="mfaLogout">Logg ut</button>
+      <p class="form-message" id="mfaMessage"></p>
     </div>
   </dialog>
 
@@ -494,7 +520,7 @@
         <button type="button" class="profile-hub-back">← Tilbake</button>
         <h3>Personvern og data</h3>
         <div class="privacy-summary-card">
-          <p><strong>Gjeldende dokumentversjon</strong><br><span id="legalDocumentVersion">2026-07-29</span></p>
+          <p><strong>Gjeldende dokumentversjon</strong><br><span id="legalDocumentVersion">2026-10-10 / 2026-07-29</span></p>
           <p><strong>Din bekreftelse</strong><br><span id="legalAcceptanceStatus">Kontrollerer …</span></p>
         </div>
         <div class="privacy-action-list">
@@ -606,6 +632,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.99"></script><script src="app.js?v=0.18.0.102"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.103"></script><script src="backend.js?v=0.18.0.103"></script><script src="app.js?v=0.18.0.103"></script>
 </body>
 </html>

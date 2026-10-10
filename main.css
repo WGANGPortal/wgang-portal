@@ -879,3 +879,11 @@ body:not(.admin-mode) .admin-only {
 .wiki-experience-heading{margin:28px 2px 14px}.tip-card{box-shadow:0 7px 22px rgba(72,43,53,.035)}.tip-card-wide{grid-column:1/-1;background:linear-gradient(135deg,#fffdfa,#f7fbf7)}
 @media(max-width:760px){.wiki-strategy-card{grid-template-columns:1fr}.wiki-checklist-grid{grid-template-columns:1fr}.wiki-goal-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:420px){.wiki-strategy-card,.wiki-checklist{padding:20px}.wiki-goal-row{grid-template-columns:1fr}.tip-card-wide{grid-column:auto}}
+/* v0.18.0.103 – sikker innlogging */
+.registration-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.registration-captcha{display:flex;justify-content:center;min-height:66px;margin:4px 0}
+.mfa-dialog .auth-card{width:min(470px,92vw)}
+.mfa-setup-details{display:grid;justify-items:center;gap:10px;margin:18px 0;padding:16px;border:1px solid var(--border);border-radius:18px;background:var(--cream)}
+.mfa-setup-details img{width:min(240px,70vw);height:auto;border-radius:12px;background:#fff}
+.mfa-setup-details p{margin:0;text-align:center;line-height:1.5}
+.mfa-secret-wrap code{display:block;margin-top:7px;padding:9px;border-radius:9px;background:#fff;overflow-wrap:anywhere;font-size:.78rem;user-select:all}

@@ -1,0 +1,25 @@
+WGANG PORTAL v0.18.0.103
+
+REKKEFØLGE
+
+1. Last opp portalfilene til GitHub og vent til Cloudflare Pages har publisert dem.
+2. Logg inn som Eier. Portalen leder deg gjennom oppsett av autentiseringsapp.
+   Lagre den viste hemmelige nøkkelen på et sikkert sted før du bekrefter.
+3. Kjør MIGRATION-v0.18.0.103-SECURITY-HARDENING.sql i Supabase SQL Editor.
+4. Kjør SECURITY-CHECK-v0.18.0.103.sql. Resultatet skal være:
+   WGANG security v0.18.0.103: OK
+5. I Supabase: Authentication → Attack Protection:
+   slå på Leaked password protection.
+6. For CAPTCHA:
+   a) Opprett en Turnstile-widget i Cloudflare.
+   b) Lim site key inn i config.js: turnstileSiteKey: "..."
+   c) Legg secret key inn i Supabase Authentication → Bot and Abuse Protection.
+   d) Publiser config.js før CAPTCHA aktiveres i Supabase.
+
+VIKTIG
+
+Databasemigrasjonen skal ikke kjøres før portalfilene er publisert. Den krever
+to-faktor for sensitive administratorhandlinger, og den gamle portalen har ikke
+skjermbildet for å bekrefte koden.
+
+FILENE I DENNE PAKKEN ER DE ENESTE SOM SKAL LASTES OPP / KJØRES.

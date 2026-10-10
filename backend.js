@@ -1,4 +1,4 @@
-/* v0.18.0.99 – samle aktivitetsvarsler per innlegg */
+/* v0.18.0.103 – sikkerhetsoppdatering: MFA, CAPTCHA og metadatafrie bilder */
 (function () {
   "use strict";
 
@@ -29,7 +29,7 @@
 
   const cfg = window.WGANG_SUPABASE || {};
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
-  const LEGAL_PRIVACY_VERSION = "2026-07-29";
+  const LEGAL_PRIVACY_VERSION = "2026-10-10";
   const LEGAL_RULES_VERSION = "2026-07-29";
   const DERBY_RULES_V2_EFFECTIVE_AT = Date.parse("2026-10-13T08:00:00Z");
   const derbyRulesAckVersionForEvent = event => {
@@ -78,6 +78,42 @@
       ||(file.type==="video/webm"&&bytes[0]===0x1a&&bytes[1]===0x45&&bytes[2]===0xdf&&bytes[3]===0xa3);
     if(!signatureOk)throw new Error("Filinnholdet stemmer ikke med valgt bilde- eller filmtype.");
     return extension;
+  }
+
+  async function stripImageMetadata(file, extension) {
+    if(!file.type.startsWith("image/"))return file;
+    const objectUrl=URL.createObjectURL(file);
+    try {
+      const image=await new Promise((resolve,reject)=>{
+        const element=new Image();
+        element.onload=()=>resolve(element);
+        element.onerror=()=>reject(new Error("Bildet kunne ikke leses sikkert."));
+        element.src=objectUrl;
+      });
+      const maxSide=4096;
+      const scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));
+      const width=Math.max(1,Math.round(image.naturalWidth*scale));
+      const height=Math.max(1,Math.round(image.naturalHeight*scale));
+      const canvas=document.createElement("canvas");
+      canvas.width=width; canvas.height=height;
+      const context=canvas.getContext("2d",{alpha:file.type!=="image/jpeg"});
+      if(!context)throw new Error("Nettleseren kunne ikke klargjøre bildet sikkert.");
+      if(file.type==="image/jpeg"){
+        context.fillStyle="#fff";
+        context.fillRect(0,0,width,height);
+      }
+      context.drawImage(image,0,0,width,height);
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(
+        value=>value?resolve(value):reject(new Error("Bildet kunne ikke renses før opplasting.")),
+        file.type,
+        file.type==="image/png"?undefined:.92
+      ));
+      if(blob.size>WIKI_IMAGE_MAX_BYTES)throw new Error("Det rensede bildet er større enn 10 MB. Beskjær bildet og prøv igjen.");
+      const safeBase=String(file.name||"bilde").replace(/\.[^.]+$/,"").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,80)||"bilde";
+      return new File([blob],`${safeBase}.${extension}`,{type:file.type,lastModified:Date.now()});
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   }
 
   function derbyOsloClock(now=new Date()) {
@@ -468,11 +504,15 @@
       if (error) throw error;
       return loadRemoteState(data.session);
     },
-    async signIn(email, password) {
+    async signIn(email, password, captchaToken="") {
       if (!configured) {
         throw new Error("Innlogging er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
       }
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password,
+        options:captchaToken?{captchaToken}:undefined
+      });
       if (error) {
         if (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message || "")) {
           const confirmationError = new Error("E-postadressen er ikke bekreftet. Åpne bekreftelsesmailen før du logger inn.");
@@ -490,7 +530,7 @@
       }
       return loadRemoteState(data.session);
     },
-    async signUp(name, email, password) {
+    async signUp(name, email, password, captchaToken="") {
       name = String(name || "").trim().toUpperCase();
       if (!configured) {
         throw new Error("Medlemssøknad er midlertidig utilgjengelig. Kontakt WGANG-ledelsen dersom problemet vedvarer.");
@@ -506,7 +546,8 @@
             legal_rules_version:LEGAL_RULES_VERSION,
             legal_acknowledged_at:acknowledgedAt
           },
-          emailRedirectTo:appUrl()
+          emailRedirectTo:appUrl(),
+          ...(captchaToken?{captchaToken}:{})
         }
       });
       if (error) throw error;
@@ -525,10 +566,48 @@
       cleanAuthUrl();
       return data;
     },
-    async requestPasswordReset(email) {
+    async requestPasswordReset(email, captchaToken="") {
       if (!configured) throw new Error("Supabase er ikke koblet til.");
-      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo:appUrl() });
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo:appUrl(),
+        ...(captchaToken?{captchaToken}:{})
+      });
       if (error) throw error;
+    },
+    async getMfaState() {
+      if(!configured)return {verifiedFactors:[],currentLevel:"aal1",nextLevel:"aal1"};
+      const [{data:factors,error:factorsError},{data:levels,error:levelsError}]=await Promise.all([
+        client.auth.mfa.listFactors(),
+        client.auth.mfa.getAuthenticatorAssuranceLevel()
+      ]);
+      if(factorsError)throw factorsError;
+      if(levelsError)throw levelsError;
+      const all=Array.isArray(factors?.all)?factors.all:[...(factors?.totp||[]),...(factors?.phone||[])];
+      return {
+        verifiedFactors:all.filter(factor=>factor.status==="verified"),
+        currentLevel:levels?.currentLevel||"aal1",
+        nextLevel:levels?.nextLevel||"aal1"
+      };
+    },
+    async beginMfaEnrollment() {
+      if(!configured)throw new Error("Tofaktorautentisering krever Supabase.");
+      const {data:existing,error:listError}=await client.auth.mfa.listFactors();
+      if(listError)throw listError;
+      const all=Array.isArray(existing?.all)?existing.all:[...(existing?.totp||[]),...(existing?.phone||[])];
+      for(const factor of all.filter(item=>item.factor_type==="totp"&&item.status!=="verified")){
+        const {error}=await client.auth.mfa.unenroll({factorId:factor.id});
+        if(error)throw error;
+      }
+      const {data,error}=await client.auth.mfa.enroll({factorType:"totp",friendlyName:"WGANG Portal"});
+      if(error)throw error;
+      return {factorId:data.id,qrCode:data.totp?.qr_code||"",secret:data.totp?.secret||""};
+    },
+    async verifyMfa(factorId, code) {
+      const cleanCode=String(code||"").replace(/\s+/g,"");
+      if(!factorId||!/^[0-9]{6}$/.test(cleanCode))throw new Error("Skriv inn den sekssifrede koden fra autentiseringsappen.");
+      const {data,error}=await client.auth.mfa.challengeAndVerify({factorId,code:cleanCode});
+      if(error)throw error;
+      return data;
     },
     legalVersions() {
       return { privacy:LEGAL_PRIVACY_VERSION, rules:LEGAL_RULES_VERSION };
@@ -1015,6 +1094,7 @@
       if (!configured) throw new Error("Opplasting av bilde eller film krever tilkobling til medlemsportalen.");
       if (!window.tus?.Upload) throw new Error("Opplastingsmodulen kunne ikke lastes. Kontroller nettet og prøv igjen.");
       const extension=await validateWikiMedia(file);
+      const uploadFile=await stripImageMetadata(file,extension);
       const { data:{session}, error:sessionError }=await client.auth.getSession();
       if(sessionError || !session?.access_token || !session?.user?.id)throw sessionError || new Error("Du må være logget inn.");
       const objectId=globalThis.crypto?.randomUUID?.();
@@ -1022,7 +1102,7 @@
       const path=`${session.user.id}/${objectId}.${extension}`;
       const projectId=new URL(cfg.url).hostname.split(".")[0];
       await new Promise((resolve,reject)=>{
-        const upload=new window.tus.Upload(file,{
+        const upload=new window.tus.Upload(uploadFile,{
           endpoint:`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
           retryDelays:[0,3000,5000,10000,20000],
           headers:{
@@ -1034,7 +1114,7 @@
           metadata:{
             bucketName:WIKI_MEDIA_BUCKET,
             objectName:path,
-            contentType:file.type,
+            contentType:uploadFile.type,
             cacheControl:"3600"
           },
           chunkSize:6 * 1024 * 1024,
@@ -1048,9 +1128,9 @@
       });
       return {
         path,
-        mimeType:file.type,
-        sizeBytes:file.size,
-        originalName:String(file.name||`vedlegg.${extension}`).slice(0,255)
+        mimeType:uploadFile.type,
+        sizeBytes:uploadFile.size,
+        originalName:String(uploadFile.name||`vedlegg.${extension}`).slice(0,255)
       };
     },
     async getWikiMediaUrl(path) {

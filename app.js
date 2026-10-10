@@ -1,4 +1,4 @@
-/* v0.18.0.102 – presisert samarbeid om produksjonsoppgaver */
+/* v0.18.0.103 – sikkerhetsoppdatering */
 (function () {
   "use strict";
 
@@ -210,6 +210,9 @@
 
   let state = { accounts:[], gameIdentities:[], derby:{type:"Normal Derby",taskTotal:9,maxPoints:320,strategy:[]}, content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, notifications:{preferences:null,readState:null}, social:{likes:[],comments:[],translations:[],activityNotifications:[]}, currentUserId:null };
   let busy = false;
+  let registrationOpenedAt = Date.now();
+  let mfaFactorId = null;
+  const turnstileWidgets = {login:null,register:null};
   let activePortalRoute = "";
   let chatFocusToken = 0;
   let activePrivateUserId = null;
@@ -246,6 +249,7 @@
   }
   const portalMain = $("portalMain");
   const auth = $("authDialog");
+  const mfaDialog = $("mfaDialog");
   const legalAcceptanceDialog = $("legalAcceptanceDialog");
   const passwordSetup = $("passwordSetupDialog");
   const editor = $("derbyEditor");
@@ -544,12 +548,40 @@
   }
 
   function openAuth(tab="login") { showDialog(auth); setAuthTab(tab); }
+  function captchaEnabled(){ return !!window.WGANG_SUPABASE?.turnstileSiteKey; }
+  function renderCaptcha(kind,attempt=0){
+    if(!captchaEnabled())return;
+    const container=$(kind==="login"?"loginCaptcha":"registerCaptcha");
+    if(!container)return;
+    container.classList.remove("hidden");
+    if(turnstileWidgets[kind]!==null)return;
+    if(!window.turnstile?.render){
+      if(attempt<30)setTimeout(()=>renderCaptcha(kind,attempt+1),200);
+      return;
+    }
+    turnstileWidgets[kind]=window.turnstile.render(container,{
+      sitekey:window.WGANG_SUPABASE.turnstileSiteKey,
+      theme:"light"
+    });
+  }
+  function captchaToken(kind){
+    if(!captchaEnabled())return "";
+    if(turnstileWidgets[kind]===null)throw new Error("Sikkerhetskontrollen lastes fortsatt. Vent et øyeblikk og prøv igjen.");
+    const token=window.turnstile?.getResponse(turnstileWidgets[kind])||"";
+    if(!token)throw new Error("Fullfør sikkerhetskontrollen før du fortsetter.");
+    return token;
+  }
+  function resetCaptcha(kind){
+    if(turnstileWidgets[kind]!==null)window.turnstile?.reset(turnstileWidgets[kind]);
+  }
   function setAuthTab(tab) {
     $$('[data-auth-tab]').forEach(b => b.classList.toggle("active", b.dataset.authTab === tab));
     $("loginForm").classList.toggle("hidden", tab !== "login");
     $("registerForm").classList.toggle("hidden", tab !== "register");
     $("authTitle").textContent = tab === "login" ? "Logg inn" : "Søk om medlemskap";
     $("authIntro").textContent = tab === "login" ? "Bruk e-postadressen din for å åpne portalen." : "Bruk Hay Day-navnet ditt. En administrator godkjenner søknaden.";
+    if(tab==="register")registrationOpenedAt=Date.now();
+    setTimeout(()=>renderCaptcha(tab==="login"?"login":"register"),0);
   }
 
   function navigate(route, useHash=true) {
@@ -609,9 +641,38 @@
     document.body.classList.add("modal-open");
   }
 
-  function openPortal() {
+  async function requirePrivilegedMfa() {
+    if(!isOwnerOrAdmin())return true;
+    try {
+      const mfa=await backend.getMfaState();
+      if(mfa.currentLevel==="aal2")return true;
+      mfaFactorId=mfa.verifiedFactors?.[0]?.id||null;
+      $("mfaMessage").textContent="";
+      $("mfaSetupDetails").classList.add("hidden");
+      if(mfaFactorId){
+        $("mfaTitle").textContent="Bekreft innloggingen";
+        $("mfaIntro").textContent="Skriv inn koden fra autentiseringsappen for å åpne eier- og adminfunksjonene.";
+        $("mfaEnrollment").classList.add("hidden");
+        $("mfaVerifyForm").classList.remove("hidden");
+      }else{
+        $("mfaTitle").textContent="Beskytt administratorkontoen";
+        $("mfaIntro").textContent="Eier og administrator må koble til en autentiseringsapp før portalen åpnes.";
+        $("mfaEnrollment").classList.remove("hidden");
+        $("mfaVerifyForm").classList.add("hidden");
+        $("startMfaEnrollment").classList.remove("hidden");
+      }
+      showDialog(mfaDialog);
+      return false;
+    } catch(error) {
+      await portalAlert(humanError(error,"Kunne ikke kontrollere tofaktorautentisering."));
+      return false;
+    }
+  }
+
+  async function openPortal() {
     const user = current();
     if (!user || !user.approved) { openAuth("login"); return; }
+    if(!(await requirePrivilegedMfa()))return;
     if (legalAcceptanceRequired()) { showLegalAcceptanceDialog(); return; }
     landing.classList.add("hidden");
     portal.classList.remove("hidden");
@@ -635,6 +696,7 @@
     landing.classList.remove("hidden");
     document.body.classList.remove("admin-mode","leadership-mode","admin-access-mode","owner-mode");
     closeDialog(legalAcceptanceDialog);
+    closeDialog(mfaDialog);
     document.body.classList.remove("modal-open");
     sidebar.classList.remove("open");
     location.hash = "landing";
@@ -3195,7 +3257,7 @@
         showDialog(passwordSetup);
         return;
       }
-      if (state.currentUserId && current() && current().approved) openPortal();
+      if (state.currentUserId && current() && current().approved) await openPortal();
       else if (state.currentUserId && current() && !current().approved) {
         await backend.signOut();
         state.currentUserId = null;
@@ -3214,6 +3276,40 @@
   $("closeAuth").onclick = () => closeDialog(auth);
   if ($("closePortal")) $("closePortal").onclick = logout;
   $$('[data-auth-tab]').forEach(b => b.onclick = () => setAuthTab(b.dataset.authTab));
+  if(mfaDialog)mfaDialog.addEventListener("cancel",event=>event.preventDefault());
+  if($("startMfaEnrollment"))$("startMfaEnrollment").onclick=async()=>{
+    if(busy)return;
+    setBusy(true);
+    const msg=$("mfaMessage"); msg.textContent="";
+    try{
+      const enrollment=await backend.beginMfaEnrollment();
+      mfaFactorId=enrollment.factorId;
+      if(!String(enrollment.qrCode||"").toLowerCase().startsWith("data:image/svg+xml")||!String(enrollment.qrCode||"").includes(",")){
+        throw new Error("Mottok ikke en gyldig QR-kode fra innloggingstjenesten.");
+      }
+      $("mfaQrCode").src=enrollment.qrCode;
+      $("mfaSecret").textContent=enrollment.secret;
+      $("mfaSetupDetails").classList.remove("hidden");
+      $("mfaVerifyForm").classList.remove("hidden");
+      $("startMfaEnrollment").classList.add("hidden");
+      $("mfaCode").focus();
+    }catch(error){msg.textContent=humanError(error,"Kunne ikke starte tofaktoroppsettet.");}
+    setBusy(false);
+  };
+  if($("mfaVerifyForm"))$("mfaVerifyForm").onsubmit=async event=>{
+    event.preventDefault();
+    if(busy)return;
+    setBusy(true);
+    const msg=$("mfaMessage"); msg.textContent="";
+    try{
+      await backend.verifyMfa(mfaFactorId,$("mfaCode").value);
+      $("mfaVerifyForm").reset();
+      closeDialog(mfaDialog);
+      await openPortal();
+    }catch(error){msg.textContent=humanError(error,"Koden ble ikke godkjent. Kontroller koden og prøv igjen.");}
+    setBusy(false);
+  };
+  if($("mfaLogout"))$("mfaLogout").onclick=logout;
 
   $("forgotPassword").onclick = async () => {
     if (busy) return;
@@ -3223,7 +3319,7 @@
     const msg = $("loginMessage"); msg.classList.remove("success"); msg.textContent = "";
     setBusy(true);
     try {
-      await backend.requestPasswordReset(email);
+      await backend.requestPasswordReset(email,captchaToken("login"));
       msg.textContent = "Vi har sendt deg en e-post. Åpne lenken der for å velge nytt passord.";
       msg.classList.add("success");
     } catch (error) { msg.textContent = humanError(error, "Kunne ikke sende e-post for nytt passord."); }
@@ -3256,9 +3352,13 @@
     const msg = $("loginMessage"); msg.classList.remove("success"); msg.textContent = "";
     setBusy(true);
     try {
-      state = await backend.signIn($("loginEmail").value.trim().toLowerCase(), $("loginPassword").value);
-      closeDialog(auth); openPortal();
-    } catch (error) { msg.textContent = humanError(error, "Kunne ikke logge inn."); }
+      state = await backend.signIn(
+        $("loginEmail").value.trim().toLowerCase(),
+        $("loginPassword").value,
+        captchaToken("login")
+      );
+      closeDialog(auth); await openPortal();
+    } catch (error) { msg.textContent = humanError(error, "Kunne ikke logge inn."); resetCaptcha("login"); }
     setBusy(false);
   };
 
@@ -3279,7 +3379,7 @@
       closeDialog(legalAcceptanceDialog);
       document.body.classList.remove("modal-open");
       $("legalAcceptanceForm").reset();
-      openPortal();
+      await openPortal();
     } catch(error) {
       msg.textContent=humanError(error,"Kunne ikke registrere bekreftelsen.");
     }
@@ -3295,11 +3395,18 @@
     }
     setBusy(true);
     try {
-      const result = await backend.signUp($("registerName").value.trim().toUpperCase(), $("registerEmail").value.trim().toLowerCase(), $("registerPassword").value);
+      if($("registerWebsite").value)throw new Error("Søknaden kunne ikke sendes.");
+      if(Date.now()-registrationOpenedAt<2500)throw new Error("Vent et øyeblikk og kontroller opplysningene før du sender.");
+      const result = await backend.signUp(
+        $("registerName").value.trim().toUpperCase(),
+        $("registerEmail").value.trim().toLowerCase(),
+        $("registerPassword").value,
+        captchaToken("register")
+      );
       msg.textContent = result.needsEmailConfirmation ? "Søknaden er opprettet. Bekreft e-postadressen din først. Deretter må en administrator godkjenne medlemskapet." : "Søknaden er sendt. En administrator må godkjenne deg før innlogging.";
       msg.classList.add("success"); e.target.reset();
       if (backend.mode === "local") await refreshState();
-    } catch (error) { msg.textContent = humanError(error, "Kunne ikke sende søknaden."); }
+    } catch (error) { msg.textContent = humanError(error, "Kunne ikke sende søknaden."); resetCaptcha("register"); }
     setBusy(false);
   };
 
@@ -3437,7 +3544,7 @@
       if($("accountMemberSince")) $("accountMemberSince").textContent=accountMemberSinceValue(u);
     }
     if(section==="privacy"){
-      const versions=typeof backend.legalVersions==="function" ? backend.legalVersions() : {privacy:"2026-07-29",rules:"2026-07-29"};
+      const versions=typeof backend.legalVersions==="function" ? backend.legalVersions() : {privacy:"2026-10-10",rules:"2026-07-29"};
       if($("legalDocumentVersion")) $("legalDocumentVersion").textContent=versions.privacy===versions.rules ? versions.privacy : `${versions.privacy} / ${versions.rules}`;
       const accepted=state.legalAcceptance;
       if($("legalAcceptanceStatus")){
@@ -3855,7 +3962,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.102").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.103").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
