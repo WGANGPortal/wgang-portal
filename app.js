@@ -1,4 +1,4 @@
-/* v0.18.0.101 – kunnskap bygget fra medlemmenes erfaringer */
+/* v0.18.0.102 – presisert samarbeid om produksjonsoppgaver */
 (function () {
   "use strict";
 
@@ -3855,7 +3855,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.101").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.102").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
