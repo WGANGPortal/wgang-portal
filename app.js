@@ -1,4 +1,4 @@
-/* v0.18.0.105 – forbedret medlemsoversikt */
+/* v0.18.0.106 – rollebasert medlemsoversikt */
 (function () {
   "use strict";
 
@@ -1457,12 +1457,33 @@
   function renderMembers() {
     const grid = $("memberGrid");
     if (!grid) return;
+    const leadershipView=isLeadership();
+    const pageIntro=document.querySelector('.members-page .page-heading p:last-child');
+    if(pageIntro)pageIntro.textContent=leadershipView
+      ?"Finn naboene, spillprofilene deres og status for pågående derby."
+      :"Se hvem som er med i nabolaget og hvilken rolle de har.";
+    $("memberOverview")?.classList.toggle("hidden",!leadershipView);
+    $("memberToolbar")?.classList.toggle("hidden",!leadershipView);
+    grid.classList.toggle("member-grid-simple",!leadershipView);
+    const members=approved();
+    if(!leadershipView){
+      grid.innerHTML=members
+        .slice()
+        .sort((a,b)=>a.name.localeCompare(b.name,"nb"))
+        .map(a=>`<article class="member-card member-card-simple member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role member-role-${esc(a.role)}">${roleLabel(a.role)}</span></div></div><span class="profile-open-hint" aria-hidden="true">Se profil →</span></article>`)
+        .join("")||`<p class="empty-state">Ingen medlemmer er registrert ennå.</p>`;
+      $$('[data-profile-id]').forEach(card=>{
+        card.onclick=()=>openMemberProfile(card.dataset.profileId);
+        card.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openMemberProfile(card.dataset.profileId);}};
+      });
+      translateUi(grid);
+      return;
+    }
     const q = $("memberSearch")?.value.trim().toLowerCase()||"";
     const filter = $("memberFilter")?.value||"all";
     const roleFilter = $("memberRoleFilter")?.value||"all";
     const sort = $("memberSort")?.value||"name";
     const event=state.derbyManagement?.next;
-    const members=approved();
     const allIdentities=members.flatMap(account=>gameIdentityRowsForAccount(account,event));
     setText("memberOverviewTotal",members.length);
     setText("memberOverviewProfiles",allIdentities.length);
@@ -3984,7 +4005,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.105").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.106").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

@@ -1,4 +1,4 @@
-/* v0.18.0.105 – medlemsoversikt, sikkerhetsoppdatering videreført */
+/* v0.18.0.106 – rollebasert medlemsoversikt, sikkerhetsoppdatering videreført */
 (function () {
   "use strict";
 
