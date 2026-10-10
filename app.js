@@ -1,4 +1,4 @@
-/* v0.18.0.97 – tydeligere oppgavetavle og mobilvalg */
+/* v0.18.0.98 – enklere og tydeligere derbypåmelding */
 (function () {
   "use strict";
 
@@ -2926,7 +2926,7 @@
       const choice=identity.choice || "waiting";
       const tag=identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:"";
       const primary=identity.isPrimary?`<span class="game-primary-badge">Hovedprofil</span>`:"";
-      return `<article class="game-identity-card"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${[["joined","Jeg deltar",eligibility.blocked?"Ikke kvalifisert denne uken":"Krever regelbekreftelse"],["pause","Jeg tar pause","Ikke med denne uken"],["unsure","Jeg er usikker","Avklarer før fristen"]].map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${label}</strong><small>${help}</small></button>`).join("")}</div><p class="game-choice-status">Status: <strong>${choiceLabel(choice)}</strong></p></article>`;
+      return `<article class="game-identity-card participation-${esc(choice)}"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${[["joined","Jeg deltar",eligibility.blocked?"Ikke kvalifisert denne uken":"Krever regelbekreftelse"],["pause","Jeg tar pause","Ikke med denne uken"],["unsure","Jeg er usikker","Avklarer før fristen"]].map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}" aria-pressed="${choice===value?"true":"false"}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${label}</strong><small>${help}</small></button>`).join("")}</div><p class="game-choice-status"><span aria-hidden="true">${choice==="joined"?"✓":choice==="pause"?"Ⅱ":choice==="unsure"?"?":"○"}</span> Status: <strong>${choiceLabel(choice)}</strong></p></article>`;
     }).join("") || `<p class="empty-state">Ingen spillprofiler er registrert ennå.</p>`;
     box.querySelectorAll("[data-game-identity][data-choice]").forEach(button=>button.onclick=async()=>{
       if(busy||!hasPermission("derby.plan"))return;
@@ -3062,6 +3062,22 @@
     const extraMaximum = (includedTasks + extraTasks) * pointsPerTask;
     const number = value => new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "nb-NO").format(value || 0);
     renderParticipationCommitment();
+    const signupUser=current();
+    const signupIdentities=signupUser&&next?gameIdentityRowsForAccount(signupUser,next):[];
+    const signupAnswered=signupIdentities.filter(identity=>identity.choice&&identity.choice!=="waiting").length;
+    const signupLocked=participationDeadlineState().locked;
+    const signupDeadline=next?.signup_deadline?new Date(next.signup_deadline):null;
+    const signupType=/^Standard Derby$/i.test(d.type)?"Normal Derby":d.type;
+    setText("signupOverviewDerby",signupType||"Neste derby");
+    setText("signupOverviewDeadline",signupDeadline&&!Number.isNaN(signupDeadline.getTime())?new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{timeZone:"Europe/Oslo",weekday:"long",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(signupDeadline):"Mandag kl. 23:00");
+    setText("signupOverviewProfiles",`${signupIdentities.length} ${signupIdentities.length===1?"profil":"profiler"}`);
+    setText("signupOverviewAnswers",`${signupAnswered} av ${signupIdentities.length}`);
+    setText("signupOverviewState",signupLocked?"Påmelding stengt":signupIdentities.length&&signupAnswered===signupIdentities.length?"Svar registrert":"Påmelding åpen");
+    setText("signupOverviewMessage",signupLocked?"Svarfristen er utløpt. Registrerte svar er låst.":signupIdentities.length&&signupAnswered===signupIdentities.length?"Alle spillprofilene dine har et registrert svar. Du kan endre frem til fristen.":"Registrer ett svar for hver spillprofil før svarfristen.");
+    const signupOverview=$("derbySignupOverview"),signupProgress=$("signupOverviewProgress");
+    signupOverview?.classList.toggle("is-complete",!!signupIdentities.length&&signupAnswered===signupIdentities.length);
+    signupOverview?.classList.toggle("is-locked",signupLocked);
+    if(signupProgress)signupProgress.style.width=`${signupIdentities.length?signupAnswered/signupIdentities.length*100:0}%`;
     setText("derbyIncludedTasks", number(includedTasks));
     setText("derbyPointsPerTask", number(pointsPerTask));
     setText("derbyBaseMaximum", number(baseMaximum));
@@ -3798,7 +3814,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.97").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.98").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
