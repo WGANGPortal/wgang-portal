@@ -738,3 +738,47 @@ body:not(.admin-mode) .admin-only {
   .admin-module .button-row,.admin-module .form-actions{align-items:stretch;flex-direction:column}.admin-module .button-row .button,.admin-module .form-actions .button{width:100%}
 }
 @media(max-width:390px){.bottom-nav small{font-size:.52rem}.dashboard-next-action-copy{gap:11px}.dashboard-action-icon{width:40px;height:40px;border-radius:13px}}
+
+/* v0.18.0.95 – ryddigere sider og konsekvent portaldesign */
+.portal-main{background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 320px)}
+.page-heading{padding-bottom:18px;border-bottom:1px solid rgba(92,62,72,.1)}
+.page-heading h1{font-size:clamp(2.15rem,3.5vw,3.25rem)}
+.page-heading .eyebrow{margin-bottom:7px}.page-heading p:last-child{margin-top:7px}
+.page>.portal-card,.page>.derby-layout,.page>.metric-grid,.page>.dashboard-grid,.page>.filter-bar,.page>[id$="TaskHub"],.page>.history-summary-grid{margin-bottom:16px}
+.portal-card{border-color:rgba(88,55,67,.12)}
+.portal-card p{line-height:1.55}.portal-card h2{line-height:1.25}
+.card-header{align-items:center}.card-header>div{min-width:0}.card-header .helper-text{max-width:680px;margin:6px 0 0}
+.dashboard-grid{grid-template-columns:1fr}.neighborhood-news-card{max-width:none}
+.metric-grid article{min-width:0}.metric-grid strong{overflow-wrap:anywhere;line-height:1.12}
+.filter-bar{padding:12px;border:1px solid rgba(88,55,67,.12);border-radius:18px;background:rgba(255,255,255,.72);box-shadow:0 6px 20px rgba(72,43,53,.035)}
+.filter-bar input,.filter-bar select{min-height:46px;border-color:rgba(88,55,67,.16);outline:none}
+.filter-bar input:focus,.filter-bar select:focus,.dialog-card input:focus,.dialog-card textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(169,47,96,.1)}
+.member-card{border-color:rgba(88,55,67,.12);box-shadow:0 7px 22px rgba(72,43,53,.04)}
+.member-info div{padding:12px}.member-info strong{line-height:1.25}
+.admin-module-panel{display:grid;gap:16px}.admin-module.admin-module-active{margin-top:0!important}
+.admin-module .card-header>.button{max-width:260px;white-space:normal;text-align:center}
+.admin-module .table-wrap{margin-top:16px}.admin-module .approval-list,.admin-module .admin-action-list{margin-top:16px}
+.published-derby-summary,.result-registration-summary{margin-top:16px}
+.content-section>.card-header{padding-bottom:14px;border-bottom:1px solid rgba(88,55,67,.09)}
+.button{min-height:44px}.button-small{min-height:38px}
+.empty-state{margin:12px 0 0;padding:20px}
+.table-wrap{scrollbar-width:thin;scrollbar-color:rgba(169,47,96,.28) transparent}
+
+@media(max-width:620px){
+  .page-heading{padding-bottom:15px}.page-heading h1{font-size:clamp(2rem,8.5vw,2.55rem)}
+  .page-heading>.button{width:100%;margin-top:14px}
+  .metric-grid{grid-template-columns:1fr 1fr}.metric-grid article{min-height:124px;display:flex;flex-direction:column;justify-content:center}.metric-grid strong{font-size:1.28rem}
+  .portal-card p{line-height:1.5}.portal-card h2{font-size:1.16rem}
+  .filter-bar{gap:8px;padding:10px;border-radius:16px}
+  .member-card{padding:18px}.member-info{gap:8px;margin:14px 0 10px}.member-info div{padding:10px}
+  .admin-module-panel{gap:12px}.admin-module .card-header>.button{width:100%;max-width:none}
+  .admin-module .table-wrap,.content-section .post-list{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}
+  .approval-item{padding:14px}.approval-actions{display:grid;grid-template-columns:1fr 1fr}
+  .derby-layout{gap:12px}.choice-button{min-height:64px}
+}
+
+@media(max-width:390px){
+  .metric-grid{grid-template-columns:1fr}.metric-grid article{min-height:auto}
+  .page-heading h1{font-size:2rem}.portal-card{padding:16px}
+  .admin-module .table-wrap,.content-section .post-list{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+}

@@ -1,4 +1,4 @@
-/* v0.18.0.94 – visuell portalforbedring og mobilflyt */
+/* v0.18.0.95 – ryddigere sider og konsekvent portaldesign */
 (function () {
   "use strict";
 
@@ -2816,9 +2816,9 @@
     $("standardTaskHub")?.classList.toggle("hidden",!preferenceBased);
     $("bunnyTaskHub")?.classList.toggle("hidden",!bunny);
     $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
-    if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgaver i neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg oppgavene sammen og se felles interesse før neste harepus.":"Påmeldingen er åpen. Dere kan samtidig klargjøre oppgaver og se felles interesse før derbyet starter.");}
-    else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgaver");setText("taskHubIntro","Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
-    else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgaver – ${type}`);setText("taskHubIntro","Oppgaveområdet tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
+    if(bunny){const active=derbyDashboardPhase(event)==="active";setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgavetavle – neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg sammen og se hva naboene klargjør før neste harepus.":"Klargjør oppgaver og se felles interesse før derbyet starter.");}
+    else if(preferenceBased){setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);}
+    else{setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgavetavle – ${type}`);setText("taskHubIntro","Oppgavetavla tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);}
   }
 
   function derbyCommitmentDetails() {
@@ -3730,7 +3730,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.94").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.95").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

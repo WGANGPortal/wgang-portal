@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.94">
+  <link rel="stylesheet" href="main.css?v=0.18.0.95">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.94</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.95</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -140,7 +140,7 @@
               <small class="bunny-manual-status" id="bunnyManualStatus"></small>
             </div>
           </div><div class="development-note development-note-light" id="dashboardDevelopmentNote"><strong>Under utvikling</strong><span>Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.</span></div><div class="spotlight-progress hidden-development-metric" aria-hidden="true"><div><strong><span id="dashboardTasksDone">0</span>/<span id="dashboardTasksTotal">9</span></strong><small>oppgaver</small></div><div class="progress-track light"><span id="dashboardProgress"></span></div></div><div class="dashboard-derby-actions"><button class="button button-cream" id="dashboardDerbyAction" data-route="derby">Åpne påmelding</button><button class="button button-cream button-compact hidden" id="dashboardDerbyComplete" type="button">Jeg er ferdig</button></div></div><span class="spotlight-icon" id="dashboardDerbyIcon">◇</span></div>
-          <div class="metric-grid"><article><span>Dine statuser</span><strong id="myStatusMetric">Mangler svar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>registrerte spillprofiler</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
+          <div class="metric-grid"><article><span>Spillprofilene dine</span><strong id="myStatusMetric">Mangler svar</strong><small id="dashboardStatusHint">kan endres frem til fristen</small></article><article><span id="dashboardDeadlineLabel">Svarfrist</span><strong id="dashboardDeadline">Mandag kl. 23:00</strong><small id="dashboardDeadlineHint">svar gjerne innen fristen</small></article><article><span>Har svart</span><strong id="respondedMetric">0/0</strong><small>registrerte spillprofiler</small></article><article><span id="dashboardDerbyMetricLabel">Neste derby</span><strong id="dashboardNextDerbyName">Standard</strong><small id="dashboardDerbyMetricHint">oppstart tirsdag kl. 10</small></article></div>
           <div class="dashboard-grid">
             <article class="portal-card neighborhood-news-card" id="neighborhoodNewsCard"><div class="card-header"><div><p class="card-kicker">NABOLAGSNYTT</p><h2>Ingen kunngjøringer ennå</h2></div></div><p class="neighborhood-news-preview">Den nyeste viktige kunngjøringen vises her når den er publisert.</p></article>
           </div>
@@ -220,9 +220,9 @@
           <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 95 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
-        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se spillprofilene og derby-statusen til hver gård.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn eller spill-ID"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></div><div class="member-grid" id="memberGrid"></div></section>
+        <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Finn naboene og se status for pågående derby.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn eller spill-ID"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></div><div class="member-grid" id="memberGrid"></div></section>
         <section class="page" data-page="preferences">
-          <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVER</p><h1 id="taskHubTitle">Oppgaver</h1><p id="taskHubIntro">Oppgaveverktøyet tilpasses derbyet som pågår.</p></div></div>
+          <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVETAVLE</p><h1 id="taskHubTitle">Oppgavetavle</h1><p id="taskHubIntro">Planlegg og koordiner oppgavene i derbyet.</p></div></div>
           <div id="standardTaskHub"><article class="portal-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div></div><div class="preference-list" id="preferenceList"></div><p class="helper-text">Marker hvilke oppgaver som passer deg. Lederne bruker oversikten til å vurdere hva som bør beholdes eller slettes fra tavla.</p></article></div>
           <div id="bunnyTaskHub" class="hidden"><section class="bunny-center" id="bunnyCenter">
             <div class="bunny-hero">
@@ -576,6 +576,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.94"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.95"></script>
 </body>
 </html>
