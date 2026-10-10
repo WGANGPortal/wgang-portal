@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.92">
+  <link rel="stylesheet" href="main.css?v=0.18.0.93">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -55,7 +55,7 @@
       </section>
 
       <section class="section derby-story" id="derby-info">
-        <div class="rule-card"><p class="eyebrow light">VÅR DERBYREGEL</p><strong>80%</strong><h2>Når du deltar, gjør du ditt beste.</h2><p>Minimumskravet er 80 % av mulig makspoeng. Målet er at alle henter 100 %.</p></div>
+        <div class="rule-card"><p class="eyebrow light">VÅR DERBYREGEL</p><strong>95%</strong><h2>Når du deltar, forventes 100 %.</h2><p>Det forventes at alle fullfører 100 %. Fordi feil kan skje den beste, er minimumskravet 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.</p></div>
         <div class="rule-copy"><p class="eyebrow">ROM FOR PAUSE</p><h2>Det skal være gøy å være med.</h2><p>WGANG er ambisiøst, men menneskelig. Du kan velge pause, delta eller markere at du er usikker. Det gir lederne oversikt og laget forutsigbarhet.</p><button class="text-link" id="openPortalRule">Se hvordan det fungerer <span>→</span></button></div>
       </section>
 
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.92</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.93</span></div></div>
       </aside>
 
       <main class="portal-main" id="portalMain" tabindex="-1">
@@ -156,7 +156,7 @@
               <p>Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.</p>
               <div class="participation-commitment-facts">
                 <span><b id="participationPointsCommitment">320 poeng</b><small>på hver oppgave</small></span>
-                <span><b id="participationMinimumCommitment">80 %</b><small>minimum av mulig makspoeng</small></span>
+                <span><b id="participationMinimumCommitment">95 %</b><small>minimum av mulig makspoeng</small></span>
                 <span><b>0 tapte oppgaver</b><small>ingen sletting eller tidsutløp</small></span>
               </div>
             </div>
@@ -186,7 +186,7 @@
                 <div><span>Maks uten ekstra</span><strong id="derbyBaseMaximum">2 880</strong></div>
                 <div><span>Maks med ekstra</span><strong id="derbyExtraMaximum">3 200</strong></div>
               </div>
-              <p class="helper-text" id="derbyTargetExplanation">Målet er 100 %. WGANGs minimum er 80 % av mulig makspoeng.</p>
+              <p class="helper-text" id="derbyTargetExplanation">Det forventes 100 %. WGANGs minimum er 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.</p>
             </article>
             <article class="portal-card derby-warning-card">
               <p class="card-kicker">VIKTIG FØR DU VELGER OPPGAVE</p>
@@ -211,11 +211,11 @@
             <article><span>Mitt gjennomsnitt</span><strong id="myHistoryAverage">–</strong><small>prosent maksimalt 100 %</small></article>
             <article><span>100 %</span><strong id="myHistoryPerfect">0</strong><small>resultater</small></article>
             <article><span>⭐</span><strong id="myHistoryStars">0</strong><small>fulle ekstraoppgaver med makspoeng</small></article>
-            <article><span>Under 80 %</span><strong id="myHistoryBelow">0</strong><small>resultater</small></article>
+            <article><span>Under 95 %</span><strong id="myHistoryBelow">0</strong><small>resultater</small></article>
           </div>
           <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">DERBYARKIV</p><h2>WGANGs sluttresultater</h2><p class="helper-text">Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.</p></div></div><div class="derby-archive-list" id="derbyArchiveList"></div></article>
           <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">MIN HISTORIKK</p><h2>Mine derbyresultater</h2><p class="helper-text">Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. Hver hel ekstraoppgave med makspoeng gir én ⭐.</p></div></div><div class="member-history-list" id="myDerbyHistory"></div></article>
-          <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 80 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
+          <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 95 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
         </section>
 
         <section class="page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Se spillprofilene og derby-statusen til hver gård.</p></div></div><div class="filter-bar"><input id="memberSearch" type="search" placeholder="Søk etter spillnavn eller spill-ID"><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></div><div class="member-grid" id="memberGrid"></div></section>
@@ -412,7 +412,7 @@
       <div class="participation-confirm-summary">
         <div><span>Derby</span><strong id="participationDialogDerbyName">–</strong></div>
         <div><span>Mål 100 %</span><strong id="participationDialogTarget">–</strong></div>
-        <div><span>Minimum 80 %</span><strong id="participationDialogMinimum">–</strong></div>
+        <div><span>Minimum 95 %</span><strong id="participationDialogMinimum">–</strong></div>
       </div>
       <fieldset class="participation-confirm-list">
         <legend>Dette bekrefter du:</legend>
@@ -421,6 +421,7 @@
         <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span>Jeg sletter eller avbryter ikke en oppgave etter at jeg har valgt den, og lar den ikke gå ut på tid.</span></label>
         <label class="participation-rule-check"><input type="checkbox" data-participation-rule required><span id="participationRuleTarget">Jeg kjenner WGANGs mål og minimumskrav for dette derbyet.</span></label>
         <label class="participation-rule-check hidden" id="participationRuleDailyWrap"><input type="checkbox" id="participationRuleDaily" data-participation-rule disabled><span id="participationRuleDailyText">Jeg følger derbyets daglige oppgavekvote.</span></label>
+        <label class="participation-rule-check hidden" id="participationRuleReturnWrap"><input type="checkbox" id="participationRuleReturn" data-participation-rule disabled><span id="participationRuleReturnText">Jeg har en realistisk plan for å fullføre 100 %, og bekrefter at jeg vil gjøre alt jeg kan for å gjennomføre alle oppgavene med makspoeng.</span></label>
       </fieldset>
       <p class="participation-loss-warning"><strong>Viktig:</strong> En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.</p>
       <div class="dialog-actions participation-dialog-actions">
@@ -573,6 +574,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.92"></script><script src="app.js?v=0.18.0.92"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.93"></script><script src="app.js?v=0.18.0.93"></script>
 </body>
 </html>

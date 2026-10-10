@@ -1,4 +1,4 @@
-/* v0.18.0.92 – push-varsel for private én-til-én-meldinger */
+/* v0.18.0.93 – derbykrav 95 prosent, mål 100 prosent */
 (function () {
   "use strict";
 
@@ -22,6 +22,14 @@
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
   const PREF_LABELS = { like:"Liker", can:"Kan ta", avoid:"Helst ikke", no:"Kan ikke" };
+  const DERBY_MINIMUM_PERCENT = 95;
+  const DERBY_RULES_V2_EFFECTIVE_AT = Date.parse("2026-10-13T08:00:00Z");
+  const derbyRulesAckVersionForEvent = event => {
+    const start = event?.start_at ? new Date(event.start_at).getTime() : Number.NaN;
+    return Number.isFinite(start) && start < DERBY_RULES_V2_EFFECTIVE_AT
+      ? "WGANG-DERBY-RULES-v1"
+      : "WGANG-DERBY-RULES-v2";
+  };
   const $ = id => document.getElementById(id);
   const $$ = selector => document.querySelectorAll(selector);
   const lastOf = values => values && values.length ? values[values.length-1] : null;
@@ -71,12 +79,12 @@
     "Jeg deltar":"I'm participating","Jeg gjør mitt beste":"I'll do my best","Krever regelbekreftelse":"Rule confirmation required","Jeg tar pause":"I'm taking a break","Ikke med denne uken":"Not participating this week","Jeg er usikker":"I'm unsure","Avklarer før fristen":"I'll decide before the deadline",
     "Velg status for uken":"Choose your status for the week","Velg status for neste derby.":"Choose your status for the next Derby.",
     "Før du velger «Jeg deltar»":"Before choosing ‘I'm participating’","Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.":"Participation is voluntary. When you sign up, you confirm the rules before your response is saved.","på hver oppgave":"on every task","minimum av mulig makspoeng":"minimum of the maximum possible score","0 tapte oppgaver":"0 lost tasks","ingen sletting eller tidsutløp":"no deletion or expiry",
-    "BEKREFT DELTAKELSE":"CONFIRM PARTICIPATION","Du melder deg på neste derby":"You are signing up for the next Derby","Les hvert punkt før du bekrefter.":"Read each item before confirming.","Mål 100 %":"Goal 100%","Minimum 80 %":"Minimum 80%","Dette bekrefter du:":"You confirm the following:","Jeg velger bare oppgaver med derbyets makspoeng.":"I only choose tasks worth the Derby's maximum points.","Jeg kontrollerer oppgavens tidsfrist før jeg velger den, og fullfører oppgaven innen fristen.":"I check the task's time limit before choosing it and complete the task before it expires.","Jeg sletter eller avbryter ikke en oppgave etter at jeg har valgt den, og lar den ikke gå ut på tid.":"I do not delete or abandon a task after choosing it, and I do not let it expire.","Jeg kjenner WGANGs mål og minimumskrav for dette derbyet.":"I understand WGANG's goal and minimum requirement for this Derby.","En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.":"A deleted, abandoned or expired task gives 0 points and uses one of your available tasks.","Avbryt":"Cancel","Bekreft at jeg deltar":"Confirm my participation",
+    "BEKREFT DELTAKELSE":"CONFIRM PARTICIPATION","Du melder deg på neste derby":"You are signing up for the next Derby","Les hvert punkt før du bekrefter.":"Read each item before confirming.","Mål 100 %":"Goal 100%","Minimum 95 %":"Minimum 95%","Dette bekrefter du:":"You confirm the following:","Jeg velger bare oppgaver med derbyets makspoeng.":"I only choose tasks worth the Derby's maximum points.","Jeg kontrollerer oppgavens tidsfrist før jeg velger den, og fullfører oppgaven innen fristen.":"I check the task's time limit before choosing it and complete the task before it expires.","Jeg sletter eller avbryter ikke en oppgave etter at jeg har valgt den, og lar den ikke gå ut på tid.":"I do not delete or abandon a task after choosing it, and I do not let it expire.","Jeg kjenner WGANGs mål og minimumskrav for dette derbyet.":"I understand WGANG's goal and minimum requirement for this Derby.","En slettet, avbrutt eller utløpt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.":"A deleted, abandoned or expired task gives 0 points and uses one of your available tasks.","Avbryt":"Cancel","Bekreft at jeg deltar":"Confirm my participation",
     "Regler":"Rules","WGANG-strategi":"WGANG strategy","Oppgaver":"Tasks","Maks poeng":"Max points","Status":"Status",
     "Publiser kun dette derbyet":"Publish this Derby only","Lagre som standard":"Save as default","Velg grunnmal":"Choose template","Velg derbytype":"Choose Derby type",
     "Navn på derby":"Derby name","Start":"Start","Slutt":"End","Ordinære oppgaver":"Regular tasks","Ekstraoppgaver":"Extra tasks","Maks poeng per oppgave":"Max points per task","Daglig oppgavegrense":"Daily task limit","Kort beskrivelse":"Short description",
-    "VÅR DERBYREGEL":"OUR DERBY RULE","Når du deltar, gjør du ditt beste.":"When you participate, you do your best.","Minimumskravet er 80 % av mulig makspoeng. Målet er at alle henter 100 %.":"The minimum requirement is 80% of the maximum possible score. Our goal is for everyone to reach 100%.",
-    "DITT MÅL I DETTE DERBYET":"YOUR GOAL IN THIS DERBY","Maksimalt mulig resultat":"Maximum possible result","Inkluderte oppgaver":"Included tasks","Maks per oppgave":"Maximum per task","Maks uten ekstra":"Maximum without extra","Maks med ekstra":"Maximum with extra","Målet er 100 %. WGANGs minimum er 80 % av mulig makspoeng.":"The goal is 100%. WGANG's minimum is 80% of the maximum possible score.",
+    "VÅR DERBYREGEL":"OUR DERBY RULE","Når du deltar, forventes 100 %.":"When you participate, 100% is expected.","Det forventes at alle fullfører 100 %. Fordi feil kan skje den beste, er minimumskravet 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.":"Everyone is expected to complete 100%. Because mistakes can happen to anyone, the minimum requirement is 95% of the maximum possible score. Extra tasks are welcome.",
+    "DITT MÅL I DETTE DERBYET":"YOUR GOAL IN THIS DERBY","Maksimalt mulig resultat":"Maximum possible result","Inkluderte oppgaver":"Included tasks","Maks per oppgave":"Maximum per task","Maks uten ekstra":"Maximum without extra","Maks med ekstra":"Maximum with extra","Det forventes at du fullfører 100 %. Minimumskravet er 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.":"You are expected to complete 100%. The minimum requirement is 95% of the maximum possible score. Extra tasks are welcome.",
     "VIKTIG FØR DU VELGER OPPGAVE":"IMPORTANT BEFORE CHOOSING A TASK","Kontroller oppgaven og tidsfristen":"Check the task and its time limit","Velg bare oppgaver du kan fullføre innen oppgavens egen tidsfrist.":"Only choose tasks you can complete within the task's own time limit.","Ikke la en valgt oppgave gå ut på tid.":"Do not let a selected task expire.","Ikke slett eller avbryt en oppgave etter at den er valgt.":"Do not delete or abandon a task after selecting it.","Gi beskjed til en leder så tidlig som mulig dersom det oppstår problemer.":"Tell a leader as early as possible if a problem occurs.","En tapt oppgave gir 0 poeng og bruker én av oppgavene du har tilgjengelig.":"A lost task gives 0 points and uses one of your available tasks."
     ,"OVERSIKT":"OVERVIEW","OPPGAVER":"TASKS","MEDLEMMER":"MEMBERS","ADMINISTRASJON":"ADMINISTRATION",
     "Fortell laget hvilke oppgaver som passer deg best.":"Tell the team which tasks suit you best.",
@@ -104,7 +112,7 @@
     "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
     "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings",
     "Derbyhistorikk":"Derby history","DERBYHISTORIKK":"DERBY HISTORY","Resultater over tid":"Results over time","Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.":"View the team's Derby archive, your own results and development across multiple Derbies.",
-    "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 80 %":"Below 80%","Stjerner":"Stars","fulle ekstraoppgaver med makspoeng":"full extra tasks at maximum points",
+    "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 95 %":"Below 95%","Stjerner":"Stars","fulle ekstraoppgaver med makspoeng":"full extra tasks at maximum points",
     "DERBYARKIV":"DERBY ARCHIVE","WGANGs sluttresultater":"WGANG final results","Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.":"All approved members can view Derby type, date, league, placement, total points and participant count.",
     "MIN HISTORIKK":"MY HISTORY","Mine derbyresultater":"My Derby results","Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. Hver hel ekstraoppgave med makspoeng gir én ⭐.":"The score percentage is calculated against the regular maximum and stops at 100%. Every full extra task at maximum points earns one ⭐.",
     "LEDEROVERSIKT":"LEADERSHIP OVERVIEW","Gjennomsnitt og utvikling":"Average and development","Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.":"The percentage stops at 100%. Every completed extra task at maximum points counts as one ⭐.",
@@ -156,7 +164,7 @@
     "Kontroller alltid oppgavens egen tidsfrist før du velger den.":"Always check the task's own time limit before selecting it.",
     "En valgt oppgave skal fullføres og skal ikke slettes eller avbrytes.":"A selected task must be completed and must not be deleted or abandoned.",
     "En oppgave som går ut på tid gir ingen poeng og bruker én tilgjengelig oppgave.":"A task that expires gives no points and uses one available task.",
-    "WGANGs minimum er 80 prosent av mulig makspoeng. Målet er 100 prosent.":"WGANG's minimum is 80% of the maximum possible score. The goal is 100%.",
+    "Det forventes at alle fullfører 100 prosent. Minimumskravet er 95 prosent av mulig makspoeng, og ekstraoppgaver er kjærkomne.":"Everyone is expected to complete 100%. The minimum requirement is 95% of the maximum possible score, and extra tasks are welcome.",
     "Prioriter oppgaver med 320 poeng.":"Prioritize 320-point tasks.",
     "Utnytt de reduserte oppgavekravene til å fullføre tidlig og sikkert.":"Use the reduced task requirements to finish early and safely.",
     "Ha produksjon, by, båt, gruveverktøy og hjelpeoppgaver forberedt.":"Prepare production, town, boat, mining-tool and help tasks.",
@@ -391,7 +399,13 @@
     return (state.derbyManagement?.gameParticipations || []).find(row=>String(row.event_id)===String(event.id)&&String(row.game_identity_id)===String(identityId)) || null;
   }
   function gameIdentityChoice(identityId,event=state.derbyManagement?.next) {
-    return gameParticipationFor(identityId,event)?.choice || "waiting";
+    const row=gameParticipationFor(identityId,event);
+    if(!row)return "waiting";
+    if(row.choice!=="joined")return row.choice;
+    const acknowledged=!!row.rules_acknowledged_at
+      && row.rules_acknowledgement_version===derbyRulesAckVersionForEvent(event)
+      && Number(row.acknowledged_max_points)===Number(event?.max_points||320);
+    return acknowledged?"joined":"waiting";
   }
   function memberParticipationChoiceForEvent(account,event=state.derbyManagement?.next) {
     if(!account||!event?.id)return account?.choice || "waiting";
@@ -405,6 +419,25 @@
     const memberChoice=memberParticipationChoiceForEvent(account,event);
     if(rows.length)return rows.map(identity=>({...identity,choice:memberChoice==="removed"?"removed":gameIdentityChoice(identity.id,event)}));
     return account?[{id:`legacy-${account.id}`,userId:account.id,name:account.name,playerTag:"",isPrimary:true,choice:account.choice || "waiting",legacy:true}]:[];
+  }
+  function derbyEligibilityForAccount(account,event=state.derbyManagement?.next) {
+    if(!account?.id||!event?.start_at)return {blocked:false,returning:false};
+    if(derbyRulesAckVersionForEvent(event)!=="WGANG-DERBY-RULES-v2")return {blocked:false,returning:false};
+    const eventStart=new Date(event.start_at).getTime();
+    if(!Number.isFinite(eventStart))return {blocked:false,returning:false};
+    const history=derbyHistoryData();
+    const archives=(history.archives||[]).filter(archive=>{
+      const ended=new Date(archive.ended_at||archive.started_at||0).getTime();
+      return Number.isFinite(ended)&&ended<eventStart;
+    }).sort((a,b)=>new Date(b.ended_at||b.started_at||0)-new Date(a.ended_at||a.started_at||0));
+    const results=(history.results||[]).filter(result=>String(result.user_id)===String(account.id));
+    const previous=archives[0]||null;
+    const previousResult=previous?results.find(result=>String(result.archive_id)===String(previous.id)):null;
+    const latestResult=archives.map(archive=>results.find(result=>String(result.archive_id)===String(archive.id))).find(Boolean)||null;
+    return {
+      blocked:!!previousResult&&resultPercentValue(previousResult)<DERBY_MINIMUM_PERCENT,
+      returning:!previousResult&&!!latestResult&&resultPercentValue(latestResult)<DERBY_MINIMUM_PERCENT
+    };
   }
   function ownGameIdentitySummary(event=state.derbyManagement?.next) {
     const rows=gameIdentityRowsForAccount(current(),event);
@@ -1539,12 +1572,12 @@
     const missingToNextStar = starCount<extra&&pointsPerTask>0?Math.max(0,nextStarTarget-pointsEarned):0;
     let tone = "below";
     let label = currentLanguage === "en"
-      ? `${historyPercent(percent)} · Below 80%`
-      : `${historyPercent(percent)} · Under 80 %`;
+      ? `${historyPercent(percent)} · Below ${DERBY_MINIMUM_PERCENT}%`
+      : `${historyPercent(percent)} · Under ${DERBY_MINIMUM_PERCENT} %`;
     if (percent >= 100) {
       tone = star ? "star" : "perfect";
       label = star ? `100 % ${starBadge}` : "100 %";
-    } else if (percent >= 80) {
+    } else if (percent >= DERBY_MINIMUM_PERCENT) {
       tone = "minimum";
       label = historyPercent(percent);
     }
@@ -1602,7 +1635,7 @@
     setText("myHistoryAverage",ownRows.length?historyPercent(myAverage):"–");
     setText("myHistoryPerfect",historyNumber(ownRows.filter(row=>resultPercentValue(row)>=100).length));
     setText("myHistoryStars",historyNumber(ownRows.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0)));
-    setText("myHistoryBelow",historyNumber(ownRows.filter(row=>resultPercentValue(row)<80).length));
+    setText("myHistoryBelow",historyNumber(ownRows.filter(row=>resultPercentValue(row)<DERBY_MINIMUM_PERCENT).length));
 
     if (canViewLeadership) {
       const groups = new Map();
@@ -1623,7 +1656,7 @@
           average:capped.reduce((a,b)=>a+b,0)/Math.max(1,capped.length),
           perfect:rows.filter(row=>resultPercentValue(row)>=100).length,
           stars:rows.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0),
-          below:rows.filter(row=>resultPercentValue(row)<80).length,
+          below:rows.filter(row=>resultPercentValue(row)<DERBY_MINIMUM_PERCENT).length,
           unused:rows.reduce((sum,row)=>sum+unusedTaskCount(row),0),
           trend:rows.length>1?capped[0]-capped[1]:null
         };
@@ -1631,7 +1664,7 @@
       const cappedAll=allResults.map(resultPercentValue);
       const teamAverage=cappedAll.length?cappedAll.reduce((a,b)=>a+b,0)/cappedAll.length:0;
       const leaderMetrics=$("leaderHistoryMetrics");
-      if(leaderMetrics)leaderMetrics.innerHTML=`<article><span>${currentLanguage==="en"?"Average":"Gjennomsnitt"}</span><strong>${cappedAll.length?historyPercent(teamAverage):"–"}</strong><small>${currentLanguage==="en"?"percentage capped at 100%":"prosent maksimalt 100 %"}</small></article><article><span>100 %</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)>=100).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>⭐</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0))}</strong><small>${currentLanguage==="en"?"full extra tasks":"fulle ekstraoppgaver"}</small></article><article><span>${currentLanguage==="en"?"Below 80%":"Under 80 %"}</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)<80).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Not used":"Ikke brukt"}</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+unusedTaskCount(row),0))}</strong><small>${currentLanguage==="en"?"tasks":"oppgaver"}</small></article>`;
+      if(leaderMetrics)leaderMetrics.innerHTML=`<article><span>${currentLanguage==="en"?"Average":"Gjennomsnitt"}</span><strong>${cappedAll.length?historyPercent(teamAverage):"–"}</strong><small>${currentLanguage==="en"?"percentage capped at 100%":"prosent maksimalt 100 %"}</small></article><article><span>100 %</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)>=100).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>⭐</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+resultStatusModel(row).starCount,0))}</strong><small>${currentLanguage==="en"?"full extra tasks":"fulle ekstraoppgaver"}</small></article><article><span>${currentLanguage==="en"?`Below ${DERBY_MINIMUM_PERCENT}%`:`Under ${DERBY_MINIMUM_PERCENT} %`}</span><strong>${historyNumber(allResults.filter(row=>resultPercentValue(row)<DERBY_MINIMUM_PERCENT).length)}</strong><small>${currentLanguage==="en"?"results":"resultater"}</small></article><article><span>${currentLanguage==="en"?"Not used":"Ikke brukt"}</span><strong>${historyNumber(allResults.reduce((sum,row)=>sum+unusedTaskCount(row),0))}</strong><small>${currentLanguage==="en"?"tasks":"oppgaver"}</small></article>`;
       const leaderTable=$("leaderHistoryTable");
       if(leaderTable)leaderTable.innerHTML=leaders.length?leaders.map(item=>{
         const trend=item.trend===null?"–":`${item.trend>0?"↑":item.trend<0?"↓":"→"} ${item.trend===0?"":historyPercent(Math.abs(item.trend))}`.trim();
@@ -1648,10 +1681,9 @@
 
   // Regelbekreftelsen ble innført etter at de eldre derbyene allerede var
   // startet og svarfristen var utløpt. For resultatregistrering beholder disse
-  // derbyene derfor sine faktiske, eventspesifikke «Jeg deltar»-svar. Derbyer
-  // fra og med 4. august 2026 krever fortsatt full WGANG-DERBY-RULES-v1-
-  // bekreftelse. Denne overgangen påvirker ikke påmelding til aktive/fremtidige
-  // derbyer.
+  // derbyene derfor sine faktiske, eventspesifikke «Jeg deltar»-svar. Kravet
+  // til 95 prosent og WGANG-DERBY-RULES-v2 gjelder fra derbyet som starter
+  // 13. oktober 2026. Eldre derbyer beholder versjonen de faktisk bekreftet.
   const RESULT_RULE_CONFIRMATION_START_AT=Date.parse("2026-08-04T08:00:00Z");
 
   function validResultParticipation(event,row) {
@@ -1659,7 +1691,7 @@
     const eventStart=event.start_at?new Date(event.start_at).getTime():Number.NaN;
     const legacyEvent=Number.isFinite(eventStart)&&eventStart<RESULT_RULE_CONFIRMATION_START_AT;
     const confirmedRules=!!row.rules_acknowledged_at
-      && row.rules_acknowledgement_version==="WGANG-DERBY-RULES-v1"
+      && row.rules_acknowledgement_version===derbyRulesAckVersionForEvent(event)
       && Number(row.acknowledged_max_points)===Number(event.max_points);
     return legacyEvent||confirmedRules;
   }
@@ -2768,7 +2800,7 @@
       bunny: /bunny|harepus/i.test(eventName),
       pointsPerTask,
       baseMaximum,
-      minimumPoints: Math.ceil(baseMaximum * 0.8)
+      minimumPoints: Math.ceil(baseMaximum * DERBY_MINIMUM_PERCENT / 100)
     };
   }
 
@@ -2778,18 +2810,19 @@
 
   function renderParticipationCommitment(details=derbyCommitmentDetails()) {
     setText("participationPointsCommitment", `${derbyCommitmentNumber(details.pointsPerTask)} ${currentLanguage === "en" ? "points" : "poeng"}`);
-    setText("participationMinimumCommitment", `${derbyCommitmentNumber(details.minimumPoints)} ${currentLanguage === "en" ? "points (80%)" : "poeng (80 %)"}`);
+    setText("participationMinimumCommitment", `${derbyCommitmentNumber(details.minimumPoints)} ${currentLanguage === "en" ? "points (95%)" : "poeng (95 %)"}`);
   }
 
   function renderGameIdentityParticipation() {
     const box=$("gameIdentityParticipationList"),user=current();
     if(!box||!user)return;
     const identities=gameIdentityRowsForAccount(user,state.derbyManagement?.next);
+    const eligibility=derbyEligibilityForAccount(user,state.derbyManagement?.next);
     box.innerHTML=identities.map(identity=>{
       const choice=identity.choice || "waiting";
       const tag=identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:"";
       const primary=identity.isPrimary?`<span class="game-primary-badge">Hovedprofil</span>`:"";
-      return `<article class="game-identity-card"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${[["joined","Jeg deltar","Krever regelbekreftelse"],["pause","Jeg tar pause","Ikke med denne uken"],["unsure","Jeg er usikker","Avklarer før fristen"]].map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}"${identity.legacy?" disabled":""}><strong>${label}</strong><small>${help}</small></button>`).join("")}</div><p class="game-choice-status">Status: <strong>${choiceLabel(choice)}</strong></p></article>`;
+      return `<article class="game-identity-card"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${[["joined","Jeg deltar",eligibility.blocked?"Ikke kvalifisert denne uken":"Krever regelbekreftelse"],["pause","Jeg tar pause","Ikke med denne uken"],["unsure","Jeg er usikker","Avklarer før fristen"]].map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${label}</strong><small>${help}</small></button>`).join("")}</div><p class="game-choice-status">Status: <strong>${choiceLabel(choice)}</strong></p></article>`;
     }).join("") || `<p class="empty-state">Ingen spillprofiler er registrert ennå.</p>`;
     box.querySelectorAll("[data-game-identity][data-choice]").forEach(button=>button.onclick=async()=>{
       if(busy||!hasPermission("derby.plan"))return;
@@ -2804,7 +2837,9 @@
     const full=gameIdentitiesFor(user.id).length>=5;
     if(addButton)addButton.disabled=busy||full;
     if(addForm)addForm.classList.toggle("identity-limit-reached",full);
-    setText("participationStatus",identities.length?`Registrer ett svar for hver spillprofil. ${ownGameIdentitySummary()}.`:"Legg til spillprofilen din for å svare på derbyet.");
+    setText("participationStatus",eligibility.blocked
+      ? "Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde spillprofilene dine på dette derbyet."
+      : identities.length?`Registrer ett svar for hver spillprofil. ${ownGameIdentitySummary()}.`:"Legg til spillprofilen din for å svare på derbyet.");
     renderParticipationLock();
   }
 
@@ -2822,6 +2857,8 @@
     }
     const identity=gameIdentitiesFor(current()?.id).find(item=>String(item.id)===String(identityId));
     if(!identity){alert("Spillprofilen ble ikke funnet. Oppdater siden og prøv igjen.");return;}
+    const eligibility=derbyEligibilityForAccount(current(),state.derbyManagement?.next);
+    if(eligibility.blocked){alert("Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde deg på dette derbyet.");return;}
     participationGameIdentityId=identity.id;
     const details = derbyCommitmentDetails();
     const number = derbyCommitmentNumber;
@@ -2835,8 +2872,8 @@
       ? `I only choose tasks worth ${number(details.pointsPerTask)} points (the maximum per task for this Derby).`
       : `Jeg velger bare oppgaver med ${number(details.pointsPerTask)} poeng (makspoeng per oppgave i dette derbyet).`);
     setText("participationRuleTarget", currentLanguage === "en"
-      ? `I understand that WGANG's goal is 100% (${number(details.baseMaximum)} points) and the minimum is 80% (${number(details.minimumPoints)} points).`
-      : `Jeg forstår at WGANGs mål er 100 % (${number(details.baseMaximum)} poeng) og minimum er 80 % (${number(details.minimumPoints)} poeng).`);
+      ? `I understand that WGANG expects 100% (${number(details.baseMaximum)} points), while the minimum is 95% (${number(details.minimumPoints)} points). Extra tasks are welcome.`
+      : `Jeg forstår at WGANG forventer 100 % (${number(details.baseMaximum)} poeng), mens minimum er 95 % (${number(details.minimumPoints)} poeng). Ekstraoppgaver er kjærkomne.`);
     const dailyWrap=$("participationRuleDailyWrap"), dailyInput=$("participationRuleDaily");
     const showDaily=details.dailyTaskLimit>0;
     dailyWrap?.classList.toggle("hidden",!showDaily);
@@ -2844,6 +2881,12 @@
     if(showDaily)setText("participationRuleDailyText",currentLanguage === "en"
       ? `I follow the daily quota of ${number(details.dailyTaskLimit)} included tasks and complete it before the quota resets.${details.extraTasks ? " A daily extra task is purchased separately." : ""}`
       : `Jeg følger den daglige kvoten på ${number(details.dailyTaskLimit)} inkluderte oppgaver og fullfører den før kvoten nullstilles.${details.extraTasks ? " En eventuell ekstraoppgave kjøpes separat for dagen." : ""}`);
+    const returnWrap=$("participationRuleReturnWrap"),returnInput=$("participationRuleReturn");
+    returnWrap?.classList.toggle("hidden",!eligibility.returning);
+    if(returnInput){returnInput.disabled=!eligibility.returning;returnInput.required=eligibility.returning;}
+    if(eligibility.returning)setText("participationRuleReturnText",currentLanguage === "en"
+      ? "I have a realistic plan to complete 100%, and I confirm that I will do everything I can to complete every task at maximum points."
+      : "Jeg har en realistisk plan for å fullføre 100 %, og bekrefter at jeg vil gjøre alt jeg kan for å gjennomføre alle oppgavene med makspoeng.");
     setText("participationDialogStatus", "");
     updateParticipationConfirmationState();
     showDialog(derbyParticipationDialog);
@@ -2921,8 +2964,8 @@
     setText("derbyExtraMaximum", number(extraMaximum));
     setText("derbyTargetTitle", currentLanguage === "en" ? `${number(baseMaximum)} points without extra tasks` : `${number(baseMaximum)} poeng uten ekstraoppgaver`);
     setText("derbyTargetExplanation", currentLanguage === "en"
-      ? `The goal is 100% (${number(baseMaximum)} points). WGANG's minimum is 80% (${number(Math.ceil(baseMaximum * 0.8))} points).${extraTasks ? ` With ${extraTasks} extra task${extraTasks === 1 ? "" : "s"}, the maximum possible score is ${number(extraMaximum)} points. Every full extra task at maximum points earns one ⭐, up to ${extraTasks}.` : ""}`
-      : `Målet er 100 % (${number(baseMaximum)} poeng). WGANGs minimum er 80 % (${number(Math.ceil(baseMaximum * 0.8))} poeng).${extraTasks ? ` Med ${extraTasks} ekstraoppgave${extraTasks === 1 ? "" : "r"} er mulig maksimum ${number(extraMaximum)} poeng. Hver hel ekstraoppgave med makspoeng gir én ⭐, opptil ${extraTasks}.` : ""}`);
+      ? `100% is expected (${number(baseMaximum)} points). WGANG's minimum is 95% (${number(Math.ceil(baseMaximum * DERBY_MINIMUM_PERCENT / 100))} points). Extra tasks are welcome.${extraTasks ? ` With ${extraTasks} extra task${extraTasks === 1 ? "" : "s"}, the maximum possible score is ${number(extraMaximum)} points. Every full extra task at maximum points earns one ⭐, up to ${extraTasks}.` : ""}`
+      : `Det forventes 100 % (${number(baseMaximum)} poeng). WGANGs minimum er 95 % (${number(Math.ceil(baseMaximum * DERBY_MINIMUM_PERCENT / 100))} poeng). Ekstraoppgaver er kjærkomne.${extraTasks ? ` Med ${extraTasks} ekstraoppgave${extraTasks === 1 ? "" : "r"} er mulig maksimum ${number(extraMaximum)} poeng. Hver hel ekstraoppgave med makspoeng gir én ⭐, opptil ${extraTasks}.` : ""}`);
     $("derbyStrategy").innerHTML = (d.strategy || []).map(x => `<li>${esc(tText(x))}</li>`).join("") || `<li>${esc(tText("Strategi publiseres av admin før derbyet starter."))}</li>`;
     const info = $("nextDerbyInfo");
     if (info) {
@@ -3642,7 +3685,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.92").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.93").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

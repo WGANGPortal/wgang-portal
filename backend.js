@@ -1,4 +1,4 @@
-/* v0.18.0.92 – private meldinger med valgfritt push-varsel */
+/* v0.18.0.93 – derbykrav 95 prosent med kvalifiseringssperre */
 (function () {
   "use strict";
 
@@ -31,7 +31,11 @@
   const configured = Boolean(cfg.url && cfg.anonKey && window.supabase && window.supabase.createClient);
   const LEGAL_PRIVACY_VERSION = "2026-07-29";
   const LEGAL_RULES_VERSION = "2026-07-29";
-  const DERBY_RULES_ACK_VERSION = "WGANG-DERBY-RULES-v1";
+  const DERBY_RULES_V2_EFFECTIVE_AT = Date.parse("2026-10-13T08:00:00Z");
+  const derbyRulesAckVersionForEvent = event => {
+    const start=event?.start_at?new Date(event.start_at).getTime():Number.NaN;
+    return Number.isFinite(start)&&start<DERBY_RULES_V2_EFFECTIVE_AT?"WGANG-DERBY-RULES-v1":"WGANG-DERBY-RULES-v2";
+  };
   const WIKI_MEDIA_BUCKET = "wiki-videos";
   const WIKI_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
   const WIKI_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
@@ -209,15 +213,15 @@
     return data;
   }
 
-  function mapProfile(row, participation, preferences, expectedMaxPoints) {
+  function mapProfile(row, participation, preferences, expectedEvent) {
     const prefMap = {};
     (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
     const part = (participation || []).find(p => p.user_id === row.id);
     const rawChoice = part ? part.choice : "waiting";
     const participationAcknowledged = rawChoice !== "joined" || Boolean(
       part?.rules_acknowledged_at &&
-      part?.rules_acknowledgement_version === DERBY_RULES_ACK_VERSION &&
-      Number(part?.acknowledged_max_points) === Number(expectedMaxPoints || 320)
+      part?.rules_acknowledgement_version === derbyRulesAckVersionForEvent(expectedEvent) &&
+      Number(part?.acknowledged_max_points) === Number(expectedEvent?.max_points || 320)
     );
     return {
       id: row.id,
@@ -307,7 +311,7 @@
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = await loadLegalAcceptance(session);
     if (own.status !== "approved") {
-      const ownAccount = mapProfile(own, [], []);
+      const ownAccount = mapProfile(own, [], [], null);
       ownAccount.email = session.user.email || "";
       return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
@@ -358,14 +362,13 @@
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
     const completionForView = completionRowsForEvent(completionRes.data,current);
-    const expectedParticipationMaxPoints = Number(next?.max_points || d?.max_points || DEFAULT_DERBY.maxPoints);
     const absenceStatusByUser = new Map((absenceStatusesRes.data || []).map(row => [String(row.user_id), !!row.is_inactive]));
     const absencePeriodByUser = new Map((absencePeriodsRes.data || []).map(row => [String(row.user_id), row]));
     const lastActiveByUser = new Map((memberActivityRes.data || []).map(row => [String(row.user_id), row.last_active_at || null]));
     const accounts = (profilesRes.data || []).map(row => {
-      const account = mapProfile(row, participationForView, preferencesRes.data, expectedParticipationMaxPoints);
+      const account = mapProfile(row, participationForView, preferencesRes.data, next);
       const activeAccount = current
-        ? mapProfile(row, currentParticipation, [], Number(current.max_points || DEFAULT_DERBY.maxPoints))
+        ? mapProfile(row, currentParticipation, [], current)
         : null;
       const completion = completionForView.find(item => String(item.user_id) === String(row.id));
       account.activeDerbyChoice = activeAccount?.choice || "waiting";
@@ -600,7 +603,7 @@
           user_id:userId,
           choice,
           rules_acknowledged_at:acknowledgedAt,
-          rules_acknowledgement_version:choice === "joined" ? DERBY_RULES_ACK_VERSION : null,
+          rules_acknowledgement_version:choice === "joined" ? derbyRulesAckVersionForEvent(event) : null,
           acknowledged_max_points:choice === "joined" ? Number(event.max_points || DEFAULT_DERBY.maxPoints) : null,
           updated_at:new Date().toISOString()
         },{onConflict:"event_id,user_id"});
@@ -612,7 +615,7 @@
           user_id:userId,
           choice,
           rules_acknowledged_at:choice === "joined" ? new Date().toISOString() : null,
-          rules_acknowledgement_version:choice === "joined" ? DERBY_RULES_ACK_VERSION : null,
+          rules_acknowledgement_version:choice === "joined" ? "WGANG-DERBY-RULES-v2" : null,
           acknowledged_max_points:choice === "joined" ? Number(settings?.max_points || DEFAULT_DERBY.maxPoints) : null,
           updated_at:new Date().toISOString()
         },{onConflict:"user_id"});
@@ -718,7 +721,7 @@
         if (participationError) throw participationError;
         const confirmedParticipation=participation?.choice === "joined"
           && !!participation?.rules_acknowledged_at
-          && participation?.rules_acknowledgement_version === DERBY_RULES_ACK_VERSION
+          && participation?.rules_acknowledgement_version === derbyRulesAckVersionForEvent(event)
           && Number(participation?.acknowledged_max_points) === Number(event.max_points || DEFAULT_DERBY.maxPoints);
         if (!confirmedParticipation) throw new Error(`Du må ha bekreftet påmeldingen og reglene for det pågående ${derbyLabel} før du kan registrere deg som ferdig.`);
         const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
@@ -982,7 +985,7 @@
             included_tasks:included,extra_tasks:extra,tasks_used:used,tasks_completed:Number(item.tasks_completed || 0),
             points_per_task:pointsPerTask,points_earned:points,possible_points:possible,
             result_percent:possible ? Math.min(100, Math.round(points * 10000 / possible) / 100) : 0,
-            minimum_met:possible ? points >= possible * .8 : false,perfect_result:possible ? points >= possible : false,
+            minimum_met:possible ? points >= possible * .95 : false,perfect_result:possible ? points >= possible : false,
             extra_star_earned:extraStars > 0,extra_stars_earned:extraStars,
             notes:item.notes || null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
           });
