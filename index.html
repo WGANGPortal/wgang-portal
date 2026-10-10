@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.99">
+  <link rel="stylesheet" href="main.css?v=0.18.0.100">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -120,7 +120,7 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.99</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.100</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -249,7 +249,15 @@
         </section>
         <section class="page" data-page="discussions">
           <div class="page-heading"><div><p class="eyebrow">DERBYPRAT</p><h1>Diskusjoner</h1><p>Strategi, spørsmål og koordinering rundt ukens derby.</p></div></div>
-          <article class="portal-card content-section"><div class="card-header"><div><p class="card-kicker">DERBYPRAT</p><h2>Prat om ukens derby</h2><p class="helper-text">Del strategi, spørsmål og koordinering med nabolaget.</p><span class="chat-continuation-note">Du fortsetter automatisk fra første uleste innlegg.</span></div><button class="button button-primary" data-permission-any="chat.community.post" id="openDerbyPostForm">Nytt innlegg</button></div><div id="derbyPostList" class="post-list"></div></article>
+          <section class="discussion-compose-card" data-permission-any="chat.community.post">
+            <div class="discussion-compose-intro"><span class="discussion-compose-icon" aria-hidden="true">＋</span><div><p class="card-kicker">START EN SAMTALE</p><h2>Hva vil du dele med nabolaget?</h2><p>Still et spørsmål, del en idé eller start planleggingen av ukens derby.</p></div></div>
+            <button class="button button-primary discussion-compose-button" id="openDerbyPostForm">＋ Nytt innlegg</button>
+          </section>
+          <article class="portal-card content-section discussion-feed"><div class="card-header"><div><p class="card-kicker">AKTIVE DISKUSJONER</p><h2>Det nabolaget snakker om nå</h2><p class="helper-text">Innlegg med aktivitet den siste uken vises her.</p><span class="chat-continuation-note">Du fortsetter automatisk fra første uleste innlegg.</span></div><span class="discussion-count-pill" id="activeDiscussionCount">0 aktive</span></div><div id="derbyPostList" class="post-list"></div></article>
+          <details class="discussion-archive" id="discussionArchive">
+            <summary><span><strong>Arkiv</strong><small>Innlegg uten aktivitet den siste uken</small></span><b id="discussionArchiveCount">0</b></summary>
+            <div id="derbyPostArchiveList" class="post-list archive-post-list"></div>
+          </details>
         </section>
         <section class="page" data-page="messages">
           <div class="page-heading"><div><p class="eyebrow">PRIVAT</p><h1>Private meldinger</h1><p>Én-til-én-samtaler mellom godkjente WGANG-medlemmer.</p></div></div>
@@ -594,6 +602,6 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.99"></script><script src="app.js?v=0.18.0.99"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="config.js?v=0.18.0.60"></script><script src="backend.js?v=0.18.0.99"></script><script src="app.js?v=0.18.0.100"></script>
 </body>
 </html>

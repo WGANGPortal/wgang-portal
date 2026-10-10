@@ -853,3 +853,21 @@ body:not(.admin-mode) .admin-only {
 /* v0.18.0.99 – bare nyeste aktivitetsvarsel per innlegg */
 .notification-item{position:relative;border-bottom:1px solid rgba(88,55,67,.08)}.notification-item:last-child{border-bottom:0}
 .notification-item small{display:inline-flex;align-self:flex-start;margin-top:3px;padding:4px 7px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.64rem;font-weight:800;line-height:1.25}
+
+/* v0.18.0.100 – tydelig diskusjonsstart og automatisk ukesarkiv */
+[data-page="discussions"]{max-width:920px}
+.discussion-compose-card{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:18px;padding:25px 27px;border:1px solid rgba(169,47,96,.22);border-radius:24px;background:linear-gradient(135deg,#fffdfa 0%,#fff0f5 100%);box-shadow:0 13px 34px rgba(107,39,68,.08)}
+.discussion-compose-intro{display:flex;align-items:center;gap:17px;min-width:0}.discussion-compose-intro h2{margin:0;font-size:1.28rem;line-height:1.25}.discussion-compose-intro p:last-child{margin:6px 0 0;color:var(--muted);font-size:.87rem;line-height:1.5}
+.discussion-compose-icon{display:grid;place-items:center;width:52px;height:52px;flex:none;border-radius:17px;background:var(--pink);color:#fff;font-size:1.8rem;font-weight:500;box-shadow:0 9px 20px rgba(169,47,96,.2)}
+.discussion-compose-button{min-height:50px;padding-inline:22px;white-space:nowrap}
+.discussion-feed{max-width:none!important}.discussion-feed>.card-header{padding-bottom:18px;border-bottom:1px solid rgba(88,55,67,.09)}
+.discussion-count-pill{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 12px;border-radius:999px;background:var(--pink-soft);color:var(--pink);font-size:.75rem;font-weight:900;white-space:nowrap}
+.discussion-feed .content-post{background:#fffdfa;box-shadow:0 5px 17px rgba(72,43,53,.035)}
+.discussion-empty-state{display:grid;justify-items:center;gap:4px;padding:34px 20px;border:1px dashed rgba(169,47,96,.24);border-radius:18px;background:#fffaf5;text-align:center}.discussion-empty-state>span{font-size:1.7rem}.discussion-empty-state h3{margin:5px 0 0}.discussion-empty-state p{margin:0;color:var(--muted);font-size:.87rem}
+.discussion-archive{margin-top:18px;border:1px solid var(--border);border-radius:22px;background:rgba(255,255,255,.75);box-shadow:0 8px 24px rgba(72,43,53,.04);overflow:hidden}
+.discussion-archive>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;cursor:pointer;list-style:none}.discussion-archive>summary::-webkit-details-marker{display:none}.discussion-archive>summary>span{display:grid;gap:2px}.discussion-archive>summary strong{font-size:1.05rem}.discussion-archive>summary small{color:var(--muted);font-size:.76rem}.discussion-archive>summary>b{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:999px;background:#f1e9ec;color:var(--muted);font-size:.76rem}.discussion-archive>summary::after{content:"⌄";margin-left:-5px;color:var(--pink);font-size:1.25rem;transition:transform .2s}.discussion-archive[open]>summary::after{transform:rotate(180deg)}
+.archive-post-list{margin:0!important;padding:0 24px 24px;border-top:1px solid rgba(88,55,67,.08)}.archive-post-list .content-post{background:#fff;box-shadow:none}.archive-post-list .content-post:first-of-type{margin-top:18px}
+@media(max-width:620px){
+  .discussion-compose-card{align-items:stretch;flex-direction:column;padding:20px;gap:18px}.discussion-compose-intro{align-items:flex-start}.discussion-compose-icon{width:46px;height:46px;border-radius:15px;font-size:1.55rem}.discussion-compose-intro h2{font-size:1.12rem}.discussion-compose-button{width:100%}
+  .discussion-feed>.card-header{align-items:flex-start}.discussion-count-pill{flex:none}.discussion-archive>summary{padding:18px}.archive-post-list{padding:0 18px 18px}.archive-post-list.content-post{margin-inline:0}
+}

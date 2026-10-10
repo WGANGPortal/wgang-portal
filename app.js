@@ -1,4 +1,4 @@
-/* v0.18.0.99 – bare nyeste aktivitetsvarsel per innlegg */
+/* v0.18.0.100 – tydelig diskusjonsstart og automatisk ukesarkiv */
 (function () {
   "use strict";
 
@@ -692,6 +692,11 @@
     if(!el) return false;
 
     pendingNotificationFocus=null;
+
+    // Archived discussions are collapsed by default. Open the archive before
+    // positioning a notification target that belongs to an older thread.
+    const containingDetails=el.closest("details");
+    if(containingDetails)containingDetails.open=true;
 
     // If the target is a comment, open its comment area before positioning.
     const comments=el.closest("[data-comments-for]");
@@ -2046,7 +2051,11 @@
     return channel==="leadership"?$("leadershipMessageList"):$("derbyPostList");
   }
   function chatActivityElements(channel) {
-    return [...document.querySelectorAll(`[data-chat-channel="${channel}"][data-chat-time]`)].filter(el=>!el.closest(".social-comments.hidden"));
+    return [...document.querySelectorAll(`[data-chat-channel="${channel}"][data-chat-time]`)].filter(el=>{
+      if(el.closest(".social-comments.hidden"))return false;
+      const details=el.closest("details");
+      return !details||details.open;
+    });
   }
   function updateLocalChatRead(channel,id,time) {
     state.chatReadState=state.chatReadState||[];
@@ -2191,10 +2200,23 @@
     return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
+  const DISCUSSION_ARCHIVE_AGE_MS=7*24*60*60*1000;
+  function discussionActivityTime(item) {
+    const postTime=new Date(item?.publishedAt||item?.createdAt||0).getTime()||0;
+    return targetComments("community",item?.id).reduce((latest,comment)=>{
+      const commentTime=new Date(comment.created_at||comment.createdAt||0).getTime()||0;
+      return Math.max(latest,commentTime);
+    },postTime);
+  }
+  function discussionRows(items,unread,canModerate) {
+    return items.map(item=>`${String(item.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="derbyChatUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:""}${postCard(item,{canModerate,chatChannel:"derby"})}`).join("");
+  }
+
   function renderContent() {
     const content = state.content || {announcements:[],derbyPosts:[],tips:[],pendingTips:[]};
     const announcementList = $("announcementList");
     const derbyPostList = $("derbyPostList");
+    const derbyPostArchiveList = $("derbyPostArchiveList");
     const tipsList = $("communityTipsList");
     const canModerate=hasPermission("chat.moderate");
     if (announcementList) announcementList.innerHTML = content.announcements.length ? content.announcements.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen kunngjøringer er publisert ennå.</p>`;
@@ -2202,8 +2224,21 @@
       const posts=content.derbyPosts||[];
       const chronological=[...posts].sort((a,b)=>new Date(a.publishedAt||a.createdAt)-new Date(b.publishedAt||b.createdAt));
       const unread=unreadChatActivity("derby","community",chronological);
-      derbyPostList.innerHTML=chronological.length?chronological.map(x=>`${String(x.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="derbyChatUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:""}${postCard(x,{canModerate,chatChannel:"derby"})}`).join(""):`<p class="empty-state">Ingen innlegg i Derbyprat ennå. Bli den første som deler noe.</p>`;
-      if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("derby",lastOf(chatActivityElements("derby")));derbyPostList.appendChild(jump);}
+      const cutoff=Date.now()-DISCUSSION_ARCHIVE_AGE_MS;
+      const active=posts.filter(item=>discussionActivityTime(item)>=cutoff).sort((a,b)=>discussionActivityTime(a)-discussionActivityTime(b));
+      const archived=posts.filter(item=>discussionActivityTime(item)<cutoff).sort((a,b)=>discussionActivityTime(b)-discussionActivityTime(a));
+      derbyPostList.innerHTML=active.length?discussionRows(active,unread,canModerate):`<div class="discussion-empty-state"><span aria-hidden="true">💬</span><h3>${currentLanguage==="en"?"No active discussions":"Ingen aktive diskusjoner"}</h3><p>${currentLanguage==="en"?"Start a new post to get the conversation going.":"Start et nytt innlegg for å få i gang praten."}</p></div>`;
+      if(derbyPostArchiveList)derbyPostArchiveList.innerHTML=archived.length?discussionRows(archived,unread,canModerate):"";
+      const activeCount=$("activeDiscussionCount");
+      if(activeCount)activeCount.textContent=currentLanguage==="en"?`${active.length} active`:`${active.length} aktive`;
+      const archiveCount=$("discussionArchiveCount");
+      if(archiveCount)archiveCount.textContent=String(archived.length);
+      const archive=$("discussionArchive");
+      if(archive){
+        archive.classList.toggle("hidden",archived.length===0);
+        if(archived.some(item=>String(item.id)===String(unread.first?.entryId)))archive.open=true;
+      }
+      if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("derby",lastOf([...derbyPostList.querySelectorAll('[data-chat-channel="derby"][data-chat-time]')]));derbyPostList.appendChild(jump);}
     }
     if (tipsList) tipsList.innerHTML = content.tips.length ? content.tips.map(x=>postCard(x,{canModerate})).join("") : `<p class="empty-state">Ingen medlemstips er publisert ennå.</p>`;
 
@@ -3820,7 +3855,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.99").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.100").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
