@@ -1,4 +1,4 @@
-/* v0.18.0.108 – skrivebeskyttet testvisning for eier */
+/* v0.18.0.109 – robust bekreftelse ved derbypåmelding */
 (function () {
   "use strict";
 
@@ -740,7 +740,8 @@
     },
     async setGameParticipation(gameIdentityId, choice, acknowledgement={}) {
       if(!new Set(["joined","pause","unsure"]).has(choice))throw new Error("Ugyldig derby-svar.");
-      if(choice==="joined"&&acknowledgement.accepted!==true)throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
+      const rulesAccepted=acknowledgement===true||acknowledgement?.accepted===true;
+      if(choice==="joined"&&!rulesAccepted)throw new Error("Du må lese og bekrefte derbyreglene før deltakelsen kan lagres.");
       const eventResult=await (configured
         ? client.from("derby_events").select("id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,rules").in("status",["published","active"]).order("start_at",{ascending:false}).limit(20)
         : Promise.resolve({data:localState.derbyManagement?.events || [],error:null}));
@@ -758,7 +759,7 @@
         localSave(localState);return value;
       }
       const {data,error}=await client.rpc("wgang_set_game_participation",{
-        p_event_id:Number(nextEvent.id),p_game_identity_id:Number(gameIdentityId),p_choice:choice,p_rules_accepted:choice==="joined"&&acknowledgement.accepted===true
+        p_event_id:Number(nextEvent.id),p_game_identity_id:Number(gameIdentityId),p_choice:choice,p_rules_accepted:choice==="joined"&&rulesAccepted
       });
       if(error)throw error;
       return data;

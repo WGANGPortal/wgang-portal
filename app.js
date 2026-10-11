@@ -1,4 +1,4 @@
-/* v0.18.0.108 – skrivebeskyttet testvisning for eier */
+/* v0.18.0.109 – robust bekreftelse ved derbypåmelding */
 (function () {
   "use strict";
 
@@ -3147,10 +3147,21 @@
     renderParticipationLock();
   }
 
+  function participationConfirmationChecks() {
+    const form = $("derbyParticipationForm");
+    if (!form) return [];
+    return [...form.querySelectorAll("[data-participation-rule]")]
+      .filter(input => !input.disabled && !input.closest(".hidden"));
+  }
+
+  function participationRulesAccepted() {
+    const checks = participationConfirmationChecks();
+    return checks.length > 0 && checks.every(input => input.checked);
+  }
+
   function updateParticipationConfirmationState() {
-    const checks = [...document.querySelectorAll("[data-participation-rule]:not(:disabled)")];
     const confirmButton = $("confirmDerbyParticipation");
-    if (confirmButton) confirmButton.disabled = busy || !checks.length || !checks.every(input => input.checked);
+    if (confirmButton) confirmButton.disabled = busy || !participationRulesAccepted();
   }
 
   function openParticipationConfirmation(identityId) {
@@ -3181,13 +3192,13 @@
     const dailyWrap=$("participationRuleDailyWrap"), dailyInput=$("participationRuleDaily");
     const showDaily=details.dailyTaskLimit>0;
     dailyWrap?.classList.toggle("hidden",!showDaily);
-    if(dailyInput){dailyInput.disabled=!showDaily;dailyInput.required=showDaily;}
+    if(dailyInput){dailyInput.checked=false;dailyInput.disabled=!showDaily;dailyInput.required=showDaily;}
     if(showDaily)setText("participationRuleDailyText",currentLanguage === "en"
       ? `I follow the daily quota of ${number(details.dailyTaskLimit)} included tasks and complete it before the quota resets.${details.extraTasks ? " A daily extra task is purchased separately." : ""}`
       : `Jeg følger den daglige kvoten på ${number(details.dailyTaskLimit)} inkluderte oppgaver og fullfører den før kvoten nullstilles.${details.extraTasks ? " En eventuell ekstraoppgave kjøpes separat for dagen." : ""}`);
     const returnWrap=$("participationRuleReturnWrap"),returnInput=$("participationRuleReturn");
     returnWrap?.classList.toggle("hidden",!eligibility.returning);
-    if(returnInput){returnInput.disabled=!eligibility.returning;returnInput.required=eligibility.returning;}
+    if(returnInput){returnInput.checked=false;returnInput.disabled=!eligibility.returning;returnInput.required=eligibility.returning;}
     if(eligibility.returning)setText("participationRuleReturnText",currentLanguage === "en"
       ? "I have a realistic plan to complete 100%, and I confirm that I will do everything I can to complete every task at maximum points."
       : "Jeg har en realistisk plan for å fullføre 100 %, og bekrefter at jeg vil gjøre alt jeg kan for å gjennomføre alle oppgavene med makspoeng.");
@@ -3778,14 +3789,15 @@
   };
 
   document.querySelectorAll("[data-participation-rule]").forEach(input => {
-    input.onchange = updateParticipationConfirmationState;
+    input.addEventListener("input", updateParticipationConfirmationState);
+    input.addEventListener("change", updateParticipationConfirmationState);
   });
 
   if ($("derbyParticipationForm")) $("derbyParticipationForm").onsubmit = async event => {
     event.preventDefault();
     if (busy || !current() || !hasPermission("derby.plan")) return;
-    const checks = [...document.querySelectorAll("[data-participation-rule]:not(:disabled)")];
-    if (!checks.length || !checks.every(input => input.checked)) {
+    const rulesAccepted = participationRulesAccepted();
+    if (!rulesAccepted) {
       setText("participationDialogStatus", currentLanguage === "en" ? "Tick every item before confirming." : "Kryss av alle punktene før du bekrefter.");
       updateParticipationConfirmationState();
       return;
@@ -3802,7 +3814,7 @@
     setText("participationDialogStatus", currentLanguage === "en" ? "Saving your confirmation …" : "Lagrer bekreftelsen …");
     try {
       if(!participationGameIdentityId)throw new Error("Velg hvilken spillprofil som skal meldes på.");
-      await backend.setGameParticipation(participationGameIdentityId, "joined", {accepted:true});
+      await backend.setGameParticipation(participationGameIdentityId, "joined", true);
       await refreshState();
       closeDialog(derbyParticipationDialog);
       participationGameIdentityId=null;
@@ -4080,7 +4092,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.108").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.109").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

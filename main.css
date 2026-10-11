@@ -942,7 +942,7 @@ body:not(.admin-mode) .admin-only {
 }
 @media(max-width:390px){.member-toolbar{padding:12px}.member-filter-row{grid-template-columns:1fr}.member-filter-row label:last-child{grid-column:auto}.member-overview span{font-size:.67rem}}
 
-/* v0.18.0.108 – skrivebeskyttet testvisning for eier */
+/* v0.18.0.109 – robust bekreftelse ved derbypåmelding */
 .role-preview-open{display:flex;align-items:center;gap:11px;width:100%;margin-top:auto;padding:12px 14px;border:1px solid rgba(169,47,96,.18);border-radius:14px;background:#fff6ea;color:var(--ink);text-align:left;cursor:pointer}
 .role-preview-open>span:first-child{display:grid;place-items:center;width:30px;height:30px;flex:none;border-radius:10px;background:#f4c868;color:#643f00;font-weight:900}
 .role-preview-open>span:last-child{display:grid;gap:2px}.role-preview-open strong{font-size:.84rem}.role-preview-open small{color:var(--muted);font-size:.68rem;line-height:1.3}
