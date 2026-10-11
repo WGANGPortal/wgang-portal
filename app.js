@@ -3085,7 +3085,7 @@
       setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle","Tre ting å huske");
       setText("taskBoardStepOneTitle","Klargjør først");setText("taskBoardStepOneText","Vent med å ta oppgaven til du kan starte.");
       setText("taskBoardStepTwoTitle","Prioriter harepus");setText("taskBoardStepTwoText","Harepusoppgaver er hovedfokus når harepusten er aktiv.");
-      setText("taskBoardStepThreeTitle","Ta én om gangen");setText("taskBoardStepThreeText","Hold de fem oppgaveplassene åpne for laget.");
+      setText("taskBoardStepThreeTitle","Frigjør plassen raskt");setText("taskBoardStepThreeText","Unngå at laget holder alle fem plassene for samme oppgave opptatt lenge.");
       renderBunnyQuickPlan();
     }else if(preferenceBased){
       setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);

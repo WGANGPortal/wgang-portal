@@ -138,7 +138,7 @@
           <div class="spotlight-card" id="dashboardDerbySpotlight"><div><p class="eyebrow light" id="dashboardDerbyPhase">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 10:00</p><div class="dashboard-countdown hidden" id="dashboardCountdownWrap"><span id="dashboardCountdownLabel">Starter om</span><strong id="dashboardCountdown">–</strong></div><p id="dashboardDerbyFocusText">Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="bunny-dashboard-panel hidden" id="bunnyDashboardPanel">
             <div class="bunny-dashboard-countdown"><div><span id="bunnyCountdownKicker">NESTE HAREPUST</span><strong id="bunnyCountdownValue">–</strong><small id="bunnyCountdownUnits">timer · minutter · sekunder</small></div><div class="bunny-countdown-meta"><strong id="bunnyCountdownStart">Starter –</strong><span id="bunnyCountdownDuration">Varer i 10 min</span></div></div>
             <div class="bunny-dashboard-rounds"><div><span>RUNDE</span><strong id="bunnyRoundNumber">1 av 3</strong></div><div><span>MÅL</span><strong>3 harepus</strong></div><div><span>HAREPUSER TATT</span><strong id="bunnyRoundsTaken">0 av 3</strong></div></div>
-            <div class="bunny-dashboard-tip"><strong>💡 Husk:</strong> Klargjør før harepusten starter, men vent med å ta oppgaven til du kan begynne. Ta og fullfør én oppgave om gangen, slik at du ikke beslaglegger alle fem oppgaveplassene samtidig.</div>
+            <div class="bunny-dashboard-tip"><strong>💡 Husk:</strong> En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, og ta oppgaven først når du kan begynne. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge – fullfør raskt og frigjør plassen for neste spiller.</div>
             <button class="button bunny-round-complete" data-permission-any="derby.board.update" id="bunnyRoundCompleteButton" type="button">✓ Harepus tatt – avslutt runde</button>
             <div class="bunny-manual-schedule" data-permission-any="derby.board.update" id="bunnyManualSchedule">
               <div><strong>Juster neste harepust</strong><small>Brukes dersom tidspunktet i spillet avviker fra automatikken. Etter valgt tidspunkt fortsetter portalen automatisk med 1,5 times intervall.</small></div>
@@ -238,7 +238,7 @@
           <div id="standardTaskHub"><article class="portal-card task-preference-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div><strong class="task-board-counter" id="preferenceSelectionSummary">0 av 0 vurdert</strong></div><div class="preference-legend" aria-label="Forklaring"><span class="pref-like">♥ Liker</span><span class="pref-can">✓ Kan ta</span><span class="pref-avoid">– Helst ikke</span><span class="pref-no">× Kan ikke</span></div><div class="task-board-progress" aria-hidden="true"><span id="preferenceSelectionProgress"></span></div><div class="preference-list" id="preferenceList"></div><p class="helper-text task-board-footer-note">Svarene lagres med én gang. Lederne bruker oversikten til å beholde aktuelle oppgaver og rydde bort resten.</p></article></div>
           <div id="bunnyTaskHub" class="hidden"><section class="bunny-simple-plan" id="bunnyCenter">
             <article class="bunny-simple-hero">
-              <div><p class="card-kicker">🐰 CHILL BUNNY DERBY</p><h2>Harepus først – én oppgave om gangen</h2><p>Klargjør før harepusten starter. Når harepusen er aktiv, tar og fullfører du én oppgave før du eventuelt tar den neste. Da holder vi oppgaveplassene åpne for hele nabolaget.</p></div>
+              <div><p class="card-kicker">🐰 CHILL BUNNY DERBY</p><h2>Harepus først – én oppgave om gangen</h2><p>En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, ta oppgaven når du kan begynne, og fullfør raskt slik at plassen blir ledig for neste spiller.</p></div>
               <div class="bunny-notification-card">
                 <span class="bunny-notification-icon" aria-hidden="true">🔔</span>
                 <div><strong>Harepusvarsel</strong><p id="bunnyNotificationState">Kontrollerer innstillingen …</p></div>
@@ -252,12 +252,12 @@
               <article><b>1</b><div><strong>Nye oppgaver hver dag</strong><p>Oppgavetavlen i spillet fornyes daglig kl. 10.00. Gamle planer skal derfor ikke styre den nye dagen.</p></div></article>
               <article><b>2</b><div><strong>Harepus er hovedfokus</strong><p>På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.</p></div></article>
               <article><b>3</b><div><strong>Klargjør før du tar</strong><p>Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.</p></div></article>
-              <article><b>4</b><div><strong>Hold oppgaveplasser åpne</strong><p>Ikke ta alle fem oppgavene samtidig. Ta én, fullfør den raskt og ta deretter neste.</p></div></article>
+              <article><b>4</b><div><strong>Hold oppgaveplasser åpne</strong><p>En spiller kan bare ha én oppgave om gangen. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge. Fullfør raskt og frigjør plassen for neste spiller.</p></div></article>
             </div>
 
             <article class="portal-card bunny-flow-card">
               <div><p class="card-kicker">ENKEL ARBEIDSFLYT</p><h2>Slik får flere tatt harepusoppgaver</h2></div>
-              <div class="bunny-flow-steps"><span><b>Før</b>Klargjør uten å beslaglegge oppgaven.</span><span><b>Under</b>Ta én oppgave og fullfør den raskt.</span><span><b>Etter</b>Ta neste bare når du er klar.</span></div>
+              <div class="bunny-flow-steps"><span><b>Før</b>Klargjør uten å ta oppgaven.</span><span><b>Under</b>Ta oppgaven først når du er klar, og fullfør raskt.</span><span><b>Etter</b>Plassen frigjøres for neste spiller.</span></div>
               <p class="helper-text"><strong>Bruk spillchatten ved produksjonsoppgaver:</strong> Si fra når du klargjør eller venter på en bestemt produksjonsoppgave. Andre oppgaver kan normalt tas fortløpende.</p>
             </article>
           </section></div>
