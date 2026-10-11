@@ -1,12 +1,31 @@
-/* v0.18.0.107 – dataminimering for medlemsopplysninger */
+/* v0.18.0.108 – skrivebeskyttet testvisning for eier */
 (function () {
   "use strict";
 
-  const backend = window.WGANG_BACKEND;
-  if (!backend) {
+  let rolePreviewRole = null;
+  const rawBackend = window.WGANG_BACKEND;
+  if (!rawBackend) {
     console.error("WGANG backend mangler.");
     return;
   }
+  const PREVIEW_SAFE_BACKEND_METHODS = new Set([
+    "bootstrap","refresh","getAuthIntent","getMfaState","legalVersions","legalAcceptanceRequired",
+    "getBunnyData","getBunnyRoundState","getBunnyRoundSchedule","getWikiMediaUrl","onAuthChange","signOut"
+  ]);
+  const backend = new Proxy(rawBackend, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (typeof value !== "function") return value;
+      return (...args) => {
+        if (isRolePreviewActive() && !PREVIEW_SAFE_BACKEND_METHODS.has(String(property))) {
+          const error = new Error("Testvisning er skrivebeskyttet. Avslutt testvisningen før du lagrer eller endrer noe.");
+          error.code = "WGANG_PREVIEW_READ_ONLY";
+          throw error;
+        }
+        return value.apply(target, args);
+      };
+    }
+  });
 
   const TASK_GROUPS = [
     { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Tomat","Annen høsting"] },
@@ -265,9 +284,44 @@
   let openProfileUserId = null;
   let participationGameIdentityId = null;
 
-  function current() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
+  function actualCurrent() { return state.accounts.find(a => a.id === state.currentUserId) || null; }
+  function isRolePreviewActive() { return !!rolePreviewRole && actualCurrent()?.role === "owner"; }
+  function current() {
+    const user = actualCurrent();
+    return user && isRolePreviewActive() ? {...user, role:rolePreviewRole} : user;
+  }
   function isOwner(user=current()) { return !!user && user.role === "owner"; }
   function isLeadership(user=current()) { return !!user && ["owner","admin","assistant_leader","senior"].includes(user.role); }
+
+  function syncRolePreviewUi() {
+    const actualOwner = actualCurrent()?.role === "owner";
+    const active = isRolePreviewActive();
+    const openButton = $("openRolePreview");
+    const banner = $("rolePreviewBanner");
+    if (openButton) openButton.classList.toggle("hidden", !actualOwner || active);
+    if (banner) {
+      banner.classList.toggle("hidden", !active);
+      banner.setAttribute("aria-hidden", String(!active));
+    }
+    if ($("rolePreviewLabel")) $("rolePreviewLabel").textContent = active ? roleLabel(rolePreviewRole) : "";
+    document.body.classList.toggle("role-preview-mode", active);
+  }
+
+  function startRolePreview(role) {
+    if (actualCurrent()?.role !== "owner" || !["admin","assistant_leader","senior","member"].includes(role)) return;
+    rolePreviewRole = role;
+    closeDialog($("rolePreviewDialog"));
+    renderSession();
+    navigate("dashboard");
+    closeMenu();
+  }
+
+  function stopRolePreview({navigateHome=true}={}) {
+    if (!rolePreviewRole) return;
+    rolePreviewRole = null;
+    renderSession();
+    if (navigateHome) navigate("dashboard");
+  }
 
   const PERMISSION_DEFINITIONS = [
     {group:"Medlemmer",key:"members.view",label:"Se administrativ medlemsoversikt",defaults:{owner:1,admin:1,assistant_leader:0,member:0}},
@@ -690,11 +744,12 @@
     setBusy(true);
     try { await detachCurrentPushSubscription(); } catch (e) { console.warn(e); }
     try { await backend.signOut(); } catch (e) { console.warn(e); }
+    rolePreviewRole = null;
     state.currentUserId = null;
     portal.classList.add("hidden");
     portal.setAttribute("aria-hidden", "true");
     landing.classList.remove("hidden");
-    document.body.classList.remove("admin-mode","leadership-mode","admin-access-mode","owner-mode");
+    document.body.classList.remove("admin-mode","leadership-mode","admin-access-mode","owner-mode","role-preview-mode");
     closeDialog(legalAcceptanceDialog);
     closeDialog(mfaDialog);
     document.body.classList.remove("modal-open");
@@ -1155,6 +1210,7 @@
     if (!user) return;
     applyAccessModeClasses(user);
     applyPermissionVisibility();
+    syncRolePreviewUi();
     if (!canAccessAdmin(user)) {
       $("adminSubnav")?.classList.add("hidden");
       $("adminNavToggle")?.setAttribute("aria-expanded", "false");
@@ -3316,6 +3372,18 @@
   $("joinMembershipButton").onclick = () => openAuth("register");
   $("closeAuth").onclick = () => closeDialog(auth);
   if ($("closePortal")) $("closePortal").onclick = logout;
+  if ($("openRolePreview")) $("openRolePreview").onclick = () => {
+    if (actualCurrent()?.role !== "owner") return;
+    $("rolePreviewSelect").value = rolePreviewRole || "member";
+    showDialog($("rolePreviewDialog"));
+    closeMenu();
+  };
+  if ($("cancelRolePreview")) $("cancelRolePreview").onclick = () => closeDialog($("rolePreviewDialog"));
+  if ($("rolePreviewForm")) $("rolePreviewForm").onsubmit = event => {
+    event.preventDefault();
+    startRolePreview($("rolePreviewSelect").value);
+  };
+  if ($("exitRolePreview")) $("exitRolePreview").onclick = () => stopRolePreview();
   $$('[data-auth-tab]').forEach(b => b.onclick = () => setAuthTab(b.dataset.authTab));
   if(mfaDialog)mfaDialog.addEventListener("cancel",event=>event.preventDefault());
   if($("startMfaEnrollment"))$("startMfaEnrollment").onclick=async()=>{
@@ -3988,6 +4056,13 @@
 
   renderDerbyConfig(); progress(); init();
 
+  document.addEventListener("submit", event => {
+    if (!isRolePreviewActive() || event.target?.id === "rolePreviewForm") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    portalAlert("Testvisning er skrivebeskyttet. Avslutt testvisningen før du lagrer eller endrer noe.", "Ingen endringer ble lagret");
+  }, true);
+
   // PWA installasjon
   let deferredInstallPrompt = null;
   window.addEventListener("beforeinstallprompt", event => {
@@ -4005,7 +4080,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.107").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.108").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

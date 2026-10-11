@@ -1,4 +1,4 @@
-/* v0.18.0.107 – dataminimering for medlemsopplysninger */
+/* v0.18.0.108 – skrivebeskyttet testvisning for eier */
 (function () {
   "use strict";
 

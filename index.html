@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.107">
+  <link rel="stylesheet" href="main.css?v=0.18.0.108">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -94,6 +94,11 @@
 </div><button class="profile-chip" id="profileChip"><b id="globalNotificationBadge" class="profile-notification-badge hidden">0</b><span class="avatar" id="profileAvatar">N</span><span><strong id="profileName">Nabo</strong><small id="profileRole">Medlem</small></span></button></div>
     </header>
 
+    <div class="role-preview-banner hidden" id="rolePreviewBanner" aria-hidden="true" role="status">
+      <div><strong>TESTVISNING</strong><span>Du ser portalen som <b id="rolePreviewLabel"></b>. Ingen endringer kan lagres.</span></div>
+      <button type="button" id="exitRolePreview">Avslutt testvisning</button>
+    </div>
+
     <div class="portal-shell">
       <aside class="sidebar" id="sidebar">
         <nav class="main-nav">
@@ -120,7 +125,8 @@
   </div>
 </div>
         </nav>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.107</span></div></div>
+        <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.108</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -632,6 +638,23 @@
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.107"></script><script src="backend.js?v=0.18.0.107"></script><script src="app.js?v=0.18.0.107"></script>
+  <dialog id="rolePreviewDialog" class="role-preview-dialog">
+    <form id="rolePreviewForm" class="dialog-card">
+      <div class="card-header"><div><p class="card-kicker">EIERKONTROLL</p><h2>Test portalen som en annen rolle</h2></div><button type="button" class="icon-button" id="cancelRolePreview" aria-label="Lukk">×</button></div>
+      <p class="helper-text">Velg rollen du vil kontrollere. Menyer, sider og funksjoner vises med rollens faktiske portalrettigheter. Du er fortsatt innlogget som eier, og testvisningen er skrivebeskyttet.</p>
+      <label>Vis portalen som
+        <select id="rolePreviewSelect" required>
+          <option value="admin">Administrator</option>
+          <option value="assistant_leader">Assisterende leder</option>
+          <option value="senior">Senior</option>
+          <option value="member" selected>Medlem</option>
+        </select>
+      </label>
+      <div class="role-preview-explanation"><strong>Trygt å kontrollere</strong><span>Du kan åpne sider, menyer og vinduer. Forsøk på å lagre, publisere, sende eller endre data blir stoppet.</span></div>
+      <button type="submit" class="button button-primary button-full">Start testvisning</button>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.108"></script><script src="backend.js?v=0.18.0.108"></script><script src="app.js?v=0.18.0.108"></script>
 </body>
 </html>
