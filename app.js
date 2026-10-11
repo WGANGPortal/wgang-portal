@@ -1,4 +1,4 @@
-/* v0.18.0.109 – robust bekreftelse ved derbypåmelding */
+/* v0.18.0.110 – forenklet Chill Bunny-plan med varsling og regler */
 (function () {
   "use strict";
 
@@ -663,7 +663,7 @@
     actions: ["Til behandling", "Varsler, tips og andre saker som venter på gjennomgang."],
     derby: ["Derbyadministrasjon", "Publiser neste derby og registrer kontrollerte sluttresultater."],
     applications: ["Medlemssøknader", "Godkjenn eller avslå nye medlemsforespørsler."],
-    board: ["Oppgavetavle", "Oppdater derbyets oppgavetavle og se lagets oppgavepreferanser."],
+    board: ["Oppgavetavle", "Se lagets oppgavepreferanser og administrer tavlen når derbytypen krever det."],
     roles: ["Medlemmer og roller", "Administrer medlemmer, roller og tilgang."]
   };
 
@@ -1184,6 +1184,18 @@
     set("notifyPrivateMessages","push_private_messages");
     set("notifyBunnyStart","push_bunny_starts");
     set("emailNotificationsEnabled","email_enabled");
+    renderBunnyQuickPlan();
+  }
+
+  function renderBunnyQuickPlan(){
+    const toggle=$("bunnyQuickNotify"), status=$("bunnyNotificationState");
+    if(!toggle&&!status)return;
+    const enabled=notificationPrefs().push_bunny_starts!==false;
+    if(toggle)toggle.checked=enabled;
+    if(status)status.textContent=enabled
+      ? "På – du varsles når harepusten starter."
+      : "Av – slå på for å få beskjed når harepusten starter.";
+    setTimeout(()=>renderPushNotificationSettings().catch(console.warn),0);
   }
 
   function renderAbsenceSettings() {
@@ -2898,12 +2910,12 @@
     setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY – PÅMELDING" : "NESTE DERBY"));
     setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Påmeldingen til neste ukes Chill Bunny er åpen." : `Her er det viktigste i planleggingen mot ${type}.`));
     setText("dashboardDerbyFocusText", active
-      ? (bunny ? "Harepus-derbyet er i gang. Bruk oppslagstavla for å koordinere klargjorte oppgaver og se hva naboene planlegger." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Bekreft om du deltar, tar pause eller er usikker før svarfristen. Oppgavetavla er klar for felles Bunny-planlegging." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
+      ? (bunny ? "Harepus-derbyet er i gang. Følg harepusvarselet, klargjør på forhånd og ta én oppgave om gangen når harepusten er aktiv." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
+      : (bunny ? "Bekreft om du deltar før svarfristen. Les harepusreglene og kontroller at varsling er aktivert." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
     setText("nextDerbyStart", active
       ? "Pågår nå"
       : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00"));
-    setText("dashboardDerbyAction", bunny && active ? "Åpne oppgavetavla" : "Åpne påmelding");
+    setText("dashboardDerbyAction", bunny && active ? "Åpne harepusplanen" : "Åpne påmelding");
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
@@ -2936,9 +2948,9 @@
       icon="◇"; title="Svar på derbypåmeldingen"; text="Kontroller spillprofilene dine og registrer om de deltar før svarfristen."; label="Åpne påmelding"; route="derby";
     }else if(activeEvent){
       const bunny=/bunny|harepus/i.test(String(activeEvent.name||state.derby?.type||""));
-      icon=bunny?"🐰":"✓"; title=bunny?"Planlegg neste harepus":"Åpne ukens oppgavetavle";
-      text=bunny?"Se hva naboene klargjør, og oppdater planen før neste harepus.":"Se strategi, oppgaver og koordinering for derbyet som pågår.";
-      label="Åpne oppgavetavla"; route="preferences";
+      icon=bunny?"🐰":"✓"; title=bunny?"Gjør deg klar til neste harepus":"Åpne ukens oppgavetavle";
+      text=bunny?"Kontroller varselet, klargjør på forhånd og hold oppgaveplasser åpne.":"Se strategi, oppgaver og koordinering for derbyet som pågår.";
+      label=bunny?"Åpne harepusplanen":"Åpne oppgavetavla"; route="preferences";
     }else if(signupEvent){
       icon="✓"; title="Påmeldingen din er registrert"; text="Du kan kontrollere svarene dine frem til svarfristen."; label="Se påmeldingen"; route="derby";
     }
@@ -3069,11 +3081,12 @@
     $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
     if(bunny){
       const active=derbyDashboardPhase(event)==="active";
-      setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",active?"Oppgavetavle – neste harepus":"Klargjør Bunny-planen");setText("taskHubIntro",active?"Planlegg sammen og se hva naboene klargjør før neste harepus.":"Klargjør oppgaver og se felles interesse før derbyet starter.");
-      setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle","Planlegg neste harepus");
-      setText("taskBoardStepOneTitle","Se dagens 12 oppgaver");setText("taskBoardStepOneText","Kontroller oppgave og antall.");
-      setText("taskBoardStepTwoTitle","Velg hva du klargjør");setText("taskBoardStepTwoText","Valget gjelder neste harepus.");
-      setText("taskBoardStepThreeTitle","Vær klar til å starte");setText("taskBoardStepThreeText","Populære oppgaver må tas raskt.");
+      setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle","Harepusplan");setText("taskHubIntro",active?"Få varsel, klargjør på forhånd og ta én oppgave om gangen.":"Les reglene og gjør varslingen klar før derbyet starter.");
+      setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle","Tre ting å huske");
+      setText("taskBoardStepOneTitle","Klargjør først");setText("taskBoardStepOneText","Vent med å ta oppgaven til du kan starte.");
+      setText("taskBoardStepTwoTitle","Prioriter harepus");setText("taskBoardStepTwoText","Harepusoppgaver er hovedfokus når harepusten er aktiv.");
+      setText("taskBoardStepThreeTitle","Ta én om gangen");setText("taskBoardStepThreeText","Hold de fem oppgaveplassene åpne for laget.");
+      renderBunnyQuickPlan();
     }else if(preferenceBased){
       setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);
       setText("taskBoardStatus",derbyScope.label);setText("taskBoardGuideTitle","Prioriter dine oppgaver");
@@ -3629,6 +3642,23 @@
       setBusy(false);
       document.body.classList.remove("modal-open");
     }
+  };
+  if ($("bunnyQuickNotify")) $("bunnyQuickNotify").onchange=async()=>{
+    const toggle=$("bunnyQuickNotify"), status=$("bunnyNotificationState");
+    if(!toggle||busy)return;
+    const wanted=toggle.checked;
+    setBusy(true);
+    if(status)status.textContent="Lagrer innstillingen …";
+    try{
+      const saved=await backend.saveNotificationPreferences({...notificationPrefs(),push_bunny_starts:wanted});
+      state.notifications=state.notifications||{};
+      state.notifications.preferences=saved;
+      renderNotificationSettings();
+    }catch(e){
+      toggle.checked=!wanted;
+      if(status)status.textContent=humanError(e,"Kunne ikke lagre harepusvarselet.");
+    }
+    setBusy(false);
   };
   function accountGameNameValue(user){
     return user?.gameName || user?.game_name || user?.displayName || user?.display_name || user?.name || (user?.role==="owner" ? "TJENTA" : "–");

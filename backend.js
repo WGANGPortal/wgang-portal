@@ -1,4 +1,4 @@
-/* v0.18.0.109 – robust bekreftelse ved derbypåmelding */
+/* v0.18.0.110 – forenklet Chill Bunny-plan med varsling og regler */
 (function () {
   "use strict";
 

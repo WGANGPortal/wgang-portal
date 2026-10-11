@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.109">
+  <link rel="stylesheet" href="main.css?v=0.18.0.110">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -106,7 +106,7 @@
           <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Påmelding</a>
           <a href="#history" data-permission-any="derby.view" data-route="history"><span>◷</span>Derbyhistorikk</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
-          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgavetavle</a>
+          <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgaver</a>
           <a href="#announcements" data-permission-any="chat.community.view" data-route="announcements"><span>▣</span>Kunngjøringer</a>
           <a href="#discussions" data-permission-any="chat.community.view" data-route="discussions"><span>□</span>Diskusjoner</a>
           <a href="#messages" data-route="messages"><span>✉</span>Private meldinger <em id="privateMessageNavBadge" class="hidden">0</em></a>
@@ -126,7 +126,7 @@
 </div>
         </nav>
         <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.109</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.110</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -138,7 +138,7 @@
           <div class="spotlight-card" id="dashboardDerbySpotlight"><div><p class="eyebrow light" id="dashboardDerbyPhase">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 10:00</p><div class="dashboard-countdown hidden" id="dashboardCountdownWrap"><span id="dashboardCountdownLabel">Starter om</span><strong id="dashboardCountdown">–</strong></div><p id="dashboardDerbyFocusText">Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="bunny-dashboard-panel hidden" id="bunnyDashboardPanel">
             <div class="bunny-dashboard-countdown"><div><span id="bunnyCountdownKicker">NESTE HAREPUST</span><strong id="bunnyCountdownValue">–</strong><small id="bunnyCountdownUnits">timer · minutter · sekunder</small></div><div class="bunny-countdown-meta"><strong id="bunnyCountdownStart">Starter –</strong><span id="bunnyCountdownDuration">Varer i 10 min</span></div></div>
             <div class="bunny-dashboard-rounds"><div><span>RUNDE</span><strong id="bunnyRoundNumber">1 av 3</strong></div><div><span>MÅL</span><strong>3 harepus</strong></div><div><span>HAREPUSER TATT</span><strong id="bunnyRoundsTaken">0 av 3</strong></div></div>
-            <div class="bunny-dashboard-tip"><strong>💡 Tips:</strong> Populære oppgaver bør være godt forhåndsklargjort før harepusten starter. Hvis du velger en populær oppgave, vær klar til å starte og fullføre den så raskt som mulig, slik at flere får mulighet til å ta samme oppgave. Fem kan ha oppgaven samtidig, men med rask gjennomføring kan flere rekke den i samme harepust. Ha gjerne én eller to reserveoppgaver klare.</div>
+            <div class="bunny-dashboard-tip"><strong>💡 Husk:</strong> Klargjør før harepusten starter, men vent med å ta oppgaven til du kan begynne. Ta og fullfør én oppgave om gangen, slik at du ikke beslaglegger alle fem oppgaveplassene samtidig.</div>
             <button class="button bunny-round-complete" data-permission-any="derby.board.update" id="bunnyRoundCompleteButton" type="button">✓ Harepus tatt – avslutt runde</button>
             <div class="bunny-manual-schedule" data-permission-any="derby.board.update" id="bunnyManualSchedule">
               <div><strong>Juster neste harepust</strong><small>Brukes dersom tidspunktet i spillet avviker fra automatikken. Etter valgt tidspunkt fortsetter portalen automatisk med 1,5 times intervall.</small></div>
@@ -236,16 +236,30 @@
           <div class="page-heading"><div><p class="eyebrow" id="taskHubEyebrow">OPPGAVETAVLE</p><h1 id="taskHubTitle">Oppgavetavle</h1><p id="taskHubIntro">Planlegg og koordiner oppgavene i derbyet.</p></div></div>
           <section class="task-board-guide" aria-label="Slik bruker du oppgavetavla"><div class="task-board-guide-heading"><div><p class="card-kicker">DIN ARBEIDSFLATE</p><h2 id="taskBoardGuideTitle">Slik bruker du tavla</h2></div><span class="task-board-status" id="taskBoardStatus">Normal Derby</span></div><div class="task-board-steps"><div><b>1</b><span><strong id="taskBoardStepOneTitle">Finn oppgavene</strong><small id="taskBoardStepOneText">Se hva som passer deg.</small></span></div><div><b>2</b><span><strong id="taskBoardStepTwoTitle">Registrer valgene</strong><small id="taskBoardStepTwoText">Velg ærlig og realistisk.</small></span></div><div><b>3</b><span><strong id="taskBoardStepThreeTitle">Følg felles plan</strong><small id="taskBoardStepThreeText">Lederne bruker svarene til å rydde tavla.</small></span></div></div></section>
           <div id="standardTaskHub"><article class="portal-card task-preference-card"><div class="card-header"><div><p class="card-kicker" id="preferenceTaskHubKicker">NORMAL DERBY</p><h2>Oppgavepreferanser</h2></div><strong class="task-board-counter" id="preferenceSelectionSummary">0 av 0 vurdert</strong></div><div class="preference-legend" aria-label="Forklaring"><span class="pref-like">♥ Liker</span><span class="pref-can">✓ Kan ta</span><span class="pref-avoid">– Helst ikke</span><span class="pref-no">× Kan ikke</span></div><div class="task-board-progress" aria-hidden="true"><span id="preferenceSelectionProgress"></span></div><div class="preference-list" id="preferenceList"></div><p class="helper-text task-board-footer-note">Svarene lagres med én gang. Lederne bruker oversikten til å beholde aktuelle oppgaver og rydde bort resten.</p></article></div>
-          <div id="bunnyTaskHub" class="hidden"><section class="bunny-center" id="bunnyCenter">
-            <div class="bunny-hero">
-              <div><p class="card-kicker">🐰 CHILL BUNNY DERBY</p><h2>Oppgaver i neste harepus</h2><p>Velg oppgavene du planlegger å ta i neste harepus. Valgene gjelder bare denne harepusen.</p></div>
-              <div class="bunny-stat"><small>DIN PLAN</small><strong id="bunnyReadyCount">0 valgt</strong><span>til neste harepus</span></div>
+          <div id="bunnyTaskHub" class="hidden"><section class="bunny-simple-plan" id="bunnyCenter">
+            <article class="bunny-simple-hero">
+              <div><p class="card-kicker">🐰 CHILL BUNNY DERBY</p><h2>Harepus først – én oppgave om gangen</h2><p>Klargjør før harepusten starter. Når harepusen er aktiv, tar og fullfører du én oppgave før du eventuelt tar den neste. Da holder vi oppgaveplassene åpne for hele nabolaget.</p></div>
+              <div class="bunny-notification-card">
+                <span class="bunny-notification-icon" aria-hidden="true">🔔</span>
+                <div><strong>Harepusvarsel</strong><p id="bunnyNotificationState">Kontrollerer innstillingen …</p></div>
+                <label class="bunny-notification-toggle"><input id="bunnyQuickNotify" type="checkbox"><span>Varsle meg</span></label>
+                <button type="button" class="button button-secondary" data-push-enable>Aktiver på denne telefonen</button>
+                <small data-push-status>Kontrollerer støtte og tillatelse …</small>
+              </div>
+            </article>
+
+            <div class="bunny-simple-rules" aria-label="Regler for Chill Bunny Derby">
+              <article><b>1</b><div><strong>Nye oppgaver hver dag</strong><p>Oppgavetavlen i spillet fornyes daglig kl. 10.00. Gamle planer skal derfor ikke styre den nye dagen.</p></div></article>
+              <article><b>2</b><div><strong>Harepus er hovedfokus</strong><p>På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.</p></div></article>
+              <article><b>3</b><div><strong>Klargjør før du tar</strong><p>Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.</p></div></article>
+              <article><b>4</b><div><strong>Hold oppgaveplasser åpne</strong><p>Ikke ta alle fem oppgavene samtidig. Ta én, fullfør den raskt og ta deretter neste.</p></div></article>
             </div>
-            <div id="bunnyBoardNotice" class="bunny-board-notice"></div>
-            <div class="bunny-toolbar"><div><strong>Oppgavetavlen</strong><span id="bunnyBoardMeta">12 tilgjengelige oppgaver</span></div><div class="bunny-interest-legend"><strong>Felles interesse</strong><span>0–30 · grønn → gul → oransje → rød</span></div></div>
-            <p class="bunny-art-note">WGANG-originale illustrasjoner – laget for rask gjenkjenning uten å kopiere spillets oppgavetavle.</p>
-            <div class="bunny-task-grid" id="bunnyTaskGrid"></div>
-            <article class="portal-card bunny-plan-card"><div class="card-header"><div><p class="card-kicker">MIN HAREPUSPLAN</p><h2>Mine planlagte oppgaver</h2></div><strong id="bunnyPlanCount">0 valgt</strong></div><div id="bunnyMyPlan" class="bunny-my-plan"></div><p class="helper-text">Tips: Bruk kortest mulig tid på de mest populære oppgavene, slik at alle som har klargjort får fullført innen harepustiden. Ha gjerne én eller to reserveoppgaver klare.</p></article>
+
+            <article class="portal-card bunny-flow-card">
+              <div><p class="card-kicker">ENKEL ARBEIDSFLYT</p><h2>Slik får flere tatt harepusoppgaver</h2></div>
+              <div class="bunny-flow-steps"><span><b>Før</b>Klargjør uten å beslaglegge oppgaven.</span><span><b>Under</b>Ta én oppgave og fullfør den raskt.</span><span><b>Etter</b>Ta neste bare når du er klar.</span></div>
+              <p class="helper-text"><strong>Bruk spillchatten ved produksjonsoppgaver:</strong> Si fra når du klargjør eller venter på en bestemt produksjonsoppgave. Andre oppgaver kan normalt tas fortløpende.</p>
+            </article>
           </section></div>
           <div id="genericTaskHub" class="hidden"><article class="portal-card"><p class="card-kicker" id="genericTaskHubKicker">DERBYOPPGAVER</p><h2 id="genericTaskHubTitle">Oppgaver for ukens derby</h2><p id="genericTaskHubText">Denne derbytypen får sin egen oppgavevisning etter hvert.</p></article></div>
         </section>
@@ -323,7 +337,6 @@
 <div class="page-heading"><div><p class="eyebrow">ADMIN</p><h1 id="adminPageTitle">Admin</h1><p id="adminPageDescription"></p></div></div>
 <div class="admin-module-panel" id="adminModulePanel">
 <article class="portal-card admin-action-card admin-module" data-permission-any="content.pending.view,members.approve,members.reject" data-admin-module="actions"><div class="card-header"><div><p class="card-kicker">🔔 KREVER HANDLING</p><h2>Adminvarsler</h2><p class="helper-text">Nye medlemsforespørsler og tips til godkjenning vises her.</p></div></div><div id="adminActionList" class="admin-action-list"></div></article>
-<article id="bunnyAdminBoardCard" class="portal-card derby-management-card admin-module hidden" data-permission-any="derby.board.update,derby.board.publish,derby.task_library.edit" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">🐰 CHILL BUNNY</p><h2>Oppdater dagens oppgavetavle</h2><p class="helper-text">Ledernes oppgave i dette derbyet er å oppdatere oppgavetavla – det gjøres her. Oppgavene i spillet byttes kl. 10:00, men portalen oppdateres manuelt.</p></div></div><div id="bunnyAdminBoard" class="bunny-admin-board"></div></article>
 <article class="portal-card derby-management-card admin-module" data-permission-any="derby.settings.publish" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">DERBYADMINISTRASJON</p><h2>Publiser neste derby</h2><p class="helper-text">Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.</p></div><button class="button button-primary" id="openDerbyPublisher">Velg og publiser derby</button></div><div id="publishedDerbySummary" class="published-derby-summary"><span>Ingen neste derby er publisert ennå.</span></div></article>
 <article class="portal-card derby-result-admin-card admin-module" data-permission-any="derby.settings.publish" data-result-manager-only data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">SLUTTRESULTAT</p><h2>Registrer derbyresultat</h2><p class="helper-text">Bruk sluttbildet fra Hay Day. Resultatet lagres samlet, og senere korreksjoner krever begrunnelse.</p></div><button class="button button-primary" id="openDerbyResultButton">Registrer eller korriger</button></div><div class="result-registration-summary" id="resultRegistrationSummary"></div></article>
 <article class="portal-card admin-summary admin-module" data-permission-any="derby.settings.publish,derby.participation.remove" data-admin-module="derby"><div class="card-header"><div><p class="card-kicker">AKTUELT DERBY</p><h2>Deltakelsesoversikt</h2></div><span class="badge" id="adminResponseBadge">0 svar</span></div><div class="admin-status-grid" id="adminStatusGrid"></div><div class="admin-derby-participant-list" id="adminDerbyParticipantList"></div></article>
@@ -348,7 +361,7 @@
       </main>
     </div>
 
-    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Påmelding</small></a><a href="#preferences" data-permission-any="derby.plan" data-route="preferences" aria-label="Oppgavetavle"><span>✓</span><small>Tavle</small></a><a href="#messages" data-route="messages"><span>✉</span><small>Meldinger</small><em id="privateMessageBottomBadge" class="hidden">0</em></a><button class="bottom-more-button" id="mobileMoreButton" type="button" aria-label="Åpne mer-meny" aria-expanded="false"><span>☰</span><small>Mer</small></button></nav>
+    <nav class="bottom-nav" aria-label="Mobilmeny"><a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span><small>Oversikt</small></a><a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span><small>Påmelding</small></a><a href="#preferences" data-permission-any="derby.plan" data-route="preferences" aria-label="Oppgaver"><span>✓</span><small>Oppgaver</small></a><a href="#messages" data-route="messages"><span>✉</span><small>Meldinger</small><em id="privateMessageBottomBadge" class="hidden">0</em></a><button class="bottom-more-button" id="mobileMoreButton" type="button" aria-label="Åpne mer-meny" aria-expanded="false"><span>☰</span><small>Mer</small></button></nav>
   </section>
 
   <dialog id="portalMessageDialog" class="portal-message-dialog" aria-labelledby="portalMessageTitle" aria-describedby="portalMessageText">
@@ -655,6 +668,6 @@
     </form>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.109"></script><script src="backend.js?v=0.18.0.109"></script><script src="app.js?v=0.18.0.109"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.110"></script><script src="backend.js?v=0.18.0.110"></script><script src="app.js?v=0.18.0.110"></script>
 </body>
 </html>
