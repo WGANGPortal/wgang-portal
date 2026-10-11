@@ -1,4 +1,4 @@
-/* v0.18.0.106 – rollebasert medlemsoversikt, sikkerhetsoppdatering videreført */
+/* v0.18.0.107 – dataminimering for medlemsopplysninger */
 (function () {
   "use strict";
 
@@ -352,12 +352,20 @@
       return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
+    let preferencesQuery = client.from("task_preferences").select("user_id,task_type,preference");
+    let absencePeriodsQuery = client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at");
+    if (!loadMemberActivity) {
+      // RLS håndhever samme begrensning i databasen. Disse filtrene sørger i
+      // tillegg for at ordinære medlemmer ikke engang ber om andres private data.
+      preferencesQuery = preferencesQuery.eq("user_id", session.user.id);
+      absencePeriodsQuery = absencePeriodsQuery.eq("user_id", session.user.id);
+    }
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
-      client.from("task_preferences").select("user_id,task_type,preference"),
+      preferencesQuery,
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
@@ -378,7 +386,7 @@
       client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
       client.rpc("wgang_get_member_absence_statuses"),
-      client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at"),
+      absencePeriodsQuery,
       client.rpc("wgang_touch_my_portal_activity"),
       loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
     ]);
