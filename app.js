@@ -1,4 +1,4 @@
-/* v0.18.0.110 – forenklet Chill Bunny-plan med varsling og regler */
+/* v0.18.0.111 – komplett engelsk visning og valgfri innholdsoversettelse */
 (function () {
   "use strict";
 
@@ -57,6 +57,7 @@
 
   const LANG_KEY = "wgangLanguage";
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
+  const ui = (no, en) => currentLanguage === "en" ? en : no;
   const I18N_EN = {
     "Oversikt":"Overview","Derby":"Derby","Påmelding":"Registration","Derbypåmelding":"Derby registration","Medlemmer":"Members","Oppgaver":"Tasks","Kunngjøringer":"Announcements","Diskusjoner":"Discussions","Wiki":"Wiki","Admin":"Admin",
     "Logg inn":"Log in","Søk medlemskap":"Apply for membership","Logg ut":"Log out","Adminvisning":"Admin","Til behandling":"To review","Derbyadministrasjon":"Derby administration","Medlemssøknader":"Membership applications","Oppslagstavla":"Task board","Oppgavetavle":"Task board","Medlemmer og roller":"Members and roles",
@@ -140,6 +141,38 @@
 
   };
   const STATIC_EN_EXTRA = {
+    "Sammen står vi sterkere":"Stronger together","Bli medlem":"Join WGANG","ET NABOLAG MED LAGÅND":"A NEIGHBORHOOD WITH TEAM SPIRIT","WGANG samler naboer, derbyplanlegging og nyttig kunnskap i én enkel portal – bygget for samarbeid, ikke stress.":"WGANG brings neighbors, Derby planning and useful knowledge together in one simple portal – built for cooperation, not stress.","Bli kjent med oss":"Get to know us","minimumsmål":"minimum target","DERBYET PÅGÅR":"DERBY IN PROGRESS","oppgaver":"tasks","DETTE ER WGANG":"THIS IS WGANG","Et hyggelig fellesskap med tydelige rammer.":"A friendly community with clear expectations.","Vi har plass til ulike spillestiler. Det viktigste er kommunikasjon, respekt og at vi gjør vårt beste når vi deltar.":"There is room for different playing styles. What matters most is communication, respect and doing our best when we participate.","Ressurser, råd og oppgaver deles på en måte som gjør laget bedre.":"Resources, advice and tasks are shared in a way that makes the team stronger.","Derby er frivillig":"Derby participation is voluntary","Ta pause når du trenger det. Bare gi tydelig beskjed før fristen.":"Take a break when you need one. Just let us know clearly before the deadline.","ROM FOR PAUSE":"ROOM FOR A BREAK","Det skal være gøy å være med.":"Participating should be fun.","WGANG er ambisiøst, men menneskelig. Du kan velge pause, delta eller markere at du er usikker. Det gir lederne oversikt og laget forutsigbarhet.":"WGANG is ambitious, but human. You can take a break, participate or mark yourself as unsure. This gives leaders an overview and the team predictability.","Se hvordan det fungerer":"See how it works","BLI EN DEL AV WGANG":"BECOME PART OF WGANG","God lagånd er viktigere enn nivå.":"Team spirit matters more than level.","Vi ser etter hyggelige naboer som kommuniserer tydelig og bidrar til et godt miljø.":"We are looking for friendly neighbors who communicate clearly and contribute to a positive environment.","Søk om medlemskap":"Apply for membership",
+    "Du ser portalen som":"You are viewing the portal as","Ingen endringer kan lagres.":"No changes can be saved.","Se portalen som en annen rolle":"View the portal as another role","Åpne påmelding":"Open registration","Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.":"Participation and strategy are active. Individual task progress and the scoreboard will be added later.","RUNDE":"ROUND","MÅL":"GOAL","HAREPUSER TATT":"BUNNIES COMPLETED","timer · minutter · sekunder":"hours · minutes · seconds","En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, og ta oppgaven først når du kan begynne. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge – fullfør raskt og frigjør plassen for neste spiller.":"Each player can only have one task at a time. Prepare before Bunny time starts, and only take the task when you are ready to begin. As a team, avoid keeping all five slots for the same task occupied for too long – finish quickly and free the slot for the next player.","Juster neste harepust":"Adjust the next Bunny time","Brukes dersom tidspunktet i spillet avviker fra automatikken. Etter valgt tidspunkt fortsetter portalen automatisk med 1,5 times intervall.":"Use this if the time shown in the game differs from the automatic schedule. After the selected time, the portal continues automatically at 1.5-hour intervals.","Sett tidspunkt":"Set time","Bruk automatikk":"Use automatic schedule","Jeg er ferdig":"I am finished","kan endres frem til fristen":"can be changed until the deadline","svar gjerne innen fristen":"please respond before the deadline",
+    "Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.":"When you mark yourself as completed, your task preferences are removed from the active statistics for this Derby.","Ta kun oppgaver med 320 poeng i Standard Derby.":"Only take 320-point tasks in Normal Derby.","Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.":"Admins remove tasks the Neighborhood rarely wants so the board keeps moving.","Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.":"Use members' task preferences to decide which 320-point tasks should remain on the board.","Det forventes 100 %. WGANGs minimum er 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.":"100% is expected. WGANG's minimum is 95% of the maximum possible score. Extra tasks are welcome.","Meldt av":"Removed",
+    "Planlegg og koordiner oppgavene i derbyet.":"Plan and coordinate the Derby tasks.","DIN ARBEIDSFLATE":"YOUR WORKSPACE","Slik bruker du tavla":"How to use the board","Se hva som passer deg.":"See what suits you.","Velg ærlig og realistisk.":"Choose honestly and realistically.","Følg felles plan":"Follow the shared plan","Lederne bruker svarene til å rydde tavla.":"Leaders use the responses to manage the board.","vurdert":"reviewed","✓ Kan ta":"✓ Can do","– Helst ikke":"– Prefer not","× Kan ikke":"× Cannot do","Svarene lagres med én gang. Lederne bruker oversikten til å beholde aktuelle oppgaver og rydde bort resten.":"Your responses are saved immediately. Leaders use the overview to keep suitable tasks and remove the rest.",
+    "Harepus først – én oppgave om gangen":"Bunny tasks first – one task at a time","En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, ta oppgaven når du kan begynne, og fullfør raskt slik at plassen blir ledig for neste spiller.":"Each player can only have one task at a time. Prepare before Bunny time starts, take the task when you are ready and finish quickly so the slot is available for the next player.","Aktiver på denne telefonen":"Enable on this phone","Kontrollerer støtte og tillatelse …":"Checking support and permission …","Nye oppgaver hver dag":"New tasks every day","Oppgavetavlen i spillet fornyes daglig kl. 10.00. Gamle planer skal derfor ikke styre den nye dagen.":"The in-game task board refreshes every day at 10:00. Previous plans should therefore not control the new day.","Harepus er hovedfokus":"Bunny tasks are the main focus","På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.":"On Bunny days, Bunny tasks are prioritized while Bunny time is active.","Klargjør før du tar":"Prepare before taking a task","Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.":"Prepare products, crops, visitors or anything else first. Do not take the task until you can start immediately.","Hold oppgaveplasser åpne":"Keep task slots available","En spiller kan bare ha én oppgave om gangen. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge. Fullfør raskt og frigjør plassen for neste spiller.":"Each player can only have one task at a time. As a team, avoid keeping all five slots for the same task occupied for too long. Finish quickly and free the slot for the next player.","Slik får flere tatt harepusoppgaver":"How more members can complete Bunny tasks","Før":"Before","Klargjør uten å ta oppgaven.":"Prepare without taking the task.","Under":"During","Ta oppgaven først når du er klar, og fullfør raskt.":"Only take the task when you are ready, and finish quickly.","Etter":"After","Plassen frigjøres for neste spiller.":"The slot is freed for the next player.","Si fra når du klargjør eller venter på en bestemt produksjonsoppgave. Andre oppgaver kan normalt tas fortløpende.":"Let the team know when you are preparing or waiting for a specific production task. Other tasks can normally be taken as they appear.","Oppgaver for ukens derby":"Tasks for this week's Derby","Denne derbytypen får sin egen oppgavevisning etter hvert.":"This Derby type will get its own task view later.",
+    "Hva vil du dele med nabolaget?":"What would you like to share with the Neighborhood?","Still et spørsmål, del en idé eller start planleggingen av ukens derby.":"Ask a question, share an idea or start planning this week's Derby.","Det nabolaget snakker om nå":"What the Neighborhood is discussing now","Innlegg med aktivitet den siste uken vises her.":"Posts with activity during the past week appear here.","Du fortsetter automatisk fra første uleste innlegg.":"You automatically continue from the first unread post.","Én-til-én-samtaler mellom godkjente WGANG-medlemmer.":"One-to-one conversations between approved WGANG members.","Dine meldinger":"Your messages","Start ny samtale":"Start new conversation","Åpne samtale":"Open conversation","Velg en samtale":"Choose a conversation","Meldingene kan bare leses av deg og mottakeren.":"Messages can only be read by you and the recipient.",
+    "WIKI OG KUNNSKAP":"WIKI AND KNOWLEDGE","Kunnskap og strategi":"Knowledge and strategy","Erfaringene WGANG deler – samlet, forenklet og gjort nyttige for hele nabolaget.":"WGANG's shared experiences – collected, simplified and made useful for the entire Neighborhood.","DETTE HAR VI LÆRT":"WHAT WE HAVE LEARNED","Gode resultater starter før oppgaven tas":"Good results start before taking the task","I Standard Derby tar vi bare oppgaver med maksimal poengsum. Målet er at alle fullfører 100 % av de ordinære oppgavene. Det absolutte minimumskravet er 95 %, fordi feil kan skje – men ekstraoppgaven er både velkommen og en mulighet til å hente inn et poengtap.":"In Normal Derby, we only take tasks worth the maximum points. The goal is for everyone to complete 100% of their regular tasks. The absolute minimum is 95%, because mistakes can happen – but an extra task is both welcome and an opportunity to recover lost points.","Mål":"Goal","FØR DU VELGER":"BEFORE YOU CHOOSE","Se selv at oppgaven har maksimal poengsum. Admin rydder tavla, men hver deltaker må kontrollere oppgaven før den tas.":"Check that the task is worth the maximum points. Admins manage the board, but every participant must check the task before taking it.","Sjekk at oppgaven kan gjennomføres innen fristen. Vær ekstra oppmerksom på dyrking, produksjon og oppgaver med mye ventetid.":"Check that the task can be completed within the time limit. Pay particular attention to crops, production and tasks with long waiting times.","Ha en gjennomførbar plan":"Have a realistic plan","Velg ikke en krevende oppgave før nødvendige varer, besøkende, avlinger eller annen forberedelse er på plass.":"Do not choose a demanding task until the required products, visitors, crops or other preparations are ready.",
+    "ERFARINGER FRA NABOLAGET":"EXPERIENCE FROM THE NEIGHBORHOOD","Slik gjør vi oppgavene enklere og tryggere":"How we make tasks easier and safer","Plant før du tar oppgaven":"Plant before taking the task","Plant avlinger med lang veksttid på forhånd. Da kan mye være klart til innhøsting idet du tar oppgaven, og risikoen for at tiden løper ut blir mindre.":"Plant long-growing crops in advance. Much of the crop can then be ready to harvest when you take the task, reducing the risk of running out of time.","Produser aktuelle varer på forhånd og la dem ligge ferdige i maskinene når det er mulig. Ta oppgaven først når du er klar til å samle inn.":"Produce relevant items in advance and leave them ready in the machines whenever possible. Only take the task when you are ready to collect them.","Gjør besøkende klare":"Prepare visitors","La ferdig betjente besøkende stå klare uten å samle dem inn. Ta oppgaven når du har nok besøkende klare, og samle dem inn for en rask start.":"Leave fully served visitors ready without collecting them. Take the task when enough visitors are ready, then collect them for a quick start.","Si fra når du klargjør produkter":"Let the team know when preparing products","Gi beskjed i spillchatten når du produserer eller har gjort klar produkter til en bestemt produksjonsoppgave. Da vet andre at noen venter på akkurat denne oppgaven. Andre oppgaver kan normalt tas fortløpende – det kommer nye oppgaver etter hvert, og god flyt gjør at flere får fullført.":"Let the team know in the in-game chat when you are producing or have prepared products for a specific production task. Others will then know that someone is waiting for that task. Other tasks can normally be taken as they appear – new tasks will arrive, and good flow helps more members finish.","Admin rydder bort oppgaver under maksimal poengsum og oppgaver få ønsker. Oppgavepreferansene viser hvilke oppgaver laget faktisk kan gjennomføre.":"Admins remove tasks below the maximum score and tasks few members want. Task preferences show which tasks the team can actually complete.","Et viktig bidrag til laget":"An important contribution to the team","Når alle fullfører de ordinære oppgavene, kan ekstraoppgaver være det som løfter WGANG til en bedre plassering. De kan også hente inn et mindre poengtap.":"When everyone completes their regular tasks, extra tasks can lift WGANG to a better position. They can also recover a small points loss.","PAUSE ER HELT GREIT":"TAKING A BREAK IS FINE","Stå over når du ikke har tid til å prioritere derby":"Take a break when you do not have time to prioritize the Derby","Derby er frivillig. Det er bedre å melde pause enn å delta uten å kunne følge planen. Ved en lengre pause kan du registrere perioden i innstillingene, slik at ledelsen vet at du fortsatt ønsker å være en del av nabolaget.":"Derby participation is voluntary. It is better to take a break than to participate without being able to follow the plan. For a longer break, register the period in settings so the leadership team knows you still want to remain part of the Neighborhood.",
+    "Få beskjed når noe skjer":"Get notified when something happens","Få beskjed i varslingssenteret selv når portalen er lukket. Du velger selv hvilke typer varsler du vil ha.":"Receive notifications even when the portal is closed. You choose which types of notifications you want.","Fra diskusjon til felles kunnskap":"From discussion to shared knowledge","Når et råd eller en erfaring fra diskusjonen kan hjelpe flere over tid, samler vi det her. Fortsett gjerne å dele spørsmål, erfaringer og forbedringsforslag – de kan bli neste tillegg i kunnskapsbanken.":"When advice or experience from a discussion can help others over time, we collect it here. Keep sharing questions, experiences and suggestions – they may become the next addition to the knowledge base.",
+    "Nye medlemsforespørsler og tips til godkjenning vises her.":"New membership requests and tips awaiting approval appear here.","Velg en grunnmal, kontroller opplysningene og publiser så snart neste derbytype er kjent.":"Choose a template, check the details and publish as soon as the next Derby type is known.","Velg og publiser derby":"Choose and publish Derby","Ingen neste derby er publisert ennå.":"No upcoming Derby has been published yet.","AKTUELT DERBY":"CURRENT DERBY","svar":"responses","VENTER PÅ GODKJENNING":"AWAITING APPROVAL","Bruk preferansene som støtte når du vurderer hvilke oppgaver som bør stå, og hvem som liker hva.":"Use the preferences when deciding which tasks should remain and who prefers what.","Roller og rettigheter":"Roles and permissions","Oversikten viser hvilke tilganger portalen faktisk bruker. Eier kan endre rettigheter for Admin, Ass. leder, Senior og Medlem. Eier-rettigheter er låst.":"This overview shows the permissions actually used by the portal. The Owner can change permissions for Admins, Assistant Leaders, Seniors and Members. Owner permissions are locked.","Område / rettighet":"Area / permission",
+    "Ikke fyll ut dette feltet":"Do not fill in this field","Jeg bekrefter at jeg er medlem av WGANG-nabolaget.":"I confirm that I am a member of the WGANG Neighborhood.","E-postadressen brukes til brukerkonto, innlogging og administrasjon av medlemskapet. Les dokumentene før du sender søknaden.":"Your email address is used for your account, login and membership administration. Read the documents before submitting your application.","og godtar":"and accept","Send søknad":"Submit application","Eier og administrator bruker en ekstra kode for å beskytte portalen.":"Owners and administrators use an additional code to protect the portal.","Koble til autentiseringsapp":"Connect authenticator app","Skann QR-koden i Microsoft Authenticator, Google Authenticator, 1Password eller tilsvarende app.":"Scan the QR code in Microsoft Authenticator, Google Authenticator, 1Password or a similar app.","Kan du ikke skanne? Skriv inn nøkkelen:":"Cannot scan it? Enter the key:","Bekreft og åpne portalen":"Confirm and open the portal","Før du fortsetter":"Before you continue","Les den oppdaterte personverninformasjonen og bruksreglene. Bekreftelsen kreves én gang per dokumentversjon.":"Read the updated privacy information and rules of use. Confirmation is required once per document version.","Jeg bekrefter at jeg har lest personverninformasjonen og godtar bruksreglene.":"I confirm that I have read the privacy information and accept the rules of use.","Fortsett til WGANG Portal":"Continue to WGANG Portal","Velg passordet du vil bruke når du logger inn på WGANG Portal.":"Choose the password you want to use when logging in to WGANG Portal.","Lagre passord":"Save password",
+    "Du melder spillprofilen på neste derby":"You are registering the game profile for the next Derby","Jeg følger derbyets daglige oppgavekvote.":"I follow the Derby's daily task quota.","Jeg har en realistisk plan for å fullføre 100 %, og bekrefter at jeg vil gjøre alt jeg kan for å gjennomføre alle oppgavene med makspoeng.":"I have a realistic plan to complete 100%, and I confirm that I will do everything I can to complete every task at maximum points.","Rediger oppgave":"Edit task","Antall som skal gjøres":"Number to complete","Illustrasjonen beholdes selv om navn, beskrivelse eller antall justeres. Antallet ligger aldri i bildefilen.":"The illustration is retained even if the name, description or quantity is changed. The quantity is never stored in the image file.","Lagre endringer":"Save changes","Høsting":"Harvesting","Båt":"Boat","Send til godkjenning":"Submit for approval",
+    "Logg ut av WGANG Portal":"Log out of WGANG Portal","Meld fra om midlertidig fravær":"Report temporary absence","Statusen «Midlertidig inaktiv» vises til alle medlemmer i perioden. Start- og sluttdato vises bare for deg og WGANG-ledelsen.":"The status ‘Temporarily inactive’ is visible to all members during the period. Start and end dates are visible only to you and the WGANG leadership team.","Fra dato":"Start date","Til og med":"Through","Framtidige derbyer i perioden settes på pause hvis svarfristen fortsatt er åpen. Pågående eller låste derbyer endres aldri.":"Future Derbies during the period are set to a break if the response deadline is still open. Current or locked Derbies are never changed.","Lagre periode":"Save period","Fjern periode":"Remove period","Ingen inaktiv periode er registrert.":"No inactive period has been registered.","Medlem siden":"Member since","E-postadressen vises bare her på din egen konto og kan ikke endres her.":"Your email address is only shown here on your own account and cannot be changed here.","Gjeldende dokumentversjon":"Current document version","Din bekreftelse":"Your confirmation","Kontrollerer …":"Checking …","Les personverninformasjonen":"Read privacy information","Les bruksreglene":"Read rules of use","Be om innsyn, retting eller sletting":"Request access, correction or deletion","Send forespørselen fra e-postadressen som er knyttet til WGANG-kontoen din. Kontakt:":"Send the request from the email address linked to your WGANG account. Contact:",
+    "Velg hvilke tillatte varsler du ønsker. Valgene gjelder både i portalen og som pushvarsel på aktiverte telefoner. Rolle og rettigheter bestemmer alltid hvilke saker du kan varsles om.":"Choose which permitted notifications you want. Your choices apply both in the portal and as push notifications on enabled phones. Your role and permissions always determine which items you can be notified about.","Fellesvarsler":"General notifications","Informasjon som er relevant for hele nabolaget.":"Information relevant to the entire Neighborhood.","Ledervarsler":"Leadership notifications","Vises bare når rollen din har tilgang til saken.":"Only shown when your role has access to the item.","Tips/innlegg som venter på behandling":"Tips/posts awaiting review","Personlige varsler":"Personal notifications","Varsler som gjelder deg eller din egen aktivitet.":"Notifications concerning you or your own activity.","Kommentarer og likerklikk på mine innlegg":"Comments and likes on my posts","Private meldinger på telefon/nettbrett":"Private messages on phone/tablet","Påminn meg hvis jeg mangler derby-svar nær fristen":"Remind me if my Derby response is missing near the deadline","Varsle på telefon/nettbrett når harepus starter":"Notify me on phone/tablet when Bunny time starts","Push-varsler på telefonen":"Push notifications on this phone","Vises i varslingssenteret også når portalen er lukket. På iPhone/iPad må WGANG åpnes fra Hjem-skjermen.":"Shown in the notification center even when the portal is closed. On iPhone/iPad, WGANG must be opened from the Home Screen.","Jeg ønsker å kunne motta varsler på e-post":"I would like to receive notifications by email","E-postutsending er ikke aktivert ennå. Valget lagres slik at funksjonen er klar når vi kobler på utsending.":"Email delivery is not enabled yet. Your choice is saved so the feature is ready when delivery is connected.",
+    "Alle profilopplysninger er frivillige og vises bare til godkjente WGANG-medlemmer. Du kan dele mye, litt eller ingenting.":"All profile information is optional and visible only to approved WGANG members. You may share a lot, a little or nothing.","Ikke oppgitt":"Not provided","Språk":"Languages","Velg ett eller flere språk du snakker. Dette vises på medlemsprofilen din.":"Choose one or more languages you speak. This is shown on your member profile.","Andre språk":"Other languages","Hvilke andre språk?":"Which other languages?","Ikke del identifiserende opplysninger.":"Do not share identifying information.","Unngå fullt navn, konkret alder, by/sted, adresse, telefonnummer, e-postadresse, skole eller opplysninger om andre.":"Avoid sharing your full name, exact age, city/location, address, phone number, email address, school or information about others.","Test portalen som en annen rolle":"Test the portal as another role","Velg rollen du vil kontrollere. Menyer, sider og funksjoner vises med rollens faktiske portalrettigheter. Du er fortsatt innlogget som eier, og testvisningen er skrivebeskyttet.":"Choose the role you want to inspect. Menus, pages and features are shown using that role's actual portal permissions. You remain logged in as Owner, and test view is read-only.","Vis portalen som":"View portal as","Trygt å kontrollere":"Safe to inspect","Du kan åpne sider, menyer og vinduer. Forsøk på å lagre, publisere, sende eller endre data blir stoppet.":"You can open pages, menus and dialogs. Attempts to save, publish, send or change data are blocked.",
+    "Meldinger":"Messages","Mer":"More","FELLESSKAP":"COMMUNITY","PÅMELDING":"REGISTRATION",
+    "Her er det viktigste for neste derby.":"Here is the most important information for the next Derby.",
+    "DETTE BØR DU GJØRE NÅ":"WHAT TO DO NOW","Svar på derbypåmeldingen":"Respond to the Derby registration","Kontroller spillprofilene dine og registrer om de deltar.":"Check your game profiles and register whether they are participating.",
+    "NABOLAGSNYTT":"NEIGHBORHOOD NEWS","Påmeldingen din er registrert":"Your registration has been saved","Du kan kontrollere svarene dine frem til svarfristen.":"You can review your responses until the deadline.","Se påmeldingen":"View registration",
+    "Meld på spillprofilene dine og se reglene for derbyet.":"Register your game profiles and review the Derby rules.","Rediger derby":"Edit Derby","Påmelding åpen":"Registration open","Påmelding stengt":"Registration closed","Svar registrert":"Response saved",
+    "Dine spillprofiler":"Your game profiles","Spillprofilene dine":"Your game profiles","Registrerte svar":"Saved responses","DINE SPILLPROFILER":"YOUR GAME PROFILES","Velg status for hver gård":"Choose a status for each farm",
+    "Legg til en spillprofil":"Add a game profile","For medlemmer som spiller med flere gårder. Maks fem profiler per innlogging.":"For members who play with multiple farms. Maximum five profiles per login.","Spillnavn":"Game name","Spill-ID":"Game ID","Legg til spillprofil":"Add game profile",
+    "Registrer ett svar for hver spillprofil.":"Save one response for each game profile.","Alle spillprofilene dine har et registrert svar. Du kan endre frem til fristen.":"All your game profiles have a saved response. You can make changes until the deadline.","Svarfristen er utløpt. Registrerte svar er låst.":"The response deadline has passed. Saved responses are locked.",
+    "DERBYFREMGANG":"DERBY PROGRESS","DINE OPPGAVER":"YOUR TASKS","Har du fullført ukens oppgaver?":"Have you completed this week's tasks?","Jeg er ferdig med ukens oppgaver":"I have completed this week's tasks",
+    "Ny kommentar i Lederprat":"New comment in Leadership Chat","Ny kommentar":"New comment","Noen likte kommentaren din":"Someone liked your comment","Noen likte innlegget ditt":"Someone liked your post",
+    "Velg medlem …":"Choose a member …","Ingen private samtaler ennå.":"No private conversations yet.","Ingen meldinger ennå. Skriv den første meldingen.":"No messages yet. Write the first message.","Lest":"Read","Sendt":"Sent",
+    "Oversatt automatisk":"Translated automatically","Se originaltekst":"View original text","Oversett med Google":"Translate with Google","Åpner Google Translate":"Opens Google Translate",
+    "Finn naboene, spillprofilene deres og status for pågående derby.":"Find your neighbors, their game profiles and current Derby status.","Spillprofiler":"Game profiles","Påmeldte profiler":"Registered profiles","Midlertidig inaktive":"Temporarily inactive","Søk i medlemslisten":"Search members","Spillnavn eller spill-ID":"Game name or game ID","Derbystatus":"Derby status","Alle statuser":"All statuses","Sorter":"Sort","Navn A–Å":"Name A–Z","Sist aktiv":"Last active",
+    "Harepusplan":"Bunny plan","Tre ting å huske":"Three things to remember","Klargjør først":"Prepare first","Vent med å ta oppgaven til du kan starte.":"Do not take the task until you are ready to start.","Prioriter harepus":"Prioritize Bunny tasks","Harepusoppgaver er hovedfokus når harepusten er aktiv.":"Bunny tasks are the main focus while Bunny time is active.","Frigjør plassen raskt":"Free the slot quickly","Unngå at laget holder alle fem plassene for samme oppgave opptatt lenge.":"Avoid keeping all five slots for the same task occupied for a long time.",
+    "Prioriter dine oppgaver":"Prioritize your tasks","Vurder oppgavetypene":"Review the task types","Tenk på tid og kapasitet.":"Consider your time and capacity.","Registrer ett valg":"Save one choice","Liker, kan ta eller bør unngås.":"Like, can do or should avoid.","Hold tavla i bevegelse":"Keep the board moving","Lederne rydder etter felles behov.":"Leaders clear tasks according to the team's needs.",
+    "Følg planen for derbyet":"Follow the Derby plan","Se aktuelle oppgaver":"View available tasks","Kontroller hva derbyet krever.":"Check what the Derby requires.","Avklar ansvar":"Agree on responsibilities","Velg bare det du kan fullføre.":"Only choose what you can complete.","Fullfør som avtalt":"Complete as agreed","Gi beskjed hvis planen endres.":"Let the team know if the plan changes.",
+    "MIN WGANG":"MY WGANG","Se nye varsler":"View new notifications","Innstillinger":"Settings","Varsler og e-post":"Notifications and email","Se / endre profil":"View / edit profile","Din synlige medlemsprofil":"Your visible member profile","Min konto":"My account","Spillnavn og rolle":"Game name and role","Dokumenter, innsyn og sletting":"Documents, access and deletion","Tilbake":"Back",
     "Automatisk livefremdrift under derbyet kommer senere. Sluttresultater og utvikling over tid finner du nå i Derbyhistorikk.":"Automatic live progress during the Derby will be added later. Final results and development over time are now available in Derby History.",
     "Automatisk livefremdrift og scoreboard er ikke koblet til reelle data ennå. Kontrollerte sluttresultater og personlig historikk er tilgjengelig i Derbyhistorikk.":"Automatic live progress and the scoreboard are not connected to real data yet. Verified final results and personal history are available in Derby History.",
     "Publiser neste derby og registrer kontrollerte sluttresultater.":"Publish the next Derby and register verified final results.",
@@ -188,7 +221,15 @@
     "Utnytt de reduserte oppgavekravene til å fullføre tidlig og sikkert.":"Use the reduced task requirements to finish early and safely.",
     "Ha produksjon, by, båt, gruveverktøy og hjelpeoppgaver forberedt.":"Prepare production, town, boat, mining-tool and help tasks.",
     "Gi beskjed tidlig dersom en valgt oppgave står i fare for ikke å bli fullført.":"Let the team know early if a selected task may not be completed.",
-    "Strategi publiseres av admin før derbyet starter.":"The strategy will be published by an admin before the Derby starts."
+    "Strategi publiseres av admin før derbyet starter.":"The strategy will be published by an admin before the Derby starts.",
+    "Ingen kunngjøringer ennå":"No announcements yet","Den nyeste viktige kunngjøringen vises her når den er publisert.":"The newest important announcement will appear here when it is published.",
+    ". Ingen endringer kan lagres.":". No changes can be saved.","MEDLEM":"MEMBER","PROFIL":"PROFILE","WGANG-MEDLEM":"WGANG MEMBER",
+    "Åpne portalen i Safari → trykk Del → Legg til på Hjem-skjermen.":"Open the portal in Safari → tap Share → Add to Home Screen.",
+    "👍 Kan ta":"👍 Can do","😐 Helst ikke":"😐 Prefer not","🚫 Kan ikke":"🚫 Cannot do",
+    "Velg det avsluttede derbyet":"Choose the completed Derby","valgfritt for eldre resultat":"optional for older results","fylles automatisk fra deltakerne":"filled automatically from the participants","valgfritt hvis tallet ikke vises":"optional if the number is not shown","Du kan legge til eller fjerne deltakere før førstegangsregistreringen.":"You may add or remove participants before the result is saved for the first time.","Legg til deltaker":"Add participant"
+    ,"© 2026 WGANG Portal. Eget originalinnhold og design er beskyttet.":"© 2026 WGANG Portal. Original content and design are protected."
+    ,"Åpne portalen i Safari → trykk Del-knappen → velg «Legg til på Hjem-skjerm» → trykk Legg til. Åpne deretter WGANG-ikonet for å aktivere varsler.":"Open the portal in Safari → tap Share → choose ‘Add to Home Screen’ → tap Add. Then open the WGANG icon to enable notifications."
+    ,"Velg det avsluttede derbyet og registrer sluttlisten nøyaktig slik den vises i Hay Day. Påmeldingen brukes bare som forslag; sluttbildet er fasiten. Poengene avgjør prosent og ⭐.":"Choose the completed Derby and enter the final standings exactly as shown in Hay Day. Registration is only used as a suggestion; the final screenshot is the definitive source. Points determine the percentage and ⭐."
     ,"Innhøstingsoppgaver":"Harvesting Tasks","Hvete":"Wheat","Mais":"Corn","Gulrot":"Carrot","Bønner":"Soybeans","Sukkererter":"Sugarcane","Jordbær":"Strawberries","Potet":"Potatoes","Tomat":"Tomatoes","Annen høsting":"Other harvesting",
     "Dyreoppgaver":"Animal Tasks","Melk":"Milk","Bacon":"Bacon","Egg":"Eggs","Ull":"Wool","Geitemelk":"Goat Milk","Mate dyr":"Feed Animals",
     "Produksjonsoppgaver":"Production Tasks","Lastebiloppgaver":"Truck Tasks","Båtoppgaver":"Boat Tasks","Byoppgaver":"Town Tasks","Besøkende":"Visitors","Spesifikke personer":"Specific Visitors","Spesifikke hus":"Specific Buildings",
@@ -202,6 +243,14 @@
     if (DYNAMIC_EN[text]) return DYNAMIC_EN[text];
     if (I18N_EN[text]) return I18N_EN[text];
     return text
+      .replace(/^Hei,\s*/i,"Hi, ")
+      .replace(/^(\d+)\s+profil$/i,"$1 profile")
+      .replace(/^(\d+)\s+profiler$/i,"$1 profiles")
+      .replace(/^(\d+)\s+av\s+(\d+)$/i,"$1 of $2")
+      .replace(/^(\d+)\s+av\s+(\d+)\s+oppgaver$/i,"$1 of $2 tasks")
+      .replace(/^(\d+)\s+av\s+(\d+)\s+vurdert$/i,"$1 of $2 reviewed")
+      .replace(/^(\d+)\s+svar$/i,"$1 responses")
+      .replace(/^Registrer ett svar for hver spillprofil\.\s*(.*)$/i,"Save one response for each game profile. $1")
       .replace(/Neste derby:/g,"Next Derby:")
       .replace(/Starter tirsdag kl\. 10:00/g,"Starts Tuesday at 10:00")
       .replace(/Svar gjerne innen mandag kl\. 23:00/g,"Please respond by Monday at 23:00")
@@ -211,6 +260,7 @@
   }
 
   const originalText = new WeakMap();
+  const originalAttributes = new WeakMap();
   function translateUi(root=document) {
     const english = currentLanguage === "en";
     document.documentElement.lang = english ? "en" : "no";
@@ -224,6 +274,12 @@
       if (!trimmed) return;
       if (english) { const translated = tText(trimmed); if (translated !== trimmed) node.nodeValue = raw.replace(trimmed, translated); }
       else if (!english) node.nodeValue = raw;
+    });
+    const elements=[...(root.nodeType===Node.ELEMENT_NODE?[root]:[]),...root.querySelectorAll("[placeholder],[aria-label],[title]")];
+    elements.forEach(element=>{
+      let saved=originalAttributes.get(element);
+      if(!saved){saved={};["placeholder","aria-label","title"].forEach(name=>{if(element.hasAttribute(name))saved[name]=element.getAttribute(name);});originalAttributes.set(element,saved);}
+      Object.entries(saved).forEach(([name,raw])=>element.setAttribute(name,english?tText(raw):raw));
     });
   }
 
@@ -449,8 +505,8 @@
     document.body.classList.toggle("owner-mode",isOwner(user));
   }
   function approved() { return state.accounts.filter(a => a.approved); }
-  function roleLabel(role) { return {owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role; }
-  function choiceLabel(choice) { return {joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar",removed:"Meldt av"}[choice] || choice; }
+  function roleLabel(role) { return tText({owner:"Eier",admin:"Administrator",assistant_leader:"Ass. leder",senior:"Senior",member:"Medlem"}[role] || role); }
+  function choiceLabel(choice) { return tText({joined:"Deltar",pause:"Tar pause",unsure:"Usikker",waiting:"Mangler svar",removed:"Meldt av"}[choice] || choice); }
   function gameIdentitiesFor(userId) {
     return (state.gameIdentities || []).filter(identity=>String(identity.userId)===String(userId));
   }
@@ -504,8 +560,8 @@
     if(!rows.length)return choiceLabel(current()?.choice || "waiting");
     const counts={joined:0,pause:0,unsure:0,waiting:0,removed:0};
     rows.forEach(row=>counts[row.choice]=(counts[row.choice]||0)+1);
-    const parts=[["joined","deltar"],["pause","pause"],["unsure","usikker"],["waiting","mangler svar"],["removed","meldt av"]]
-      .filter(([key])=>counts[key]).map(([key,label])=>`${counts[key]} ${label}`);
+    const labels=currentLanguage==="en"?{joined:"participating",pause:"taking a break",unsure:"unsure",waiting:"no response",removed:"removed"}:{joined:"deltar",pause:"pause",unsure:"usikker",waiting:"mangler svar",removed:"meldt av"};
+    const parts=Object.keys(labels).filter(key=>counts[key]).map(key=>`${counts[key]} ${labels[key]}`);
     return parts.join(" · ");
   }
   function formatAbsenceDate(value) {
@@ -1231,7 +1287,7 @@
     $("profileAvatar").textContent = user.name.charAt(0).toUpperCase();
     $("profileName").textContent = user.name;
     $("profileRole").textContent = roleLabel(user.role);
-    $("welcomeHeading").textContent = "Hei, " + user.name + " 👋";
+    $("welcomeHeading").textContent = ui("Hei, ", "Hi, ") + user.name + " 👋";
     $("accountBadge").textContent = roleLabel(user.role).toUpperCase();
     const dashboardChoice = currentActiveDerbyEvent()
       ? activeDerbyParticipationChoice(user)
@@ -1571,7 +1627,7 @@
         if(sort==="activity")return (new Date(b.lastActiveAt||0).getTime()||0)-(new Date(a.lastActiveAt||0).getTime()||0)||a.name.localeCompare(b.name,"nb");
         return a.name.localeCompare(b.name,"nb");
       });
-    setText("memberResultCount",filtered.length===members.length?`${members.length} medlemmer`:`Viser ${filtered.length} av ${members.length} medlemmer`);
+    setText("memberResultCount",filtered.length===members.length?ui(`${members.length} medlemmer`,`${members.length} members`):ui(`Viser ${filtered.length} av ${members.length} medlemmer`,`Showing ${filtered.length} of ${members.length} members`));
     grid.innerHTML = filtered
       .map(a => {
         const prefs = topPreferences(a);
@@ -1635,7 +1691,7 @@
     if (!user || !list) return;
     const preferenceIcons={like:"♥",can:"✓",avoid:"–",no:"×"};
     const selectedCount=TASK_TYPES.filter(task=>!!user.preferences?.[task]).length;
-    setText("preferenceSelectionSummary",`${selectedCount} av ${TASK_TYPES.length} vurdert`);
+    setText("preferenceSelectionSummary",ui(`${selectedCount} av ${TASK_TYPES.length} vurdert`,`${selectedCount} of ${TASK_TYPES.length} reviewed`));
     const progress=$("preferenceSelectionProgress");
     if(progress)progress.style.width=`${TASK_TYPES.length?selectedCount/TASK_TYPES.length*100:0}%`;
     list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>${group.tasks.length} ${group.tasks.length===1?"oppgavetype":"oppgavetyper"}</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => {const selected=user.preferences?.[task]===key;return `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${selected?"selected":""}" aria-pressed="${selected?"true":"false"}"><span aria-hidden="true">${preferenceIcons[key]}</span><span>${label}</span></button>`;}).join("")}</div></div>`).join("")}</section>`).join("");
@@ -2127,6 +2183,20 @@
     const tr=translationFor(type,item.id);
     return tr ? {title:tr.title||original.title,body:tr.body||original.body,translated:true} : {...original,translated:false};
   }
+  function googleTranslateUrl(title, body, targetLanguage="en") {
+    const text=[title,body].filter(Boolean).join("\n\n").trim().slice(0,6000);
+    return `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLanguage)}&text=${encodeURIComponent(text)}&op=translate`;
+  }
+  function translationControl(item, view, options={}) {
+    if(currentLanguage!=="en")return "";
+    const originalTitle=options.title ?? item?.title ?? "";
+    const originalBody=options.body ?? item?.body ?? item?.message ?? "";
+    if(!String(originalTitle||originalBody).trim())return "";
+    if(view?.translated){
+      return `<details class="content-translation-note"><summary>${esc(tText("Oversatt automatisk"))} · ${esc(tText("Se originaltekst"))}</summary>${originalTitle?`<strong>${esc(originalTitle)}</strong>`:""}<p>${esc(originalBody).replace(/\n/g,"<br>")}</p></details>`;
+    }
+    return `<div class="content-translation-fallback"><a class="text-button" href="${esc(googleTranslateUrl(originalTitle,originalBody))}" target="_blank" rel="noopener noreferrer">${esc(tText("Oversett med Google"))} ↗</a><small>${esc(tText("Åpner Google Translate"))}</small></div>`;
+  }
   function socialBlock(type,item,chatChannel="") {
     const likes=targetLikes(type,item.id), comments=targetComments(type,item.id);
     const liked=likes.some(x=>String(x.user_id)===String(current()?.id));
@@ -2139,7 +2209,8 @@
       const canDelete=String(cm.user_id)===String(current()?.id) || hasPermission("chat.moderate");
       const commentLikes=targetLikes("comment",cm.id);
       const commentLiked=commentLikes.some(x=>String(x.user_id)===String(current()?.id));
-      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(tr?.body||cm.body)}</p><div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
+      const commentView={body:tr?.body||cm.body,translated:!!tr};
+      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(commentView.body)}</p>${translationControl(cm,commentView,{body:cm.body})}<div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
     }).join("");
     const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
     return `<div class="social-bar"><button type="button" class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-channel="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like post":"Lik innlegg"}">👍🏼 <span>${likes.length}</span></button><button type="button" class="social-comment-toggle" data-comment-toggle="${threadKey}" aria-expanded="${threadOpen}">💬 <span>${comments.length}</span><span class="social-action-label">${currentLanguage==="en"?"Comments":"Kommentarer"}</span></button>${likerDetails(likes,currentLanguage==="en"?"post":"innlegget")}</div><div class="social-comments ${threadOpen?"":"hidden"}" data-comments-for="${threadKey}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
@@ -2366,7 +2437,7 @@
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
-    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(item,view)}${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   const DISCUSSION_ARCHIVE_AGE_MS=7*24*60*60*1000;
@@ -2509,14 +2580,14 @@
     if(!recipientSelect||!conversationList||!messageList||!current())return;
     const others=approved().filter(account=>String(account.id)!==String(current().id)).sort((a,b)=>a.name.localeCompare(b.name,"nb"));
     const previousValue=recipientSelect.value;
-    recipientSelect.innerHTML=`<option value="">Velg medlem …</option>${others.map(account=>`<option value="${account.id}">${esc(account.name)}</option>`).join("")}`;
+    recipientSelect.innerHTML=`<option value="">${esc(ui("Velg medlem …","Choose a member …"))}</option>${others.map(account=>`<option value="${account.id}">${esc(account.name)}</option>`).join("")}`;
     recipientSelect.value=others.some(account=>String(account.id)===String(previousValue))?previousValue:"";
 
     const conversationUsers=others.map(account=>{
       const messages=privateMessagesFor(account.id), latest=messages[messages.length-1];
       return {account,messages,latest,unread:privateUnreadCount(account.id)};
     }).filter(row=>row.latest).sort((a,b)=>new Date(b.latest.createdAt)-new Date(a.latest.createdAt));
-    conversationList.innerHTML=conversationUsers.length?conversationUsers.map(row=>`<button type="button" class="private-conversation-row ${String(row.account.id)===String(activePrivateUserId)?"active":""}" data-private-conversation="${row.account.id}"><span class="avatar">${esc(row.account.name[0])}</span><span><strong>${esc(row.account.name)}</strong><small>${esc(row.latest.body)}</small></span>${row.unread?`<b>${row.unread}</b>`:""}</button>`).join(""):`<p class="empty-state">Ingen private samtaler ennå.</p>`;
+    conversationList.innerHTML=conversationUsers.length?conversationUsers.map(row=>`<button type="button" class="private-conversation-row ${String(row.account.id)===String(activePrivateUserId)?"active":""}" data-private-conversation="${row.account.id}"><span class="avatar">${esc(row.account.name[0])}</span><span><strong>${esc(row.account.name)}</strong><small>${esc(row.latest.body)}</small></span>${row.unread?`<b>${row.unread}</b>`:""}</button>`).join(""):`<p class="empty-state">${esc(ui("Ingen private samtaler ennå.","No private conversations yet."))}</p>`;
     conversationList.querySelectorAll("[data-private-conversation]").forEach(button=>button.onclick=()=>openPrivateConversation(button.dataset.privateConversation));
 
     const totalUnread=privateUnreadCount();
@@ -2532,8 +2603,9 @@
     const messages=privateMessagesFor(account.id);
     messageList.innerHTML=messages.length?messages.map(message=>{
       const own=String(message.senderId)===String(current().id);
-      return `<article class="private-message-bubble ${own?"own":"received"}"><p>${esc(message.body).replace(/\n/g,"<br>")}</p><small>${esc(formatDate(message.createdAt))}${own?` · ${message.readAt?"Lest":"Sendt"}`:""}</small></article>`;
-    }).join(""):`<p class="empty-state">Ingen meldinger ennå. Skriv den første meldingen.</p>`;
+      const translate=currentLanguage==="en"?`<div class="content-translation-fallback"><a class="text-button" href="${esc(googleTranslateUrl("",message.body))}" target="_blank" rel="noopener noreferrer">${esc(tText("Oversett med Google"))} ↗</a><small>${esc(tText("Åpner Google Translate"))}</small></div>`:"";
+      return `<article class="private-message-bubble ${own?"own":"received"}"><p>${esc(message.body).replace(/\n/g,"<br>")}</p>${translate}<small>${esc(formatDate(message.createdAt))}${own?` · ${esc(message.readAt?ui("Lest","Read"):ui("Sendt","Sent"))}`:""}</small></article>`;
+    }).join(""):`<p class="empty-state">${esc(ui("Ingen meldinger ennå. Skriv den første meldingen.","No messages yet. Write the first message."))}</p>`;
     requestAnimationFrame(()=>{messageList.scrollTop=messageList.scrollHeight;});
   }
 
@@ -2555,8 +2627,8 @@
       const canDelete = own || hasPermission("chat.moderate");
       const view=translatedContent("leadership",m);
       const unreadMark=String(m.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="leadershipUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:"";
-      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
-    }).join("") : `<p class="empty-state">Ingen meldinger ennå. Start planleggingen her.</p>`;
+      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(m,view)}${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
+    }).join("") : `<p class="empty-state">${esc(ui("Ingen meldinger ennå. Start planleggingen her.","No messages yet. Start planning here."))}</p>`;
     if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));list.appendChild(jump);}
     translateUi(list);
     $$('[data-leadership-delete]').forEach(button => button.onclick = async () => {
@@ -2907,31 +2979,31 @@
     const spotlight=$("dashboardDerbySpotlight");
     if (spotlight) spotlight.classList.toggle("bunny-focus", bunny);
     setText("dashboardDerbyIcon", bunny ? "🐰" : "◇");
-    setText("dashboardDerbyPhase", active ? "PÅGÅENDE DERBY" : (bunny ? "🐰 CHILL BUNNY – PÅMELDING" : "NESTE DERBY"));
-    setText("dashboardIntro", active ? "Her er det viktigste for derbyet som pågår nå." : (bunny ? "Påmeldingen til neste ukes Chill Bunny er åpen." : `Her er det viktigste i planleggingen mot ${type}.`));
+    setText("dashboardDerbyPhase", active ? ui("PÅGÅENDE DERBY","CURRENT DERBY") : (bunny ? ui("🐰 CHILL BUNNY – PÅMELDING","🐰 CHILL BUNNY – REGISTRATION") : ui("NESTE DERBY","NEXT DERBY")));
+    setText("dashboardIntro", active ? ui("Her er det viktigste for derbyet som pågår nå.","Here is the most important information for the current Derby.") : (bunny ? ui("Påmeldingen til neste ukes Chill Bunny er åpen.","Registration for next week's Chill Bunny Derby is open.") : ui(`Her er det viktigste i planleggingen mot ${type}.`,`Here is the most important information when preparing for ${tText(type)}.`)));
     setText("dashboardDerbyFocusText", active
-      ? (bunny ? "Harepus-derbyet er i gang. Følg harepusvarselet, klargjør på forhånd og ta én oppgave om gangen når harepusten er aktiv." : "Derbyet er i gang. Strategi og koordinering er nå hovedfokus.")
-      : (bunny ? "Bekreft om du deltar før svarfristen. Les harepusreglene og kontroller at varsling er aktivert." : "Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen."));
+      ? (bunny ? ui("Harepus-derbyet er i gang. Følg harepusvarselet, klargjør på forhånd og ta én oppgave om gangen når harepusten er aktiv.","The Bunny Derby is underway. Follow the Bunny alert, prepare in advance and take one task at a time while the Bunny time is active.") : ui("Derbyet er i gang. Strategi og koordinering er nå hovedfokus.","The Derby is underway. Strategy and coordination are now the main focus."))
+      : (bunny ? ui("Bekreft om du deltar før svarfristen. Les harepusreglene og kontroller at varsling er aktivert.","Confirm whether you are participating before the deadline. Read the Bunny rules and make sure notifications are enabled.") : ui("Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen.","Registration for the next Derby is the main focus. Confirm whether you are participating or taking a break before the deadline.")));
     setText("nextDerbyStart", active
-      ? "Pågår nå"
-      : (d.startAt ? `Starter ${formatDate(d.startAt)}` : "Starter tirsdag kl. 10:00"));
-    setText("dashboardDerbyAction", bunny && active ? "Åpne harepusplanen" : "Åpne påmelding");
+      ? ui("Pågår nå","In progress")
+      : (d.startAt ? ui(`Starter ${formatDate(d.startAt)}`,`Starts ${formatDate(d.startAt)}`) : ui("Starter tirsdag kl. 10:00","Starts Tuesday at 10:00")));
+    setText("dashboardDerbyAction", bunny && active ? ui("Åpne harepusplanen","Open Bunny plan") : ui("Åpne påmelding","Open registration"));
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
     startDashboardCountdown(event, !active, bunny);
     renderBunnyDashboard(event, bunny, active);
     renderDerbyCompletion();
-    setText("dashboardStatusHint", active ? "status for pågående derby" : "kan endres frem til fristen");
-    setText("dashboardDeadlineLabel", active ? "Derbystatus" : "Svarfrist");
+    setText("dashboardStatusHint", active ? ui("status for pågående derby","status for the current Derby") : ui("kan endres frem til fristen","can be changed until the deadline"));
+    setText("dashboardDeadlineLabel", active ? ui("Derbystatus","Derby status") : ui("Svarfrist","Response deadline"));
     const deadline=event?.signup_deadline?new Date(event.signup_deadline):null;
     const deadlineText=deadline&&!Number.isNaN(deadline.getTime())
-      ? new Intl.DateTimeFormat("nb-NO",{timeZone:"Europe/Oslo",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(deadline)
-      : "Mandag kl. 23:00";
-    setText("dashboardDeadline", active ? "Pågår nå" : deadlineText);
-    setText("dashboardDeadlineHint", active ? type : "svar gjerne innen fristen");
-    setText("dashboardDerbyMetricLabel", active ? "Pågående derby" : "Neste derby");
-    setText("dashboardNextDerbyName", shortType);
-    setText("dashboardDerbyMetricHint", active ? "startet tirsdag kl. 10" : "oppstart tirsdag kl. 10");
+      ? new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{timeZone:"Europe/Oslo",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(deadline)
+      : ui("Mandag kl. 23:00","Monday at 23:00");
+    setText("dashboardDeadline", active ? ui("Pågår nå","In progress") : deadlineText);
+    setText("dashboardDeadlineHint", active ? tText(type) : ui("svar gjerne innen fristen","please respond before the deadline"));
+    setText("dashboardDerbyMetricLabel", active ? ui("Pågående derby","Current Derby") : ui("Neste derby","Next Derby"));
+    setText("dashboardNextDerbyName", tText(shortType));
+    setText("dashboardDerbyMetricHint", active ? ui("startet tirsdag kl. 10","started Tuesday at 10:00") : ui("oppstart tirsdag kl. 10","starts Tuesday at 10:00"));
   }
 
   function renderDashboardPrimaryAction() {
@@ -2943,16 +3015,16 @@
     const missingSignup=!!signupEvent && (identities.length
       ? identities.some(identity=>identity.choice==="waiting")
       : memberParticipationChoiceForEvent(user,signupEvent)==="waiting");
-    let icon="✓", title="Du er ajour", text="Ingen handling kreves akkurat nå.", label="Se kunngjøringer", route="announcements";
+    let icon="✓", title=ui("Du er ajour","You're up to date"), text=ui("Ingen handling kreves akkurat nå.","No action is required right now."), label=ui("Se kunngjøringer","View announcements"), route="announcements";
     if(missingSignup){
-      icon="◇"; title="Svar på derbypåmeldingen"; text="Kontroller spillprofilene dine og registrer om de deltar før svarfristen."; label="Åpne påmelding"; route="derby";
+      icon="◇"; title=ui("Svar på derbypåmeldingen","Respond to the Derby registration"); text=ui("Kontroller spillprofilene dine og registrer om de deltar før svarfristen.","Check your game profiles and register whether they are participating before the deadline."); label=ui("Åpne påmelding","Open registration"); route="derby";
     }else if(activeEvent){
       const bunny=/bunny|harepus/i.test(String(activeEvent.name||state.derby?.type||""));
-      icon=bunny?"🐰":"✓"; title=bunny?"Gjør deg klar til neste harepus":"Åpne ukens oppgavetavle";
-      text=bunny?"Kontroller varselet, klargjør på forhånd og hold oppgaveplasser åpne.":"Se strategi, oppgaver og koordinering for derbyet som pågår.";
-      label=bunny?"Åpne harepusplanen":"Åpne oppgavetavla"; route="preferences";
+      icon=bunny?"🐰":"✓"; title=bunny?ui("Gjør deg klar til neste harepus","Prepare for the next Bunny time"):ui("Åpne ukens oppgavetavle","Open this week's task board");
+      text=bunny?ui("Kontroller varselet, klargjør på forhånd og hold oppgaveplasser åpne.","Check the alert, prepare in advance and keep task slots available."):ui("Se strategi, oppgaver og koordinering for derbyet som pågår.","View the strategy, tasks and coordination for the current Derby.");
+      label=bunny?ui("Åpne harepusplanen","Open Bunny plan"):ui("Åpne oppgavetavla","Open task board"); route="preferences";
     }else if(signupEvent){
-      icon="✓"; title="Påmeldingen din er registrert"; text="Du kan kontrollere svarene dine frem til svarfristen."; label="Se påmeldingen"; route="derby";
+      icon="✓"; title=ui("Påmeldingen din er registrert","Your registration has been saved"); text=ui("Du kan kontrollere svarene dine frem til svarfristen.","You can review your responses until the deadline."); label=ui("Se påmeldingen","View registration"); route="derby";
     }
     setText("dashboardNextActionIcon",icon);
     setText("dashboardNextActionTitle",title);
@@ -3034,12 +3106,12 @@
       dashboardButton.classList.toggle("hidden",!visible);
       dashboardButton.classList.toggle("is-completed",completed);
       dashboardButton.innerHTML=completed
-        ? '<span class="completion-main">Ferdig registrert ✓</span><span class="completion-sub">Angre valg?</span>'
-        : 'Jeg er ferdig';
+        ? `<span class="completion-main">${ui("Ferdig registrert ✓","Completion saved ✓")}</span><span class="completion-sub">${ui("Angre valg?","Undo?")}</span>`
+        : ui("Jeg er ferdig","I am finished");
     }
     derbyCard?.classList.toggle("hidden",!visible);
-    setText("normalDerbyCompletionTitle",completed?`Du er registrert som ferdig i ${derbyLabel}`:`Har du fullført oppgavene i ${derbyLabel}?`);
-    setText("normalDerbyCompletionText",completed?"Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.":"Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.");
+    setText("normalDerbyCompletionTitle",completed?ui(`Du er registrert som ferdig i ${derbyLabel}`,`You are marked as completed in ${tText(derbyLabel)}`):ui(`Har du fullført oppgavene i ${derbyLabel}?`,`Have you completed your tasks in ${tText(derbyLabel)}?`));
+    setText("normalDerbyCompletionText",completed?ui("Oppgavepreferansene dine teller ikke lenger i den aktive statistikken for dette derbyet.","Your task preferences are no longer included in the active statistics for this Derby."):ui("Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.","When you mark yourself as completed, your task preferences are removed from the active statistics for this Derby."));
     const button=$("derbyCompleteButton");
     if(button){
       button.classList.toggle("button-primary",!completed);
@@ -3047,10 +3119,10 @@
       button.classList.remove("button-ghost");
       button.classList.toggle("is-completed",completed);
       button.innerHTML=completed
-        ? '<span class="completion-main">Ferdig registrert ✓</span><span class="completion-sub">Angre valg?</span>'
-        : 'Jeg er ferdig med ukens oppgaver';
+        ? `<span class="completion-main">${ui("Ferdig registrert ✓","Completion saved ✓")}</span><span class="completion-sub">${ui("Angre valg?","Undo?")}</span>`
+        : ui("Jeg er ferdig med ukens oppgaver","I have completed this week's tasks");
     }
-    setText("derbyCompletionStatus",completed&&user.derbyCompletedAt?`Registrert ${new Date(user.derbyCompletedAt).toLocaleString("nb-NO")}.`:"");
+    setText("derbyCompletionStatus",completed&&user.derbyCompletedAt?ui(`Registrert ${new Date(user.derbyCompletedAt).toLocaleString("nb-NO")}.`,`Saved ${new Date(user.derbyCompletedAt).toLocaleString("en-GB")}.`):"");
     const preferenceList=$("preferenceList");
     if(preferenceList) preferenceList.classList.toggle("preferences-inactive",visible&&completed);
   }
@@ -3081,24 +3153,24 @@
     $("genericTaskHub")?.classList.toggle("hidden",preferenceBased||bunny);
     if(bunny){
       const active=derbyDashboardPhase(event)==="active";
-      setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle","Harepusplan");setText("taskHubIntro",active?"Få varsel, klargjør på forhånd og ta én oppgave om gangen.":"Les reglene og gjør varslingen klar før derbyet starter.");
-      setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle","Tre ting å huske");
-      setText("taskBoardStepOneTitle","Klargjør først");setText("taskBoardStepOneText","Vent med å ta oppgaven til du kan starte.");
-      setText("taskBoardStepTwoTitle","Prioriter harepus");setText("taskBoardStepTwoText","Harepusoppgaver er hovedfokus når harepusten er aktiv.");
-      setText("taskBoardStepThreeTitle","Frigjør plassen raskt");setText("taskBoardStepThreeText","Unngå at laget holder alle fem plassene for samme oppgave opptatt lenge.");
+      setText("taskHubEyebrow","CHILL BUNNY DERBY");setText("taskHubTitle",ui("Harepusplan","Bunny plan"));setText("taskHubIntro",active?ui("Få varsel, klargjør på forhånd og ta én oppgave om gangen.","Enable alerts, prepare in advance and take one task at a time."):ui("Les reglene og gjør varslingen klar før derbyet starter.","Read the rules and set up notifications before the Derby starts."));
+      setText("taskBoardStatus","Chill Bunny");setText("taskBoardGuideTitle",ui("Tre ting å huske","Three things to remember"));
+      setText("taskBoardStepOneTitle",ui("Klargjør først","Prepare first"));setText("taskBoardStepOneText",ui("Vent med å ta oppgaven til du kan starte.","Do not take the task until you are ready to start."));
+      setText("taskBoardStepTwoTitle",ui("Prioriter harepus","Prioritize Bunny tasks"));setText("taskBoardStepTwoText",ui("Harepusoppgaver er hovedfokus når harepusten er aktiv.","Bunny tasks are the main focus while Bunny time is active."));
+      setText("taskBoardStepThreeTitle",ui("Frigjør plassen raskt","Free the slot quickly"));setText("taskBoardStepThreeText",ui("Unngå at laget holder alle fem plassene for samme oppgave opptatt lenge.","Avoid keeping all five slots for the same task occupied for a long time."));
       renderBunnyQuickPlan();
     }else if(preferenceBased){
-      setText("taskHubEyebrow",derbyScope.eyebrow);setText("taskHubTitle","Oppgavetavle");setText("taskHubIntro","Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.");setText("preferenceTaskHubKicker",derbyScope.eyebrow);
-      setText("taskBoardStatus",derbyScope.label);setText("taskBoardGuideTitle","Prioriter dine oppgaver");
-      setText("taskBoardStepOneTitle","Vurder oppgavetypene");setText("taskBoardStepOneText","Tenk på tid og kapasitet.");
-      setText("taskBoardStepTwoTitle","Registrer ett valg");setText("taskBoardStepTwoText","Liker, kan ta eller bør unngås.");
-      setText("taskBoardStepThreeTitle","Hold tavla i bevegelse");setText("taskBoardStepThreeText","Lederne rydder etter felles behov.");
+      setText("taskHubEyebrow",tText(derbyScope.eyebrow));setText("taskHubTitle",ui("Oppgavetavle","Task board"));setText("taskHubIntro",ui("Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.","Show which tasks you can do, so the leaders can keep the board moving."));setText("preferenceTaskHubKicker",tText(derbyScope.eyebrow));
+      setText("taskBoardStatus",tText(derbyScope.label));setText("taskBoardGuideTitle",ui("Prioriter dine oppgaver","Prioritize your tasks"));
+      setText("taskBoardStepOneTitle",ui("Vurder oppgavetypene","Review the task types"));setText("taskBoardStepOneText",ui("Tenk på tid og kapasitet.","Consider your time and capacity."));
+      setText("taskBoardStepTwoTitle",ui("Registrer ett valg","Select one option"));setText("taskBoardStepTwoText",ui("Liker, kan ta eller bør unngås.","Like, can do or should avoid."));
+      setText("taskBoardStepThreeTitle",ui("Hold tavla i bevegelse","Keep the board moving"));setText("taskBoardStepThreeText",ui("Lederne rydder etter felles behov.","The leaders manage the board based on the team's needs."));
     }else{
-      setText("taskHubEyebrow",type.toUpperCase());setText("taskHubTitle",`Oppgavetavle – ${type}`);setText("taskHubIntro","Oppgavetavla tilpasses derbytypen som pågår.");setText("genericTaskHubTitle",`Oppgaver for ${type}`);
-      setText("taskBoardStatus",type);setText("taskBoardGuideTitle","Følg planen for derbyet");
-      setText("taskBoardStepOneTitle","Se aktuelle oppgaver");setText("taskBoardStepOneText","Kontroller hva derbyet krever.");
-      setText("taskBoardStepTwoTitle","Avklar ansvar");setText("taskBoardStepTwoText","Velg bare det du kan fullføre.");
-      setText("taskBoardStepThreeTitle","Fullfør som avtalt");setText("taskBoardStepThreeText","Gi beskjed hvis planen endres.");
+      setText("taskHubEyebrow",tText(type.toUpperCase()));setText("taskHubTitle",ui(`Oppgavetavle – ${type}`,`Task board – ${tText(type)}`));setText("taskHubIntro",ui("Oppgavetavla tilpasses derbytypen som pågår.","The task board adapts to the current Derby type."));setText("genericTaskHubTitle",ui(`Oppgaver for ${type}`,`Tasks for ${tText(type)}`));
+      setText("taskBoardStatus",tText(type));setText("taskBoardGuideTitle",ui("Følg planen for derbyet","Follow the Derby plan"));
+      setText("taskBoardStepOneTitle",ui("Se aktuelle oppgaver","Review the available tasks"));setText("taskBoardStepOneText",ui("Kontroller hva derbyet krever.","Check what this Derby requires."));
+      setText("taskBoardStepTwoTitle",ui("Avklar ansvar","Clarify responsibility"));setText("taskBoardStepTwoText",ui("Velg bare det du kan fullføre.","Only choose tasks you can complete."));
+      setText("taskBoardStepThreeTitle",ui("Fullfør som avtalt","Complete as agreed"));setText("taskBoardStepThreeText",ui("Gi beskjed hvis planen endres.","Let the team know if the plan changes."));
     }
   }
 
@@ -3138,9 +3210,10 @@
     box.innerHTML=identities.map(identity=>{
       const choice=identity.choice || "waiting";
       const tag=identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:"";
-      const primary=identity.isPrimary?`<span class="game-primary-badge">Hovedprofil</span>`:"";
-      return `<article class="game-identity-card participation-${esc(choice)}"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${[["joined","Jeg deltar",eligibility.blocked?"Ikke kvalifisert denne uken":"Krever regelbekreftelse"],["pause","Jeg tar pause","Ikke med denne uken"],["unsure","Jeg er usikker","Avklarer før fristen"]].map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}" aria-pressed="${choice===value?"true":"false"}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${label}</strong><small>${help}</small></button>`).join("")}</div><p class="game-choice-status"><span aria-hidden="true">${choice==="joined"?"✓":choice==="pause"?"Ⅱ":choice==="unsure"?"?":"○"}</span> Status: <strong>${choiceLabel(choice)}</strong></p></article>`;
-    }).join("") || `<p class="empty-state">Ingen spillprofiler er registrert ennå.</p>`;
+      const primary=identity.isPrimary?`<span class="game-primary-badge">${esc(ui("Hovedprofil","Primary profile"))}</span>`:"";
+      const choices=[["joined",ui("Jeg deltar","I'm participating"),eligibility.blocked?ui("Ikke kvalifisert denne uken","Not eligible this week"):ui("Krever regelbekreftelse","Rule confirmation required")],["pause",ui("Jeg tar pause","I'm taking a break"),ui("Ikke med denne uken","Not participating this week")],["unsure",ui("Jeg er usikker","I'm unsure"),ui("Avklarer før fristen","I'll decide before the deadline")]];
+      return `<article class="game-identity-card participation-${esc(choice)}"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${choices.map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}" aria-pressed="${choice===value?"true":"false"}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${esc(label)}</strong><small>${esc(help)}</small></button>`).join("")}</div><p class="game-choice-status"><span aria-hidden="true">${choice==="joined"?"✓":choice==="pause"?"Ⅱ":choice==="unsure"?"?":"○"}</span> ${esc(ui("Status","Status"))}: <strong>${esc(choiceLabel(choice))}</strong></p></article>`;
+    }).join("") || `<p class="empty-state">${esc(ui("Ingen spillprofiler er registrert ennå.","No game profiles have been added yet."))}</p>`;
     box.querySelectorAll("[data-game-identity][data-choice]").forEach(button=>button.onclick=async()=>{
       if(busy||!hasPermission("derby.plan"))return;
       if(participationDeadlineState().locked){renderParticipationLock();alert("Svarfristen er utløpt. Det går ikke an å registrere eller endre derby-svar etter fristen.");return;}
@@ -3155,8 +3228,8 @@
     if(addButton)addButton.disabled=busy||full;
     if(addForm)addForm.classList.toggle("identity-limit-reached",full);
     setText("participationStatus",eligibility.blocked
-      ? "Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde spillprofilene dine på dette derbyet."
-      : identities.length?`Registrer ett svar for hver spillprofil. ${ownGameIdentitySummary()}.`:"Legg til spillprofilen din for å svare på derbyet.");
+      ? ui("Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde spillprofilene dine på dette derbyet.","You did not reach the 95% minimum in the previous Derby and therefore cannot register your game profiles for this Derby.")
+      : identities.length?ui(`Registrer ett svar for hver spillprofil. ${ownGameIdentitySummary()}.`,`Save one response for each game profile. ${ownGameIdentitySummary()}.`):ui("Legg til spillprofilen din for å svare på derbyet.","Add your game profile to respond to the Derby."));
     renderParticipationLock();
   }
 
@@ -3252,8 +3325,8 @@
     });
     const status = $("participationStatus");
     if (locked && status) {
-      const suffix = deadline ? ` (${new Intl.DateTimeFormat("nb-NO",{weekday:"long",hour:"2-digit",minute:"2-digit"}).format(deadline)})` : "";
-      status.textContent = `Svarfristen er utløpt${suffix}. Registrert svar er låst og kan ikke endres.`;
+      const suffix = deadline ? ` (${new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{weekday:"long",hour:"2-digit",minute:"2-digit"}).format(deadline)})` : "";
+      status.textContent = ui(`Svarfristen er utløpt${suffix}. Registrert svar er låst og kan ikke endres.`,`The response deadline has passed${suffix}. The saved response is locked and cannot be changed.`);
     }
   }
 
@@ -3292,12 +3365,12 @@
     const signupLocked=participationDeadlineState().locked;
     const signupDeadline=next?.signup_deadline?new Date(next.signup_deadline):null;
     const signupType=/^Standard Derby$/i.test(d.type)?"Normal Derby":d.type;
-    setText("signupOverviewDerby",signupType||"Neste derby");
-    setText("signupOverviewDeadline",signupDeadline&&!Number.isNaN(signupDeadline.getTime())?new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{timeZone:"Europe/Oslo",weekday:"long",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(signupDeadline):"Mandag kl. 23:00");
-    setText("signupOverviewProfiles",`${signupIdentities.length} ${signupIdentities.length===1?"profil":"profiler"}`);
-    setText("signupOverviewAnswers",`${signupAnswered} av ${signupIdentities.length}`);
-    setText("signupOverviewState",signupLocked?"Påmelding stengt":signupIdentities.length&&signupAnswered===signupIdentities.length?"Svar registrert":"Påmelding åpen");
-    setText("signupOverviewMessage",signupLocked?"Svarfristen er utløpt. Registrerte svar er låst.":signupIdentities.length&&signupAnswered===signupIdentities.length?"Alle spillprofilene dine har et registrert svar. Du kan endre frem til fristen.":"Registrer ett svar for hver spillprofil før svarfristen.");
+    setText("signupOverviewDerby",tText(signupType||"Neste derby"));
+    setText("signupOverviewDeadline",signupDeadline&&!Number.isNaN(signupDeadline.getTime())?new Intl.DateTimeFormat(currentLanguage==="en"?"en-GB":"nb-NO",{timeZone:"Europe/Oslo",weekday:"long",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).format(signupDeadline):ui("Mandag kl. 23:00","Monday at 23:00"));
+    setText("signupOverviewProfiles",`${signupIdentities.length} ${signupIdentities.length===1?ui("profil","profile"):ui("profiler","profiles")}`);
+    setText("signupOverviewAnswers",ui(`${signupAnswered} av ${signupIdentities.length}`,`${signupAnswered} of ${signupIdentities.length}`));
+    setText("signupOverviewState",signupLocked?ui("Påmelding stengt","Registration closed"):signupIdentities.length&&signupAnswered===signupIdentities.length?ui("Svar registrert","Response saved"):ui("Påmelding åpen","Registration open"));
+    setText("signupOverviewMessage",signupLocked?ui("Svarfristen er utløpt. Registrerte svar er låst.","The response deadline has passed. Saved responses are locked."):signupIdentities.length&&signupAnswered===signupIdentities.length?ui("Alle spillprofilene dine har et registrert svar. Du kan endre frem til fristen.","All your game profiles have a saved response. You can make changes until the deadline."):ui("Registrer ett svar for hver spillprofil før svarfristen.","Save one response for each game profile before the deadline."));
     const signupOverview=$("derbySignupOverview"),signupProgress=$("signupOverviewProgress");
     signupOverview?.classList.toggle("is-complete",!!signupIdentities.length&&signupAnswered===signupIdentities.length);
     signupOverview?.classList.toggle("is-locked",signupLocked);
@@ -3858,13 +3931,13 @@
   if($("gameIdentityAddForm"))$("gameIdentityAddForm").onsubmit=async event=>{
     event.preventDefault();
     if(busy||!current()||!hasPermission("derby.plan"))return;
-    setBusy(true);setText("gameIdentityStatus","Lagrer spillprofil …");
+    setBusy(true);setText("gameIdentityStatus",ui("Lagrer spillprofil …","Saving game profile …"));
     try{
       await backend.addGameIdentity($("gameIdentityName").value,$("gameIdentityTag").value);
       $("gameIdentityAddForm").reset();
       await refreshState();
-      setText("gameIdentityStatus","Spillprofilen er lagt til.");
-    }catch(error){setText("gameIdentityStatus",humanError(error,"Kunne ikke legge til spillprofilen."));}
+      setText("gameIdentityStatus",ui("Spillprofilen er lagt til.","The game profile has been added."));
+    }catch(error){setText("gameIdentityStatus",humanError(error,ui("Kunne ikke legge til spillprofilen.","Could not add the game profile.")));}
     setBusy(false);renderGameIdentityParticipation();
   };
 

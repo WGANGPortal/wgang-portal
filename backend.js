@@ -1,4 +1,4 @@
-/* v0.18.0.110 – forenklet Chill Bunny-plan med varsling og regler */
+/* v0.18.0.111 – komplett engelsk visning og valgfri innholdsoversettelse */
 (function () {
   "use strict";
 

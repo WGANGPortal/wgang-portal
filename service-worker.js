@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.110-simple-bunny-plan";
+const CACHE_NAME = "wgang-v0.18.0.111-english-translation";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.110",
-  "/app.js?v=0.18.0.110", "/backend.js?v=0.18.0.110", "/config.js?v=0.18.0.110",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.111",
+  "/app.js?v=0.18.0.111", "/backend.js?v=0.18.0.111", "/config.js?v=0.18.0.111",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",

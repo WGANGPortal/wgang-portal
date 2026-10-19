@@ -969,3 +969,8 @@ body:not(.admin-mode) .admin-only {
 .bunny-flow-card{display:grid;gap:15px}.bunny-flow-card h2{margin:4px 0 0}.bunny-flow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.bunny-flow-steps span{display:grid;gap:4px;padding:13px 14px;border-radius:14px;background:#fff7eb;color:var(--ink);font-size:.75rem;line-height:1.4}.bunny-flow-steps b{color:var(--pink);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase}
 .bunny-flow-card>.helper-text{margin:0;padding:13px 14px;border-left:4px solid var(--pink);border-radius:10px;background:#f9eef3;line-height:1.55}
 @media(max-width:760px){.bunny-simple-hero{grid-template-columns:1fr;padding:18px}.bunny-simple-rules{grid-template-columns:1fr}.bunny-flow-steps{grid-template-columns:1fr}}
+
+/* v0.18.0.111 – innholdsoversettelse */
+.content-translation-fallback{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:8px 0 2px}.content-translation-fallback .text-button{font-size:.72rem}.content-translation-fallback small{color:var(--muted);font-size:.62rem}
+.content-translation-note{margin:8px 0 2px;padding:8px 10px;border:1px solid rgba(169,47,96,.14);border-radius:11px;background:#fff8fb;color:var(--muted);font-size:.68rem}.content-translation-note summary{color:var(--pink);font-weight:850;cursor:pointer}.content-translation-note strong{display:block;margin:8px 0 3px;color:var(--ink)}.content-translation-note p{margin:4px 0 0!important;color:var(--muted)!important;font-size:.7rem!important;line-height:1.45!important}
+.private-message-bubble .content-translation-fallback,.leadership-message .content-translation-fallback{margin-top:6px}.private-message-bubble .content-translation-fallback small{display:none}
