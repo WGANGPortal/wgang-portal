@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.111">
+  <link rel="stylesheet" href="main.css?v=0.18.0.112">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -126,7 +126,7 @@
 </div>
         </nav>
         <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.111</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.112</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -135,7 +135,7 @@
           <div class="page-heading"><div><p class="eyebrow">OVERSIKT</p><h1 id="welcomeHeading">Hei, Nabo 👋</h1><p id="dashboardIntro">Her er det viktigste for neste derby.</p></div><span class="account-label" id="accountBadge">MEDLEM</span></div>
           <article class="portal-card whats-new-card hidden" id="whatsNewCard"><div class="card-header"><div><p class="card-kicker">NYTT SIDEN SIST</p><h2>Du har nye varsler</h2></div><span class="notification-count-pill" id="whatsNewCount">0</span></div><div id="whatsNewList"></div></article>
           <article class="portal-card dashboard-next-action" id="dashboardNextAction"><div class="dashboard-next-action-copy"><span class="dashboard-action-icon" id="dashboardNextActionIcon">✓</span><div><p class="card-kicker">DETTE BØR DU GJØRE NÅ</p><h2 id="dashboardNextActionTitle">Svar på derbypåmeldingen</h2><p id="dashboardNextActionText">Kontroller spillprofilene dine og registrer om de deltar.</p></div></div><button class="button button-primary" id="dashboardNextActionButton" data-route="derby">Åpne påmelding</button></article>
-          <div class="spotlight-card" id="dashboardDerbySpotlight"><div><p class="eyebrow light" id="dashboardDerbyPhase">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 10:00</p><div class="dashboard-countdown hidden" id="dashboardCountdownWrap"><span id="dashboardCountdownLabel">Starter om</span><strong id="dashboardCountdown">–</strong></div><p id="dashboardDerbyFocusText">Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="bunny-dashboard-panel hidden" id="bunnyDashboardPanel">
+          <div class="spotlight-card" id="dashboardDerbySpotlight"><div><p class="eyebrow light" id="dashboardDerbyPhase">NESTE DERBY</p><h2 id="dashboardDerbyType">Standard Derby</h2><p id="nextDerbyStart">Starter tirsdag kl. 09:00 / 10:00</p><div class="dashboard-countdown hidden" id="dashboardCountdownWrap"><span id="dashboardCountdownLabel">Starter om</span><strong id="dashboardCountdown">–</strong></div><p id="dashboardDerbyFocusText">Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.</p><div class="bunny-dashboard-panel hidden" id="bunnyDashboardPanel">
             <div class="bunny-dashboard-countdown"><div><span id="bunnyCountdownKicker">NESTE HAREPUST</span><strong id="bunnyCountdownValue">–</strong><small id="bunnyCountdownUnits">timer · minutter · sekunder</small></div><div class="bunny-countdown-meta"><strong id="bunnyCountdownStart">Starter –</strong><span id="bunnyCountdownDuration">Varer i 10 min</span></div></div>
             <div class="bunny-dashboard-rounds"><div><span>RUNDE</span><strong id="bunnyRoundNumber">1 av 3</strong></div><div><span>MÅL</span><strong>3 harepus</strong></div><div><span>HAREPUSER TATT</span><strong id="bunnyRoundsTaken">0 av 3</strong></div></div>
             <div class="bunny-dashboard-tip"><strong>💡 Husk:</strong> En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, og ta oppgaven først når du kan begynne. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge – fullfør raskt og frigjør plassen for neste spiller.</div>
@@ -249,7 +249,7 @@
             </article>
 
             <div class="bunny-simple-rules" aria-label="Regler for Chill Bunny Derby">
-              <article><b>1</b><div><strong>Nye oppgaver hver dag</strong><p>Oppgavetavlen i spillet fornyes daglig kl. 10.00. Gamle planer skal derfor ikke styre den nye dagen.</p></div></article>
+              <article><b>1</b><div><strong>Nye oppgaver hver dag</strong><p>Oppgavetavlen i spillet fornyes daglig kl. 09.00 om vinteren og 10.00 om sommeren. Gamle planer skal derfor ikke styre den nye dagen.</p></div></article>
               <article><b>2</b><div><strong>Harepus er hovedfokus</strong><p>På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.</p></div></article>
               <article><b>3</b><div><strong>Klargjør før du tar</strong><p>Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.</p></div></article>
               <article><b>4</b><div><strong>Hold oppgaveplasser åpne</strong><p>En spiller kan bare ha én oppgave om gangen. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge. Fullfør raskt og frigjør plassen for neste spiller.</p></div></article>
@@ -668,6 +668,6 @@
     </form>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.111"></script><script src="backend.js?v=0.18.0.111"></script><script src="app.js?v=0.18.0.111"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.112"></script><script src="backend.js?v=0.18.0.112"></script><script src="app.js?v=0.18.0.112"></script>
 </body>
 </html>
