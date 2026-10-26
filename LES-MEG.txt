@@ -1,0 +1,12 @@
+WGANG – kun HTML-fallback (testgren)
+
+Last opp bare index.html fra denne pakken til GitHub-grenen
+test/derby-dst-correction. Erstatt eksisterende index.html.
+Ikke last opp til main og ikke opprett pull request ennå.
+
+Endringer:
+- Midlertidig starttekst uten fast vinter-/sommerklokkeslett
+- Midlertidig tekst for neste derby uten fast kl. 10
+- app.js oppdaterer begge tekstene dynamisk ved lasting
+
+Ingen JavaScript, database eller tilgangsregler er endret.
