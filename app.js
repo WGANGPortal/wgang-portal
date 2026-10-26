@@ -1,4 +1,4 @@
-/* v0.18.0.111 – komplett engelsk visning og valgfri innholdsoversettelse */
+/* v0.18.0.112 – Europe/Oslo derby reset / DST test */
 (function () {
   "use strict";
 
@@ -95,7 +95,7 @@
     "LEDELSE":"LEADERSHIP","Lederprat":"Leadership Chat","Et lukket rom for Ass. leder, Senior, Administrator og Eier.":"A private space for Assistant Leaders, Seniors, Administrators and the Owner.",
     "STRATEGIROM":"STRATEGY ROOM","Planlegg derbyet sammen":"Plan the Derby together","Meldingene her er kun synlige for WGANG-ledelsen.":"Messages here are visible only to WGANG leadership.",
     "Ny melding":"New message","Send melding":"Send message","Skriv en melding til ledelsen …":"Write a message to the leadership …",
-    "Starter tirsdag kl. 10:00":"Starts Tuesday at 10:00","Mandag kl. 23:00":"Monday at 23:00","Svar gjerne innen mandag kl. 23:00.":"Please respond by Monday at 23:00.",
+    "Starter tirsdag kl. 09:00 / 10:00":"Starts Tuesday at 09:00 / 10:00","Mandag kl. 23:00":"Monday at 23:00","Svar gjerne innen mandag kl. 23:00.":"Please respond by Monday at 23:00.",
     "Jeg deltar":"I'm participating","Jeg gjør mitt beste":"I'll do my best","Krever regelbekreftelse":"Rule confirmation required","Jeg tar pause":"I'm taking a break","Ikke med denne uken":"Not participating this week","Jeg er usikker":"I'm unsure","Avklarer før fristen":"I'll decide before the deadline",
     "Velg status for uken":"Choose your status for the week","Velg status for neste derby.":"Choose your status for the next Derby.",
     "Før du velger «Jeg deltar»":"Before choosing ‘I'm participating’","Deltakelse er frivillig. Når du melder deg på, bekrefter du reglene før svaret lagres.":"Participation is voluntary. When you sign up, you confirm the rules before your response is saved.","på hver oppgave":"on every task","minimum av mulig makspoeng":"minimum of the maximum possible score","0 tapte oppgaver":"0 lost tasks","ingen sletting eller tidsutløp":"no deletion or expiry",
@@ -145,7 +145,7 @@
     "Du ser portalen som":"You are viewing the portal as","Ingen endringer kan lagres.":"No changes can be saved.","Se portalen som en annen rolle":"View the portal as another role","Åpne påmelding":"Open registration","Deltakelse og strategi er aktivt. Individuell oppgavefremdrift og scoreboard kommer senere.":"Participation and strategy are active. Individual task progress and the scoreboard will be added later.","RUNDE":"ROUND","MÅL":"GOAL","HAREPUSER TATT":"BUNNIES COMPLETED","timer · minutter · sekunder":"hours · minutes · seconds","En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, og ta oppgaven først når du kan begynne. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge – fullfør raskt og frigjør plassen for neste spiller.":"Each player can only have one task at a time. Prepare before Bunny time starts, and only take the task when you are ready to begin. As a team, avoid keeping all five slots for the same task occupied for too long – finish quickly and free the slot for the next player.","Juster neste harepust":"Adjust the next Bunny time","Brukes dersom tidspunktet i spillet avviker fra automatikken. Etter valgt tidspunkt fortsetter portalen automatisk med 1,5 times intervall.":"Use this if the time shown in the game differs from the automatic schedule. After the selected time, the portal continues automatically at 1.5-hour intervals.","Sett tidspunkt":"Set time","Bruk automatikk":"Use automatic schedule","Jeg er ferdig":"I am finished","kan endres frem til fristen":"can be changed until the deadline","svar gjerne innen fristen":"please respond before the deadline",
     "Når du registrerer deg som ferdig, tas oppgavepreferansene dine ut av den aktive statistikken for dette derbyet.":"When you mark yourself as completed, your task preferences are removed from the active statistics for this Derby.","Ta kun oppgaver med 320 poeng i Standard Derby.":"Only take 320-point tasks in Normal Derby.","Admin rydder bort oppgaver nabolaget sjelden ønsker, slik at tavla holdes i bevegelse.":"Admins remove tasks the Neighborhood rarely wants so the board keeps moving.","Bruk medlemmenes oppgavepreferanser for å vite hvilke 320-oppgaver som bør få stå litt.":"Use members' task preferences to decide which 320-point tasks should remain on the board.","Det forventes 100 %. WGANGs minimum er 95 % av mulig makspoeng. Ekstraoppgaver er kjærkomne.":"100% is expected. WGANG's minimum is 95% of the maximum possible score. Extra tasks are welcome.","Meldt av":"Removed",
     "Planlegg og koordiner oppgavene i derbyet.":"Plan and coordinate the Derby tasks.","DIN ARBEIDSFLATE":"YOUR WORKSPACE","Slik bruker du tavla":"How to use the board","Se hva som passer deg.":"See what suits you.","Velg ærlig og realistisk.":"Choose honestly and realistically.","Følg felles plan":"Follow the shared plan","Lederne bruker svarene til å rydde tavla.":"Leaders use the responses to manage the board.","vurdert":"reviewed","✓ Kan ta":"✓ Can do","– Helst ikke":"– Prefer not","× Kan ikke":"× Cannot do","Svarene lagres med én gang. Lederne bruker oversikten til å beholde aktuelle oppgaver og rydde bort resten.":"Your responses are saved immediately. Leaders use the overview to keep suitable tasks and remove the rest.",
-    "Harepus først – én oppgave om gangen":"Bunny tasks first – one task at a time","En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, ta oppgaven når du kan begynne, og fullfør raskt slik at plassen blir ledig for neste spiller.":"Each player can only have one task at a time. Prepare before Bunny time starts, take the task when you are ready and finish quickly so the slot is available for the next player.","Aktiver på denne telefonen":"Enable on this phone","Kontrollerer støtte og tillatelse …":"Checking support and permission …","Nye oppgaver hver dag":"New tasks every day","Oppgavetavlen i spillet fornyes daglig kl. 10.00. Gamle planer skal derfor ikke styre den nye dagen.":"The in-game task board refreshes every day at 10:00. Previous plans should therefore not control the new day.","Harepus er hovedfokus":"Bunny tasks are the main focus","På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.":"On Bunny days, Bunny tasks are prioritized while Bunny time is active.","Klargjør før du tar":"Prepare before taking a task","Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.":"Prepare products, crops, visitors or anything else first. Do not take the task until you can start immediately.","Hold oppgaveplasser åpne":"Keep task slots available","En spiller kan bare ha én oppgave om gangen. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge. Fullfør raskt og frigjør plassen for neste spiller.":"Each player can only have one task at a time. As a team, avoid keeping all five slots for the same task occupied for too long. Finish quickly and free the slot for the next player.","Slik får flere tatt harepusoppgaver":"How more members can complete Bunny tasks","Før":"Before","Klargjør uten å ta oppgaven.":"Prepare without taking the task.","Under":"During","Ta oppgaven først når du er klar, og fullfør raskt.":"Only take the task when you are ready, and finish quickly.","Etter":"After","Plassen frigjøres for neste spiller.":"The slot is freed for the next player.","Si fra når du klargjør eller venter på en bestemt produksjonsoppgave. Andre oppgaver kan normalt tas fortløpende.":"Let the team know when you are preparing or waiting for a specific production task. Other tasks can normally be taken as they appear.","Oppgaver for ukens derby":"Tasks for this week's Derby","Denne derbytypen får sin egen oppgavevisning etter hvert.":"This Derby type will get its own task view later.",
+    "Harepus først – én oppgave om gangen":"Bunny tasks first – one task at a time","En spiller kan bare ha én oppgave om gangen. Klargjør før harepusten starter, ta oppgaven når du kan begynne, og fullfør raskt slik at plassen blir ledig for neste spiller.":"Each player can only have one task at a time. Prepare before Bunny time starts, take the task when you are ready and finish quickly so the slot is available for the next player.","Aktiver på denne telefonen":"Enable on this phone","Kontrollerer støtte og tillatelse …":"Checking support and permission …","Nye oppgaver hver dag":"New tasks every day","Oppgavetavlen i spillet fornyes daglig kl. 09.00 om vinteren og 10.00 om sommeren. Gamle planer skal derfor ikke styre den nye dagen.":"The in-game task board refreshes at 09:00 in winter and 10:00 in summer (Norway time). Previous plans should therefore not control the new day.","Harepus er hovedfokus":"Bunny tasks are the main focus","På harepusdager prioriterer vi harepusoppgaver mens harepusten er aktiv.":"On Bunny days, Bunny tasks are prioritized while Bunny time is active.","Klargjør før du tar":"Prepare before taking a task","Gjør varer, avlinger, besøkende eller annet klart først. Vent med å ta oppgaven til du kan starte med en gang.":"Prepare products, crops, visitors or anything else first. Do not take the task until you can start immediately.","Hold oppgaveplasser åpne":"Keep task slots available","En spiller kan bare ha én oppgave om gangen. Som lag må vi unngå at alle fem plassene for samme oppgave er opptatt lenge. Fullfør raskt og frigjør plassen for neste spiller.":"Each player can only have one task at a time. As a team, avoid keeping all five slots for the same task occupied for too long. Finish quickly and free the slot for the next player.","Slik får flere tatt harepusoppgaver":"How more members can complete Bunny tasks","Før":"Before","Klargjør uten å ta oppgaven.":"Prepare without taking the task.","Under":"During","Ta oppgaven først når du er klar, og fullfør raskt.":"Only take the task when you are ready, and finish quickly.","Etter":"After","Plassen frigjøres for neste spiller.":"The slot is freed for the next player.","Si fra når du klargjør eller venter på en bestemt produksjonsoppgave. Andre oppgaver kan normalt tas fortløpende.":"Let the team know when you are preparing or waiting for a specific production task. Other tasks can normally be taken as they appear.","Oppgaver for ukens derby":"Tasks for this week's Derby","Denne derbytypen får sin egen oppgavevisning etter hvert.":"This Derby type will get its own task view later.",
     "Hva vil du dele med nabolaget?":"What would you like to share with the Neighborhood?","Still et spørsmål, del en idé eller start planleggingen av ukens derby.":"Ask a question, share an idea or start planning this week's Derby.","Det nabolaget snakker om nå":"What the Neighborhood is discussing now","Innlegg med aktivitet den siste uken vises her.":"Posts with activity during the past week appear here.","Du fortsetter automatisk fra første uleste innlegg.":"You automatically continue from the first unread post.","Én-til-én-samtaler mellom godkjente WGANG-medlemmer.":"One-to-one conversations between approved WGANG members.","Dine meldinger":"Your messages","Start ny samtale":"Start new conversation","Åpne samtale":"Open conversation","Velg en samtale":"Choose a conversation","Meldingene kan bare leses av deg og mottakeren.":"Messages can only be read by you and the recipient.",
     "WIKI OG KUNNSKAP":"WIKI AND KNOWLEDGE","Kunnskap og strategi":"Knowledge and strategy","Erfaringene WGANG deler – samlet, forenklet og gjort nyttige for hele nabolaget.":"WGANG's shared experiences – collected, simplified and made useful for the entire Neighborhood.","DETTE HAR VI LÆRT":"WHAT WE HAVE LEARNED","Gode resultater starter før oppgaven tas":"Good results start before taking the task","I Standard Derby tar vi bare oppgaver med maksimal poengsum. Målet er at alle fullfører 100 % av de ordinære oppgavene. Det absolutte minimumskravet er 95 %, fordi feil kan skje – men ekstraoppgaven er både velkommen og en mulighet til å hente inn et poengtap.":"In Normal Derby, we only take tasks worth the maximum points. The goal is for everyone to complete 100% of their regular tasks. The absolute minimum is 95%, because mistakes can happen – but an extra task is both welcome and an opportunity to recover lost points.","Mål":"Goal","FØR DU VELGER":"BEFORE YOU CHOOSE","Se selv at oppgaven har maksimal poengsum. Admin rydder tavla, men hver deltaker må kontrollere oppgaven før den tas.":"Check that the task is worth the maximum points. Admins manage the board, but every participant must check the task before taking it.","Sjekk at oppgaven kan gjennomføres innen fristen. Vær ekstra oppmerksom på dyrking, produksjon og oppgaver med mye ventetid.":"Check that the task can be completed within the time limit. Pay particular attention to crops, production and tasks with long waiting times.","Ha en gjennomførbar plan":"Have a realistic plan","Velg ikke en krevende oppgave før nødvendige varer, besøkende, avlinger eller annen forberedelse er på plass.":"Do not choose a demanding task until the required products, visitors, crops or other preparations are ready.",
     "ERFARINGER FRA NABOLAGET":"EXPERIENCE FROM THE NEIGHBORHOOD","Slik gjør vi oppgavene enklere og tryggere":"How we make tasks easier and safer","Plant før du tar oppgaven":"Plant before taking the task","Plant avlinger med lang veksttid på forhånd. Da kan mye være klart til innhøsting idet du tar oppgaven, og risikoen for at tiden løper ut blir mindre.":"Plant long-growing crops in advance. Much of the crop can then be ready to harvest when you take the task, reducing the risk of running out of time.","Produser aktuelle varer på forhånd og la dem ligge ferdige i maskinene når det er mulig. Ta oppgaven først når du er klar til å samle inn.":"Produce relevant items in advance and leave them ready in the machines whenever possible. Only take the task when you are ready to collect them.","Gjør besøkende klare":"Prepare visitors","La ferdig betjente besøkende stå klare uten å samle dem inn. Ta oppgaven når du har nok besøkende klare, og samle dem inn for en rask start.":"Leave fully served visitors ready without collecting them. Take the task when enough visitors are ready, then collect them for a quick start.","Si fra når du klargjør produkter":"Let the team know when preparing products","Gi beskjed i spillchatten når du produserer eller har gjort klar produkter til en bestemt produksjonsoppgave. Da vet andre at noen venter på akkurat denne oppgaven. Andre oppgaver kan normalt tas fortløpende – det kommer nye oppgaver etter hvert, og god flyt gjør at flere får fullført.":"Let the team know in the in-game chat when you are producing or have prepared products for a specific production task. Others will then know that someone is waiting for that task. Other tasks can normally be taken as they appear – new tasks will arrive, and good flow helps more members finish.","Admin rydder bort oppgaver under maksimal poengsum og oppgaver få ønsker. Oppgavepreferansene viser hvilke oppgaver laget faktisk kan gjennomføre.":"Admins remove tasks below the maximum score and tasks few members want. Task preferences show which tasks the team can actually complete.","Et viktig bidrag til laget":"An important contribution to the team","Når alle fullfører de ordinære oppgavene, kan ekstraoppgaver være det som løfter WGANG til en bedre plassering. De kan også hente inn et mindre poengtap.":"When everyone completes their regular tasks, extra tasks can lift WGANG to a better position. They can also recover a small points loss.","PAUSE ER HELT GREIT":"TAKING A BREAK IS FINE","Stå over når du ikke har tid til å prioritere derby":"Take a break when you do not have time to prioritize the Derby","Derby er frivillig. Det er bedre å melde pause enn å delta uten å kunne følge planen. Ved en lengre pause kan du registrere perioden i innstillingene, slik at ledelsen vet at du fortsatt ønsker å være en del av nabolaget.":"Derby participation is voluntary. It is better to take a break than to participate without being able to follow the plan. For a longer break, register the period in settings so the leadership team knows you still want to remain part of the Neighborhood.",
@@ -252,7 +252,7 @@
       .replace(/^(\d+)\s+svar$/i,"$1 responses")
       .replace(/^Registrer ett svar for hver spillprofil\.\s*(.*)$/i,"Save one response for each game profile. $1")
       .replace(/Neste derby:/g,"Next Derby:")
-      .replace(/Starter tirsdag kl\. 10:00/g,"Starts Tuesday at 10:00")
+      .replace(/Starter tirsdag kl\. 09:00 \/ 10:00/g,"Starts Tuesday at 09:00 / 10:00")
       .replace(/Svar gjerne innen mandag kl\. 23:00/g,"Please respond by Monday at 23:00")
       .replace(/oppgaver per dag/g,"tasks per day")
       .replace(/ekstraoppgave/g,"extra task")
@@ -1347,14 +1347,19 @@
     return {y:+o.year,mo:+o.month,d:+o.day,h:+o.hour,mi:+o.minute,s:+o.second};
   }
   function bunnyDeadlineInfo(){
-    const p=bunnyOsloParts();
-    const now=Date.UTC(p.y,p.mo-1,p.d,p.h,p.mi,p.s);
-    let deadline=Date.UTC(p.y,p.mo-1,p.d,9,59,0);
-    if(p.h>=10)deadline+=86400000;
-    const ms=deadline-now,total=Math.max(0,Math.floor(ms/60000));
+    const now=new Date();
+    const reset=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),HAYDAY_RESET_UTC_HOUR);
+    const deadline=(now.getTime()>=reset?reset+86400000:reset)-60000;
+    const ms=deadline-now.getTime(),total=Math.max(0,Math.floor(ms/60000));
     return {ms,text:ms<=0?"Tidsfrist utløpt":`${Math.floor(total/60)} t ${String(total%60).padStart(2,"0")} min igjen`};
   }
-  function bunnyIsStale(){if(!bunnyData.board?.published_at)return true;const now=new Date(),cut=new Date(now);cut.setHours(10,0,0,0);if(now<cut)cut.setDate(cut.getDate()-1);return new Date(bunnyData.board.published_at)<cut;}
+  function bunnyIsStale(){
+    if(!bunnyData.board?.published_at)return true;
+    const now=new Date();
+    let reset=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),HAYDAY_RESET_UTC_HOUR);
+    if(now.getTime()<reset)reset-=86400000;
+    return new Date(bunnyData.board.published_at).getTime()<reset;
+  }
   async function loadBunny(){try{bunnyData=await backend.getBunnyData();if(!bunnyData.library?.length && backend.mode==="local"){bunnyData.library=BUNNY_DEFAULT_TASKS;bunnyData.board={id:1,published_at:new Date().toISOString(),active:true};bunnyData.boardTasks=BUNNY_DEFAULT_TASKS.map(x=>({task_id:x.id}));localStorage.setItem("wgang_bunny_v018",JSON.stringify(bunnyData));}}catch(e){console.warn("Chill Bunny data unavailable",e);bunnyData={library:[],board:null,boardTasks:[],statuses:[]};}renderBunny();}
   const BUNNY_PNG_IMAGE_KEYS=new Set(["rustikk-bukett", "dame", "ris", "popkorn-med-smor", "genser", "bygjester-kafe", "bjornebaer-muffins", "olivenolje", "sukkerror"]);
   function bunnyTaskImageUrl(task){
@@ -1373,7 +1378,7 @@
     const grid=$("bunnyTaskGrid");if(!grid)return;const ids=new Set((bunnyData.boardTasks||[]).map(x=>String(x.task_id)));const tasks=(bunnyData.library||[]).filter(t=>ids.has(String(t.id)));const uid=current()?.id;
     const mine=(bunnyData.statuses||[]).filter(x=>String(x.user_id)===String(uid));const planned=mine.filter(x=>["ready","preparing"].includes(x.status));const event=state.derbyManagement?.next,cycle=bunnyPlannerCycle(event);
     $("bunnyReadyCount").textContent=`${planned.length} valgt`;$("bunnyPlanCount").textContent=`${planned.length} valgt`;$("bunnyBoardMeta").textContent=`${tasks.length} tilgjengelige oppgaver`;
-    const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Oppgavene i spillet er byttet kl. 10:00. Tavlen i portalen er ikke bekreftet oppdatert ennå.";}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført innen 09:59</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}`:""}`;}
+    const notice=$("bunnyBoardNotice"),dl=bunnyDeadlineInfo();if(!bunnyData.board){notice.className="bunny-board-notice stale";notice.textContent="⚠️ Dagens oppgavetavle er ikke publisert ennå.";}else if(bunnyIsStale()){notice.className="bunny-board-notice stale";notice.textContent=`⚠️ Oppgavene i spillet er byttet kl. ${haydayResetHourLabel()}. Tavlen i portalen er ikke bekreftet oppdatert ennå.`;}else{notice.className="bunny-board-notice";notice.innerHTML=`✓ Tavlen er oppdatert ${new Date(bunnyData.board.published_at).toLocaleString("nb-NO",{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"})}. <strong>Må være utført før kl. ${haydayResetHourLabel()}</strong> · ⏱ ${esc(dl.text)}${cycle?` · Valgene gjelder til ${cycle.end.toLocaleTimeString("nb-NO",{timeZone:"Europe/Oslo",hour:"2-digit",minute:"2-digit"})}`:""}`;}
     const images={"Gjester i Matbutikk":"01-gjester-i-matbutikk.png","Kake med røde bær":"02-kake-med-rode-baer.png","Soyabønner":"03-soyabonner.png","Innbygger":"04-innbygger.png","Gulrøtter":"05-gulrotter.png","Bacon":"18-bacon.png","Gulrotkake":"07-gulrotkake.png","Eplejuice":"19-eplejuice.png","Egg":"09-egg.png","Frutti di Mare-pizza":"10-frutti-di-mare-pizza.png","Gresskar":"11-gresskar.png","Hvete":"12-hvete.png","Cowboy":"13-cowboy.png","Blå ullue":"14-bla-ullue.png","Kino":"15-kino.png","Bomullsskjorte":"16-bomullsskjorte.png","Sesam-is":"17-sesam-is.png","Mat dyr":"20-mat-dyr.png","Sesamkrokan":"21-sesamkrokan.png","Sushirull":"22-sushirull.png","Salat":"23-salat.png","Tofupølse":"24-tofupolse.png","Bomull":"25-bomull.png","Stekte tomater":"26-stekte-tomater.png","Gresskarpai":"27-gresskarpai.png","Stormester":"28-stormester.png","Bringebærmuffins":"29-bringebaermuffins.png"};
     grid.innerHTML=tasks.length?tasks.map(t=>{const sts=(bunnyData.statuses||[]).filter(x=>String(x.task_id)===String(t.id)&&["ready","preparing"].includes(x.status));const n=sts.length,my=mine.find(x=>String(x.task_id)===String(t.id))?.status||"";const plannedByMe=["ready","preparing"].includes(my),skippedByMe=my==="skip";const img=bunnyTaskImageUrl(t)||images[t.name];const desc=String(t.description||t.name||"").replace(/\b\d+\s*[×x]?\s*/g,"").trim();const pct=bunnyInterestPct(n),disabled=cycle?"":"disabled";return `<article class="bunny-task-card bunny-designer-card ${plannedByMe?"is-planned":skippedByMe?"is-skipped":""}"><div class="bunny-task-type">${esc(t.category)}${plannedByMe?`<span>DIN PLAN</span>`:""}</div><div class="bunny-task-content"><div class="bunny-task-art">${img?`<img class="bunny-task-image" src="./${img}" alt="${esc(t.name)}" data-fallback-icon="${esc(t.icon||"🐰")}">`:`<div class="bunny-task-icon">${esc(t.icon||"🐰")}</div>`}<span class="bunny-task-amount">${esc(bunnyAmountLabel(t))}</span></div><div class="bunny-task-copy"><h3>${esc(t.name)}</h3><p>${esc(desc)}</p></div></div><div class="bunny-interest"><div class="bunny-interest-head"><strong>${n} valgt</strong><span>${bunnyPopularity(n)}</span></div><div class="bunny-interest-scale" style="--interest:${pct}%"><span class="bunny-interest-marker"></span></div><div class="bunny-interest-labels"><span>0</span><span>10</span><span>20</span><span>30</span></div></div><div class="bunny-actions bunny-actions-two"><button class="bunny-prep ${plannedByMe?"selected":""}" data-bunny-status="preparing" data-task-id="${t.id}" aria-pressed="${plannedByMe?"true":"false"}" ${disabled}>✓ Jeg klargjør den</button><button class="bunny-skip ${skippedByMe?"selected":""}" data-bunny-status="skip" data-task-id="${t.id}" aria-pressed="${skippedByMe?"true":"false"}" ${disabled}>× Ikke aktuelt for meg</button></div></article>`;}).join(""):`<p class="empty-state">Ingen aktiv Chill Bunny-tavle er publisert.</p>`;
     grid.querySelectorAll(".bunny-task-image").forEach(img=>img.addEventListener("error",()=>{const fallback=document.createElement("div");fallback.className="bunny-task-icon";fallback.textContent=img.dataset.fallbackIcon||"🐰";img.replaceWith(fallback);},{once:true}));
@@ -1780,26 +1785,62 @@
 
   function formatDate(value) {
     if (!value) return "";
-    try { return new Date(value).toLocaleString("nb-NO", {day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
+    try { return new Date(value).toLocaleString("nb-NO", {timeZone:"Europe/Oslo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
     catch (_) { return ""; }
   }
 
+  // Hay Day reset is 08:00 UTC year-round (10:00 CEST / 09:00 CET in Norway).
+  const HAYDAY_RESET_UTC_HOUR = 8;
+  const OSLO_ZONE = "Europe/Oslo";
+  function osloParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-GB", {timeZone:OSLO_ZONE,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(date);
+    const v={}; for(const p of parts) if(p.type!=="literal") v[p.type]=Number(p.value);
+    return v;
+  }
+  function osloDateTimeToUtc(value) {
+    // datetime-local is entered in Norway time, independently of the viewer's device timezone.
+    const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value||"");
+    if(!m)return null;
+    const [y,mo,d,h,mi]=m.slice(1).map(Number);
+    let timestamp=Date.UTC(y,mo-1,d,h,mi);
+    for(let i=0;i<4;i++){
+      const p=osloParts(new Date(timestamp));
+      const actual=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute);
+      const desired=Date.UTC(y,mo-1,d,h,mi);
+      if(actual===desired)break;
+      timestamp+=desired-actual;
+    }
+    const p=osloParts(new Date(timestamp));
+    if(p.year!==y||p.month!==mo||p.day!==d||p.hour!==h||p.minute!==mi)return null;
+    return new Date(timestamp);
+  }
+  function haydayResetHourLabel(date=new Date()) {
+    const p=osloParts(new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),HAYDAY_RESET_UTC_HOUR)));
+    return String(p.hour).padStart(2,"0")+":00";
+  }
+  function nextHaydayTuesday(now=new Date()) {
+    const p=osloParts(now);
+    const todayUtc=Date.UTC(p.year,p.month-1,p.day);
+    const weekday=new Date(todayUtc).getUTCDay();
+    let add=(2-weekday+7)%7;
+    let start=new Date(todayUtc+add*86400000+HAYDAY_RESET_UTC_HOUR*3600000);
+    if(start<=now)start=new Date(start.getTime()+7*86400000);
+    return start;
+  }
+
   function nextDerbyDates() {
-    const now = new Date();
-    const start = new Date(now);
-    const day = start.getDay();
-    let add = (2 - day + 7) % 7;
-    if (add === 0 && (start.getHours() > 10 || (start.getHours() === 10 && start.getMinutes() > 0))) add = 7;
-    start.setDate(start.getDate() + add);
-    start.setHours(10,0,0,0);
-    const end = new Date(start); end.setDate(end.getDate()+6); end.setHours(10,0,0,0);
-    const deadline = new Date(start); deadline.setDate(deadline.getDate()-1); deadline.setHours(23,0,0,0);
+    const start=nextHaydayTuesday();
+    const end=new Date(start.getTime()+6*86400000);
+    const monday=new Date(start.getTime()-86400000);
+    const p=osloParts(monday);
+    const deadline=osloDateTimeToUtc(`${p.year}-${String(p.month).padStart(2,"0")}-${String(p.day).padStart(2,"0")}T23:00`);
     return {start,end,deadline};
   }
 
   function toLocalInput(date) {
-    const z = n => String(n).padStart(2,"0");
-    return `${date.getFullYear()}-${z(date.getMonth()+1)}-${z(date.getDate())}T${z(date.getHours())}:${z(date.getMinutes())}`;
+    const p=osloParts(date);
+    const z=n=>String(n).padStart(2,"0");
+    return `${p.year}-${z(p.month)}-${z(p.day)}T${z(p.hour)}:${z(p.minute)}`;
   }
 
   function derbyHistoryData() {
@@ -2824,15 +2865,7 @@
       const start = new Date(event.start_at);
       if (!Number.isNaN(start.getTime()) && start > new Date()) return start;
     }
-    // Reserve: neste tirsdag kl. 10:00. Portalen brukes i Norge, og derbytid følger Europe/Oslo.
-    const osloNow = new Date(new Date().toLocaleString("en-US", {timeZone:"Europe/Oslo"}));
-    const target = new Date(osloNow);
-    const day = target.getDay();
-    let days = (2 - day + 7) % 7;
-    if (days === 0 && target.getHours() >= 10) days = 7;
-    target.setDate(target.getDate() + days);
-    target.setHours(10,0,0,0);
-    return new Date(target.getTime() + (new Date().getTime() - osloNow.getTime()));
+    return nextHaydayTuesday();
   }
 
   function formatDashboardCountdown(ms) {
@@ -2958,7 +2991,7 @@
     const save=$("bunnyManualSave"), clear=$("bunnyManualClear"), input=$("bunnyManualNextAt");
     if(save) save.onclick=async()=>{
       if(!hasPermission("derby.board.update")||!bunnyRoundEventId)return; const model=bunnyRoundModel(event); const raw=input?.value; if(!raw){alert("Velg dato og klokkeslett for neste harepust.");return;}
-      const nextAt=new Date(raw); if(Number.isNaN(nextAt.getTime())){alert("Tidspunktet er ikke gyldig.");return;}
+      const nextAt=osloDateTimeToUtc(raw); if(!nextAt){alert("Tidspunktet er ikke gyldig.");return;}
       if(!await portalConfirm(`Sett neste harepust i runde ${model.round} til ${bunnyTimeLabel(nextAt)}? Deretter fortsetter automatikken hvert 1,5 time.`))return;
       save.disabled=true; try{await backend.setBunnyRoundSchedule(bunnyRoundEventId,model.round,nextAt.toISOString());bunnyScheduleRows=await backend.getBunnyRoundSchedule(bunnyRoundEventId);paintBunnyDashboard(event);}catch(e){alert(humanError(e,"Kunne ikke lagre manuelt harepusttidspunkt. Kontroller at SQL-oppdateringen er kjørt."));} save.disabled=false;
     };
@@ -2986,7 +3019,7 @@
       : (bunny ? ui("Bekreft om du deltar før svarfristen. Les harepusreglene og kontroller at varsling er aktivert.","Confirm whether you are participating before the deadline. Read the Bunny rules and make sure notifications are enabled.") : ui("Påmelding til neste derby er hovedfokus. Bekreft om du deltar eller tar pause før fristen.","Registration for the next Derby is the main focus. Confirm whether you are participating or taking a break before the deadline.")));
     setText("nextDerbyStart", active
       ? ui("Pågår nå","In progress")
-      : (d.startAt ? ui(`Starter ${formatDate(d.startAt)}`,`Starts ${formatDate(d.startAt)}`) : ui("Starter tirsdag kl. 10:00","Starts Tuesday at 10:00")));
+      : (d.startAt ? ui(`Starter ${formatDate(d.startAt)}`,`Starts ${formatDate(d.startAt)}`) : ui(`Starter tirsdag kl. ${haydayResetHourLabel(nextHaydayTuesday())}`,`Starts Tuesday at ${haydayResetHourLabel(nextHaydayTuesday())}`)));
     setText("dashboardDerbyAction", bunny && active ? ui("Åpne harepusplanen","Open Bunny plan") : ui("Åpne påmelding","Open registration"));
     const dashboardDerbyActionEl=$("dashboardDerbyAction");
     if(dashboardDerbyActionEl) dashboardDerbyActionEl.dataset.route=bunny && active ? "preferences" : "derby";
@@ -3003,7 +3036,7 @@
     setText("dashboardDeadlineHint", active ? tText(type) : ui("svar gjerne innen fristen","please respond before the deadline"));
     setText("dashboardDerbyMetricLabel", active ? ui("Pågående derby","Current Derby") : ui("Neste derby","Next Derby"));
     setText("dashboardNextDerbyName", tText(shortType));
-    setText("dashboardDerbyMetricHint", active ? ui("startet tirsdag kl. 10","started Tuesday at 10:00") : ui("oppstart tirsdag kl. 10","starts Tuesday at 10:00"));
+    setText("dashboardDerbyMetricHint", active ? ui(`startet tirsdag kl. ${haydayResetHourLabel(event?.start_at?new Date(event.start_at):new Date())}`,`started Tuesday at ${haydayResetHourLabel(event?.start_at?new Date(event.start_at):new Date())}`) : ui(`oppstart tirsdag kl. ${haydayResetHourLabel(nextHaydayTuesday())}`,`starts Tuesday at ${haydayResetHourLabel(nextHaydayTuesday())}`));
   }
 
   function renderDashboardPrimaryAction() {
@@ -3978,9 +4011,9 @@
     return {
       template_id: templateId ? Number(templateId) : null,
       name: $("editDerbyType").value.trim() || "Ukjent derby",
-      start_at: $("derbyStartAt").value ? new Date($("derbyStartAt").value).toISOString() : null,
-      end_at: $("derbyEndAt").value ? new Date($("derbyEndAt").value).toISOString() : null,
-      signup_deadline: $("derbySignupDeadline").value ? new Date($("derbySignupDeadline").value).toISOString() : null,
+      start_at: $("derbyStartAt").value ? osloDateTimeToUtc($("derbyStartAt").value)?.toISOString() : null,
+      end_at: $("derbyEndAt").value ? osloDateTimeToUtc($("derbyEndAt").value)?.toISOString() : null,
+      signup_deadline: $("derbySignupDeadline").value ? osloDateTimeToUtc($("derbySignupDeadline").value)?.toISOString() : null,
       task_total: $("editTaskTotal").value ? Number($("editTaskTotal").value) : null,
       extra_tasks: Number($("editExtraTasks").value || 0),
       max_points: $("editMaxPoints").value ? Number($("editMaxPoints").value) : null,
@@ -4195,7 +4228,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.109").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.112").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

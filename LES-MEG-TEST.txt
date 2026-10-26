@@ -1,0 +1,16 @@
+WGANG v0.18.0.112 – DST TEST PATCH (based on v0.18.0.111)
+
+Upload only these three files to GitHub branch test/derby-dst-correction:
+- app.js
+- index.html
+- service-worker.js
+
+Do NOT upload to main or execute SQL.
+
+Hay Day reset: 08:00 UTC = 10:00 Norway summer / 09:00 Norway winter.
+Signup deadline: Monday 23:00 Europe/Oslo.
+Includes browser-independent Europe/Oslo date parsing for derby editor.
+Existing published derby records in Supabase are NOT modified by these files.
+Important: Derby event October 27, 2026 remains at 10:00 local in DB until separately corrected.
+
+JavaScript syntax checks passed. Live browser and database integration testing pending.
