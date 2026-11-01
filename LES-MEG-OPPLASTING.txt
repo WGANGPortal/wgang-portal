@@ -1,0 +1,20 @@
+WGANG Portal v0.18.0.104 – KUN ENDREDE FILER
+================================================
+Sammenlignet med: wgang-portal-main 4(1).zip
+Oppdateringsgrunnlag: WGANG-v0.18.0.104-AVGrenset-BILDER-TEST(1).zip
+
+Filer som skal erstattes i ROTEN av GitHub-repositoriet:
+- app.js
+- backend.js
+- index.html
+
+Disse filene er hentet uendret fra den avgrensede testpakken.
+Ingen andre prosjektfiler skal slettes eller erstattes.
+
+VIKTIG:
+- Denne oppdateringen er IKKE funksjonstestet i nettleser mot aktive brukere.
+- Test først på testgrenen test/v0.18.0.104-bilder.
+- Video, @-varslinger og derbykarantene er ikke ferdigstilt.
+- Ingen ny SQL er nødvendig for den avgrensede bildeoppdateringen,
+  forutsatt at eksisterende chat-images-bøtte og RLS-policyer er intakte.
+- Ikke last opp denne README-filen som portalfil.

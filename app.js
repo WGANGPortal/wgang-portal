@@ -2238,6 +2238,39 @@
     }
     return `<div class="content-translation-fallback"><a class="text-button" href="${esc(googleTranslateUrl(originalTitle,originalBody))}" target="_blank" rel="noopener noreferrer">${esc(tText("Oversett med Google"))} ↗</a><small>${esc(tText("Åpner Google Translate"))}</small></div>`;
   }
+  function chatImageBlock(item) {
+    if(!item?.attachmentPath)return "";
+    return `<div class="chat-image"><img data-chat-image-path="${esc(item.attachmentPath)}" alt="Vedlagt bilde" loading="lazy" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:10px"></div>`;
+  }
+  async function hydrateChatImages(root=document){
+    await Promise.all([...root.querySelectorAll("[data-chat-image-path]")].map(async img=>{
+      try{const path=img.dataset.chatImagePath;if(img.dataset.chatImageLoaded===path||img.dataset.chatImageLoading===path)return;img.dataset.chatImageLoading=path;const url=await backend.chatImageUrl(path);if(url&&img.isConnected&&img.dataset.chatImagePath===path){img.dataset.chatImageLoaded=path;img.src=url;}delete img.dataset.chatImageLoading;}
+      catch(e){console.warn("Kunne ikke vise chatbilde",e);img.alt="Bildet kunne ikke åpnes";img.dataset.chatImageLoaded=img.dataset.chatImagePath;delete img.dataset.chatImageLoading;}
+    }));
+  }
+  const chatImageObserver=new MutationObserver(()=>{queueMicrotask(()=>hydrateChatImages().catch(console.warn));});
+  chatImageObserver.observe(document.body,{childList:true,subtree:true});
+  attachMentionSuggestions($("leadershipMessageInput"),"leadership");attachMentionSuggestions($("derbyPostBody"),"community");
+  function attachMentionSuggestions(input,channel="community"){
+    if(!input||input.dataset.mentionsReady)return;
+    input.dataset.mentionsReady="1";
+    const suggestions=document.createElement("div");suggestions.className="mention-suggestions";
+    suggestions.style.cssText="display:none;position:relative;background:var(--surface,#fff);border:1px solid #bbb;border-radius:8px;max-height:180px;overflow:auto;z-index:10";
+    input.insertAdjacentElement("afterend",suggestions);
+    const refresh=()=>{
+      const before=input.value.slice(0,input.selectionStart);
+      const match=before.match(/(?:^|\s)@([^@\n]{0,35})$/u);
+      if(!match){suggestions.style.display="none";return;}
+      const query=match[1].toLocaleLowerCase("nb");
+      const permission=channel==="leadership"?"chat.leadership.view":"chat.community.view";
+      const members=(state.accounts||[]).filter(a=>a.name&&a.status==="approved"&&hasPermission(permission,a)&&a.name.toLocaleLowerCase("nb").includes(query)).slice(0,8);
+      suggestions.replaceChildren();suggestions.style.display=members.length?"block":"none";
+      for(const member of members){const button=document.createElement("button");button.type="button";button.textContent="@"+member.name;button.style.cssText="display:block;width:100%;text-align:left;padding:8px;border:0;background:transparent";
+        button.addEventListener("click",()=>{const end=input.selectionStart;const start=before.lastIndexOf("@");input.value=input.value.slice(0,start)+"@"+member.name+" "+input.value.slice(end);suggestions.style.display="none";input.focus();input.dispatchEvent(new Event("input",{bubbles:true}));});suggestions.appendChild(button);}
+    };
+    input.addEventListener("input",refresh);input.addEventListener("click",refresh);
+    input.addEventListener("blur",()=>setTimeout(()=>{suggestions.style.display="none";},180));
+  }
   function socialBlock(type,item,chatChannel="") {
     const likes=targetLikes(type,item.id), comments=targetComments(type,item.id);
     const liked=likes.some(x=>String(x.user_id)===String(current()?.id));
@@ -2251,9 +2284,9 @@
       const commentLikes=targetLikes("comment",cm.id);
       const commentLiked=commentLikes.some(x=>String(x.user_id)===String(current()?.id));
       const commentView={body:tr?.body||cm.body,translated:!!tr};
-      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(commentView.body)}</p>${translationControl(cm,commentView,{body:cm.body})}<div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
+      return `<div class="social-comment" data-comment-id="${cm.id}"><div class="social-comment-head"><strong>${esc(author?.name||"WGANG")}</strong><small>${esc(formatDate(cm.created_at))}</small></div><p>${esc(commentView.body)}</p>${translationControl(cm,commentView,{body:cm.body})}${chatImageBlock(cm)}<div class="social-comment-actions"><button type="button" class="social-like social-comment-like ${commentLiked?"active":""}" data-like-type="comment" data-like-channel="${type}" data-like-id="${cm.id}" data-liked="${commentLiked}" data-thread-key="${threadKey}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like comment":"Lik kommentar"}">👍🏼 <span>${commentLikes.length}</span></button>${canDelete?`<button type="button" class="text-button" data-delete-comment="${cm.id}">${currentLanguage==="en"?"Delete":"Slett"}</button>`:""}</div>${likerDetails(commentLikes,currentLanguage==="en"?"comment":"kommentaren")}</div>`;
     }).join("");
-    const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}" required><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
+    const commentForm=canPost?`<form class="social-comment-form" data-comment-form="${type}:${item.id}"><input maxlength="2000" placeholder="${currentLanguage==="en"?"Write a comment…":"Skriv en kommentar…"}"><input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Legg ved bilde" style="max-width:180px"><button class="button button-primary button-small" type="submit">${currentLanguage==="en"?"Post":"Publiser"}</button></form>`:"";
     return `<div class="social-bar"><button type="button" class="social-like ${liked?"active":""}" data-like-type="${type}" data-like-channel="${type}" data-like-id="${item.id}" data-liked="${liked}" ${canPost?"":"disabled"} aria-label="${currentLanguage==="en"?"Like post":"Lik innlegg"}">👍🏼 <span>${likes.length}</span></button><button type="button" class="social-comment-toggle" data-comment-toggle="${threadKey}" aria-expanded="${threadOpen}">💬 <span>${comments.length}</span><span class="social-action-label">${currentLanguage==="en"?"Comments":"Kommentarer"}</span></button>${likerDetails(likes,currentLanguage==="en"?"post":"innlegget")}</div><div class="social-comments ${threadOpen?"":"hidden"}" data-comments-for="${threadKey}"><div class="social-comment-list">${commentsHtml||`<p class="empty-state">${currentLanguage==="en"?"No comments yet.":"Ingen kommentarer ennå."}</p>`}</div>${commentForm}</div>`;
   }
   function bindSocialActions(root=document) {
@@ -2275,15 +2308,15 @@
       if(opening)openSocialThreads.add(key);else openSocialThreads.delete(key);
       if(opening)setTimeout(()=>comments.querySelector("input")?.focus(),80);
     });
-    root.querySelectorAll("[data-comment-form]").forEach(form=>form.onsubmit=async e=>{
-      e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector("input"); if(!input.value.trim()) return;
+    root.querySelectorAll("[data-comment-form]").forEach(form=>{const [commentType]=form.dataset.commentForm.split(":");attachMentionSuggestions(form.querySelector('input:not([type="file"])'),commentType==="leadership"?"leadership":"community");form.onsubmit=async e=>{
+      e.preventDefault(); const [type,id]=form.dataset.commentForm.split(":"); const input=form.querySelector('input:not([type="file"])'); const file=form.querySelector('input[type="file"]')?.files?.[0]; if(!input.value.trim()&&!file) return;
       const canPost=socialPermission(type);
       if(!canPost)return;
       openSocialThreads.add(`${type}:${id}`);
       const submit=form.querySelector('button[type="submit"]');if(submit){submit.disabled=true;submit.setAttribute("aria-busy","true");}
-      try { await backend.addComment(type,id,input.value.trim()); input.value=""; await refreshState(); const latest=lastOf(targetComments(type,id));const target=latest?document.querySelector(`[data-comment-id="${latest.id}"]`):null;if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("chat-focus-target");setTimeout(()=>target.classList.remove("chat-focus-target"),1800);} } catch(err) { alert(humanError(err)); }
+      let uploaded=null;try { if(file)uploaded=await backend.uploadChatImage(file);await backend.addComment(type,id,input.value.trim(),uploaded); input.value=""; await refreshState(); const latest=lastOf(targetComments(type,id));const target=latest?document.querySelector(`[data-comment-id="${latest.id}"]`):null;if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("chat-focus-target");setTimeout(()=>target.classList.remove("chat-focus-target"),1800);} } catch(err) { if(uploaded?.path)await backend.removeChatImage(uploaded.path).catch(()=>{});alert(humanError(err)); }
       finally { if(submit){submit.disabled=false;submit.removeAttribute("aria-busy");} }
-    });
+    };});
     root.querySelectorAll("[data-delete-comment]").forEach(btn=>btn.onclick=async()=>{
       const comment=socialData().comments.find(x=>String(x.id)===String(btn.dataset.deleteComment));
       if(String(comment?.user_id)!==String(current()?.id) && !hasPermission("chat.moderate"))return;
@@ -2478,7 +2511,7 @@
     const actions = options.canModerate ? `<div class="content-actions"><button class="table-action" data-delete-content="${item.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : "";
     const view=translatedContent("community",item);
     const chatData=options.chatChannel?` data-chat-channel="${options.chatChannel}" data-chat-time="${esc(item.publishedAt||item.createdAt)}" data-chat-id="post:${item.id}" data-chat-user-id="${esc(item.authorId||"")}"`:"";
-    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(item,view)}${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
+    return `<article class="content-post" data-post-id="${item.id}"${chatData}><h3>${esc(view.title)}</h3>${category}<p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(item,view)}${chatImageBlock(item)}${item.kind==="tip"?wikiMediaBlock(item):""}<footer><span>${esc(item.authorName || "WGANG")}</span><time>${esc(formatDate(item.publishedAt || item.createdAt))}</time>${actions}</footer>${socialBlock("community",item,options.chatChannel||"")}</article>`;
   }
 
   const DISCUSSION_ARCHIVE_AGE_MS=7*24*60*60*1000;
@@ -2668,7 +2701,7 @@
       const canDelete = own || hasPermission("chat.moderate");
       const view=translatedContent("leadership",m);
       const unreadMark=String(m.id)===String(unread.first?.entryId)?`<div class="chat-unread-divider" id="leadershipUnreadStart" tabindex="-1">${currentLanguage==="en"?"First unread":"Første uleste"} · ${unread.count}</div>`:"";
-      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(m,view)}${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
+      return `${unreadMark}<article class="leadership-message ${own ? "own" : ""}" data-message-id="${m.id}" data-chat-channel="leadership" data-chat-time="${esc(m.createdAt)}" data-chat-id="message:${m.id}" data-chat-user-id="${esc(m.userId)}"><div class="leadership-message-head"><strong>${esc(m.authorName)}</strong><small>${esc(formatDate(m.createdAt))}</small></div><p>${esc(view.body).replace(/\n/g,"<br>")}</p>${translationControl(m,view)}${chatImageBlock(m)}${canDelete ? `<div class="leadership-message-tools"><button class="text-button" data-leadership-delete="${m.id}">${currentLanguage==="en"?"Delete":"Slett"}</button></div>` : ""}${socialBlock("leadership",m,"leadership")}</article>`;
     }).join("") : `<p class="empty-state">${esc(ui("Ingen meldinger ennå. Start planleggingen her.","No messages yet. Start planning here."))}</p>`;
     if(unread.count>1){const jump=document.createElement("button");jump.type="button";jump.className="chat-newer-indicator";jump.textContent=currentLanguage==="en"?"↓ Go to newest":"↓ Gå til nyeste";jump.onclick=()=>positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));list.appendChild(jump);}
     translateUi(list);
@@ -3856,16 +3889,16 @@
     const input = $("leadershipMessageInput");
     const status = $("leadershipMessageStatus");
     const message = input.value.trim();
-    if (!message) return;
+    if (!message && !$("leadershipImage")?.files?.length) return;
     setBusy(true);
-    try {
-      await backend.sendLeadershipMessage(message);
-      input.value = "";
+    let uploaded=null;try {
+      const file=$("leadershipImage")?.files?.[0];if(file)uploaded=await backend.uploadChatImage(file);await backend.sendLeadershipMessage(message,uploaded);
+      input.value = "";if($("leadershipImage"))$("leadershipImage").value="";
       status.textContent = currentLanguage === "en" ? "Message sent." : "Meldingen er sendt.";
       status.classList.add("success");
       await refreshState();
       if(activePortalRoute==="leadership")positionChatTarget("leadership",lastOf(chatActivityElements("leadership")));
-    } catch(e) { status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen."); }
+    } catch(e) { if(uploaded?.path)await backend.removeChatImage(uploaded.path).catch(()=>{});status.textContent = humanError(e, currentLanguage === "en" ? "Could not send message." : "Kunne ikke sende meldingen."); }
     setBusy(false);
   };
 
@@ -4167,8 +4200,8 @@
   if ($("derbyPostForm")) $("derbyPostForm").onsubmit = async e => {
     e.preventDefault(); if (busy || !hasPermission("chat.community.post")) return;
     setBusy(true);
-    try { await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); if(activePortalRoute==="discussions")positionChatTarget("derby",lastOf(chatActivityElements("derby"))); }
-    catch(err) { $("derbyPostMessage").textContent=humanError(err); }
+    let uploaded=null;try { const file=$("derbyPostImage")?.files?.[0];if(file)uploaded=await backend.uploadChatImage(file);await backend.createContent("derby", $("derbyPostTitle").value.trim(), $("derbyPostBody").value.trim(), "", true,null,uploaded); closeDialog(derbyPostDialog); e.target.reset(); await refreshState(); if(activePortalRoute==="discussions")positionChatTarget("derby",lastOf(chatActivityElements("derby"))); }
+    catch(err) { if(uploaded?.path)await backend.removeChatImage(uploaded.path).catch(()=>{});$("derbyPostMessage").textContent=humanError(err); }
     setBusy(false);
   };
 
