@@ -1168,7 +1168,7 @@
       const sanitized=await stripImageMetadata(file,ext);
       const {error}=await client.storage.from("chat-images").upload(path,sanitized,{contentType:sanitized.type,upsert:false});
       if(error)throw error;
-      return {path,mimeType:sanitized.type};
+      return {path,mimeType:sanitized.type,sizeBytes:sanitized.size,originalName:sanitized.name};
     },
     async chatImageUrl(path) {
       if(!configured||!path)return null;
@@ -1195,7 +1195,7 @@
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
-      if(kind==="derby" && attachment?.path){payload.attachment_path=attachment.path;payload.attachment_mime_type=attachment.mimeType;}
+      if(kind==="derby" && attachment?.path){payload.attachment_path=attachment.path;payload.attachment_mime_type=attachment.mimeType;payload.attachment_size_bytes=attachment.sizeBytes;payload.attachment_original_name=attachment.originalName;}
       if(video?.path){
         if(kind!=="tip")throw new Error("Bilde eller film kan bare knyttes til Tips og triks.");
         payload.video_path=video.path;
@@ -1234,7 +1234,7 @@
       }
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
-      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType}:{})}).select().single();
+      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType,attachment_size_bytes:attachment.sizeBytes,attachment_original_name:attachment.originalName}:{})}).select().single();
       if (error) throw error;
       return data;
     },
@@ -1367,7 +1367,7 @@
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const { error } = await client.from("social_comments").insert({
-        user_id:user.id,target_type:targetType,target_id:String(targetId),body,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType}:{})
+        user_id:user.id,target_type:targetType,target_id:String(targetId),body,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType,attachment_size_bytes:attachment.sizeBytes,attachment_original_name:attachment.originalName}:{})
       });
       if (error) throw error;
     },

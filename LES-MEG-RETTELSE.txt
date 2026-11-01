@@ -1,0 +1,17 @@
+WGANG Portal v0.18.0.104 – rettelse av bildevedlegg (TEST)
+==========================================================
+Bare backend.js er endret fra tidligere opplastet testpakke.
+
+Rettelsen sender alle fire obligatoriske feltene til Supabase:
+attachment_path, attachment_mime_type,
+attachment_size_bytes, attachment_original_name.
+
+Opplasting:
+1. Velg grenen test/v0.18.0.104-bilder i GitHub.
+2. Erstatt backend.js i rotmappen med filen i denne ZIP-en.
+3. Commit, vent på Cloudflare-forhåndsvisning.
+4. Test bildeopplasting i Lederprat, Derbyprat og kommentarer.
+5. Ikke Merge før funksjonstesten er bestått.
+
+Ingen ny SQL kreves for denne rettelsen.
+LES-MEG-filen skal ikke lastes opp til GitHub.
