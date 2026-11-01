@@ -297,7 +297,8 @@
       videoPath: row.video_path || null,
       videoMimeType: row.video_mime_type || null,
       videoSizeBytes: Number(row.video_size_bytes || 0),
-      videoOriginalName: row.video_original_name || null
+      videoOriginalName: row.video_original_name || null,
+      attachmentPath: row.attachment_path || null, attachmentMimeType: row.attachment_mime_type || null
     }));
   }
 
@@ -367,19 +368,19 @@
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       preferencesQuery,
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
-      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name").order("created_at", {ascending:false}),
+      client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name,attachment_path,attachment_mime_type").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
       client.from("derby_events").select("id,template_id,name,status,start_at,end_at,signup_deadline,task_total,extra_tasks,max_points,daily_task_limit,description,rules,strategy,published_at,created_at").order("start_at", {ascending:false}).limit(60),
       client.from("derby_event_participation").select("event_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("member_game_identities").select("id,user_id,game_name,player_tag,is_primary,created_at,updated_at").order("is_primary",{ascending:false}).order("game_name"),
       client.from("derby_game_participation").select("event_id,game_identity_id,user_id,choice,updated_at,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       client.from("derby_member_completion").select("event_id,user_id,completed_at"),
-      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at").order("created_at", {ascending:true}).limit(300),
+      client.from("leadership_messages").select("id,user_id,message,created_at,updated_at,attachment_path,attachment_mime_type").order("created_at", {ascending:true}).limit(300),
       client.from("private_messages").select("id,sender_id,recipient_id,body,created_at,read_at").order("created_at", {ascending:true}).limit(1000),
       client.from("notification_preferences").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("notification_read_state").select("*").eq("user_id", session.user.id).maybeSingle(),
       client.from("social_likes").select("user_id,target_type,target_id,created_at"),
-      client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at").order("created_at", {ascending:true}),
+      client.from("social_comments").select("id,user_id,target_type,target_id,body,created_at,updated_at,attachment_path,attachment_mime_type").order("created_at", {ascending:true}),
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
@@ -439,6 +440,7 @@
       userId: row.user_id,
       authorName: nameById[row.user_id] || "WGANG-ledelse",
       message: row.message,
+      attachmentPath: row.attachment_path || null, attachmentMimeType: row.attachment_mime_type || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -1153,7 +1155,33 @@
       const {error}=await client.storage.from(WIKI_MEDIA_BUCKET).remove([path]);
       if(error)throw error;
     },
-    async createContent(kind, title, body, category="", publishNow=false, video=null) {
+    async uploadChatImage(file) {
+      if (!configured) throw new Error("Bildeopplasting krever Supabase.");
+      const allowed={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
+      const ext=allowed[file?.type];
+      if(!ext || file.size>10*1024*1024 || !file.size)throw new Error("Velg JPG, PNG eller WebP på maks 10 MB.");
+      const {data:{user},error:authError}=await client.auth.getUser();
+      if(authError||!user)throw authError||new Error("Logg inn først.");
+      const id=globalThis.crypto?.randomUUID?.();
+      if(!id)throw new Error("Nettleseren støtter ikke sikker fil-ID.");
+      const path=`${user.id}/${id}.${ext}`;
+      const sanitized=await stripImageMetadata(file,ext);
+      const {error}=await client.storage.from("chat-images").upload(path,sanitized,{contentType:sanitized.type,upsert:false});
+      if(error)throw error;
+      return {path,mimeType:sanitized.type,sizeBytes:sanitized.size,originalName:sanitized.name};
+    },
+    async chatImageUrl(path) {
+      if(!configured||!path)return null;
+      const {data,error}=await client.storage.from("chat-images").createSignedUrl(path,900);
+      if(error)throw error;
+      return data?.signedUrl||null;
+    },
+    async removeChatImage(path) {
+      if(!configured||!path)return;
+      const {error}=await client.storage.from("chat-images").remove([path]);
+      if(error)throw error;
+    },
+    async createContent(kind, title, body, category="", publishNow=false, video=null, attachment=null) {
       if (!configured) {
         const me = localState.accounts.find(x => x.id === localState.currentUserId);
         const item = {id:Date.now(),authorId:me?.id,authorName:me?.name||"Medlem",kind,title,body,category,status:publishNow||kind==="derby"?"published":"pending",createdAt:new Date().toISOString(),publishedAt:new Date().toISOString(),videoPath:video?.path||null,videoMimeType:video?.mimeType||null,videoSizeBytes:Number(video?.sizeBytes||0),videoOriginalName:video?.originalName||null};
@@ -1167,6 +1195,7 @@
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const status = kind === "derby" || publishNow ? "published" : "pending";
       const payload = {author_id:user.id,kind,title,body,category:category||null,status,published_at:status==="published"?new Date().toISOString():null};
+      if(kind==="derby" && attachment?.path){payload.attachment_path=attachment.path;payload.attachment_mime_type=attachment.mimeType;payload.attachment_size_bytes=attachment.sizeBytes;payload.attachment_original_name=attachment.originalName;}
       if(video?.path){
         if(kind!=="tip")throw new Error("Bilde eller film kan bare knyttes til Tips og triks.");
         payload.video_path=video.path;
@@ -1196,7 +1225,7 @@
       const { error } = await client.from("community_content").delete().eq("id",id);
       if (error) throw error;
     },
-    async sendLeadershipMessage(message) {
+    async sendLeadershipMessage(message,attachment=null) {
       if (!configured) {
         localState.leadershipMessages = localState.leadershipMessages || [];
         const me = localState.accounts.find(x => x.id === localState.currentUserId);
@@ -1205,7 +1234,7 @@
       }
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
-      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message}).select().single();
+      const { data, error } = await client.from("leadership_messages").insert({user_id:user.id,message,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType,attachment_size_bytes:attachment.sizeBytes,attachment_original_name:attachment.originalName}:{})}).select().single();
       if (error) throw error;
       return data;
     },
@@ -1332,13 +1361,13 @@
         if (error) throw error;
       }
     },
-    async addComment(targetType, targetId, body) {
+    async addComment(targetType, targetId, body,attachment=null) {
       if(!["community","leadership"].includes(targetType)||!String(targetId||"").trim())throw new Error("Ugyldig kommentar-mål.");
       if (!configured) return;
       const { data:{user}, error:userError } = await client.auth.getUser();
       if (userError || !user) throw userError || new Error("Du må være logget inn.");
       const { error } = await client.from("social_comments").insert({
-        user_id:user.id,target_type:targetType,target_id:String(targetId),body
+        user_id:user.id,target_type:targetType,target_id:String(targetId),body,...(attachment?.path?{attachment_path:attachment.path,attachment_mime_type:attachment.mimeType,attachment_size_bytes:attachment.sizeBytes,attachment_original_name:attachment.originalName}:{})
       });
       if (error) throw error;
     },
