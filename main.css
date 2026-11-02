@@ -986,3 +986,8 @@ body:not(.admin-mode) .admin-only {
 @media(max-width:600px){.admin-derby-participant{align-items:flex-start;flex-wrap:wrap}.derby-participant-actions{width:100%;max-width:none}}
 
 .derby-suspension-badge.unknown{color:#50545a;background:#eceef0}
+
+.derby-roster-correction{margin-top:1rem;padding:.8rem;border:1px solid #ddd;border-radius:10px}
+.derby-roster-correction summary{cursor:pointer;font-weight:600}
+.derby-roster-correction-row{display:flex!important;align-items:center;justify-content:space-between;gap:.8rem;padding:.6rem 0;border-bottom:1px solid #eee}
+.derby-roster-correction-row select{max-width:210px;min-width:0}

@@ -1,4 +1,4 @@
-/* v0.18.0.113 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.114 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -518,7 +518,7 @@
     const row=gameParticipationFor(identityId,event);
     if(!row)return "waiting";
     if(row.choice!=="joined")return row.choice;
-    const acknowledged=!!row.rules_acknowledged_at
+    const acknowledged=!!row.admin_corrected_at || !!row.rules_acknowledged_at
       && row.rules_acknowledgement_version===derbyRulesAckVersionForEvent(event)
       && Number(row.acknowledged_max_points)===Number(event?.max_points||320);
     return acknowledged?"joined":"waiting";
@@ -2017,7 +2017,7 @@
     const confirmedRules=!!row.rules_acknowledged_at
       && row.rules_acknowledgement_version===derbyRulesAckVersionForEvent(event)
       && Number(row.acknowledged_max_points)===Number(event.max_points);
-    return legacyEvent||confirmedRules;
+    return legacyEvent||confirmedRules||!!row.admin_corrected_at;
   }
 
   function resultParticipants(eventId) {
@@ -2728,6 +2728,15 @@
     bindSocialActions(list);
   }
 
+  function derbyTuesdayCorrectionOpen(event,now=new Date()) {
+    if(!event?.start_at||!['published','active'].includes(event.status))return false;
+    const start=new Date(event.start_at),moment=new Date(now);
+    if(!Number.isFinite(+start)||!Number.isFinite(+moment)||moment<start)return false;
+    const parts=date=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}).formatToParts(date);
+    const key=date=>parts(date).filter(p=>['year','month','day'].includes(p.type)).map(p=>p.value).join('-');
+    return parts(start).find(p=>p.type==='weekday')?.value==='Tue'&&key(start)===key(moment);
+  }
+
   function renderAdmin() {
     if(!isOwnerOrAdmin()&&$("adminDerbyParticipantList"))$("adminDerbyParticipantList").innerHTML="";
     if (!canAccessAdmin()) return;
@@ -2746,33 +2755,47 @@
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
       return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="senior" ${a.role === "senior" ? "selected" : ""}>Senior</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
     }).join("") : "";
-    const adminDerbyEvent=currentActiveDerbyEvent() || state.derbyManagement?.next;
-    const adminDerbyRows=all.map(account=>({account,choice:memberParticipationChoiceForEvent(account,adminDerbyEvent)}));
-    const counts = {joined:0,pause:0,unsure:0,waiting:0,removed:0};
-    adminDerbyRows.forEach(row => counts[row.choice] = (counts[row.choice] || 0) + 1);
-    if($("adminStatusGrid")) $("adminStatusGrid").innerHTML = canViewDerbyStatus ? [["Deltar",counts.joined],["Tar pause",counts.pause],["Usikker",counts.unsure],["Mangler svar",counts.waiting],["Meldt av",counts.removed]].map(x => `<article><span>${x[0]}</span><strong>${x[1]}</strong><small>medlemmer</small></article>`).join("") : "";
-    if($("adminResponseBadge")) $("adminResponseBadge").textContent = canViewDerbyStatus ? (counts.joined+counts.pause+counts.unsure) + " av " + all.length + " svar" : "";
-    const participantList=$("adminDerbyParticipantList");
+    const preparation=state.derbyPreparation;
+    const prepEvent=preparation?.event;
+    const prepRows=prepEvent?all.flatMap(account=>gameIdentitiesFor(account.id).map(identity=>({account,identity,status:preparation.statuses.find(row=>String(row.game_identity_id)===String(identity.id))}))).filter(row=>row.status):[];
+    const counts={joined:0,pause:0,unsure:0,waiting:0,removed:0};
+    prepRows.forEach(({status})=>counts[status.choice]=(counts[status.choice]||0)+1);
+    const statusGrid=$('adminStatusGrid');
+    if(statusGrid){statusGrid.classList.toggle('hidden',!prepEvent);statusGrid.innerHTML=canViewDerbyStatus&&prepEvent?[['Deltar',counts.joined],['Tar pause',counts.pause],['Usikker',counts.unsure],['Mangler svar',counts.waiting],['Meldt av',counts.removed]].map(([name,count])=>`<article><span>${esc(tText(name))}</span><strong>${count}</strong><small>${esc(ui('spillprofiler','game profiles'))}</small></article>`).join(''):'';}
+    if($('adminResponseBadge'))$('adminResponseBadge').textContent=canViewDerbyStatus&&prepEvent?`${counts.joined+counts.pause+counts.unsure} / ${prepRows.length}`:'';
+    const participantList=$('adminDerbyParticipantList');
     if(participantList){
-      const canRemove=ownerAdmin&&hasPermission("derby.participation.remove");
-      const events=[...new Map([currentActiveDerbyEvent(),state.derbyManagement?.next].filter(Boolean).map(event=>[String(event.id),event])).values()];
-      participantList.innerHTML=canViewDerbyStatus?events.map(event=>{
-        const rows=all.flatMap(account=>gameIdentityRowsForAccount(account,event).map(identity=>({account,identity,status:derbyEligibilityForIdentity(identity,event)})));
-        const html=rows.map(({account,identity,status})=>{
-          const badge=status.unavailable?ui("Status kunne ikke hentes","Status could not be loaded"):status.blocked||status.removed?ui("Utestengt fra derby denne uken","Suspended from Derby this week")
-            :status.override_allowed?ui("Karantene opphevet","Suspension lifted"):"";
-          const detail=status.auto_blocked?ui(`Resultat: ${historyNumber(status.result_percent)} % · karantene i én derbyuke.`,`Result: ${historyNumber(status.result_percent)}% · suspended for one Derby week.`):"";
-          return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(identity.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.unavailable?"unknown":status.blocked||status.removed?"blocked":"allowed"}">${esc(badge)}</span>`:""}${detail?`<small>${esc(detail)}</small>`:""}</span><div class="derby-participant-actions">${canRemove&&identity.choice==="joined"&&String(account.id)!==String(current()?.id)?`<button type="button" class="button button-small button-danger" data-derby-remove-user="${esc(account.id)}" data-derby-remove-identity="${esc(identity.id)}" data-derby-event="${event.id}">${esc(ui("Meld av","Remove"))}</button>`:""}${!identity.legacy&&!status.unavailable?`<label class="derby-waiver-control"><input type="checkbox" data-derby-waiver="${identity.id}" data-derby-event="${event.id}" ${status.override_allowed?"checked":""}><span>${esc(ui("Tillat påmelding (opphev karantene)","Allow registration (lift suspension)"))}</span></label>`:""}</div></div>`;
-        }).join("");
-        return `<section class="derby-suspension-group"><div class="admin-derby-list-heading"><strong>${esc(event.name||"Derby")}</strong><small>${esc(formatDate(event.start_at))} · ${esc(event===currentActiveDerbyEvent()?ui("Pågår nå","Current Derby"):ui("Neste derby","Next Derby"))}</small></div><p class="helper-text">${esc(ui("Tillatelsen gjelder denne derbyuken. Spilleren må selv melde seg på og bekrefte reglene. Fjern avhukingen for å bruke den automatiske regelen igjen.","Permission applies to this Derby week. The player must register and accept the rules. Uncheck to apply the automatic rule again."))}</p>${html||`<p class="empty-state">${esc(ui("Ingen spillprofiler.","No game profiles."))}</p>`}</section>`;
-      }).join(""):"";
+      const prepHtml=canViewDerbyStatus&&prepEvent?`<section class="derby-suspension-group"><div class="admin-derby-list-heading"><strong>${esc(ui('Klargjør neste derby','Prepare next Derby'))} · ${esc(prepEvent.name)}</strong><small>${esc(formatDate(prepEvent.start_at))}</small></div><p class="helper-text">${esc(ui('Åpent for admin/eier fra søndag morgen. Medlemmenes påmelding åpner når derbyet publiseres.','Open for admins/owner from Sunday morning. Member registration opens when the Derby is published.'))}</p>${prepRows.map(({account,identity,status})=>{
+        const badge=status.blocked||status.removed?ui('Utestengt fra derby denne uken','Suspended from this Derby'):status.override_allowed?ui('Karantene opphevet','Suspension lifted'):'';
+        return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(status.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.blocked||status.removed?'blocked':'allowed'}">${esc(badge)}</span>`:''}</span><div class="derby-participant-actions"><button type="button" class="button button-small" data-derby-prep="${identity.id}" data-prep-action="${status.choice==='joined'?'pause':'joined'}" ${status.choice!=='joined'&&(status.blocked||status.removed)?'disabled':''}>${esc(status.choice==='joined'?ui('Meld av','Remove'):ui('Meld på','Register'))}</button><label class="derby-waiver-control"><input type="checkbox" data-derby-prep-waiver="${identity.id}" ${status.override_allowed?'checked':''}><span>${esc(ui('Tillat påmelding (opphev karantene)','Allow registration (lift suspension)'))}</span></label></div></div>`;
+      }).join('')}</section>`:'';
+      const correctingEvent=currentActiveDerbyEvent();
+      const correctionHtml=canViewDerbyStatus&&derbyTuesdayCorrectionOpen(correctingEvent)?`<details class="derby-roster-correction"><summary>${esc(ui('Korriger deltakerlisten fra spillet (kun tirsdag)','Correct the in-game participant list (Tuesday only)'))}</summary><p class="helper-text">${esc(ui('Brukes bare hvis listen i spillet ble endret rett før oppstart. Kontroller hvem som faktisk deltar. Korrigering stenger ved midnatt norsk tid.','Only for last-minute changes made in the game before the start. Check who actually participates. Corrections close at midnight Norwegian time.'))}</p>${all.flatMap(account=>gameIdentityRowsForAccount(account,correctingEvent)).filter(identity=>!identity.legacy).map(identity=>`<label class="derby-roster-correction-row"><strong>${esc(identity.name)}</strong><select data-derby-roster-identity="${identity.id}" data-derby-event="${correctingEvent.id}" data-original-choice="${identity.choice==='joined'?'joined':'pause'}" ${state.derbyRosterCorrectionsAvailable?'':'disabled'}><option value="joined" ${identity.choice==='joined'?'selected':''}>${esc(ui('Deltar i spillet','Participating in game'))}</option><option value="pause" ${identity.choice!=='joined'?'selected':''}>${esc(ui('Deltar ikke i spillet','Not participating in game'))}</option></select></label>`).join('')}</details>`:'';
+      participantList.innerHTML=prepHtml+correctionHtml;
+      if(canViewDerbyStatus&&!prepHtml&&!correctionHtml)participantList.innerHTML=`<p class="helper-text">${esc(ui('Klargjøring av neste derby åpner søndag morgen.','Preparation for the next Derby opens Sunday morning.'))}</p>`;
     }
-    $$('[data-derby-waiver]').forEach(input=>input.onchange=async()=>{
-      if(!isOwnerOrAdmin()||busy){input.checked=!input.checked;return;}
-      setBusy(true);input.disabled=true;
-      try{await backend.adminSetDerbySignupOverride(input.dataset.derbyEvent,input.dataset.derbyWaiver,input.checked);await refreshState();}
-      catch(error){input.checked=!input.checked;alert(humanError(error));}
-      finally{input.disabled=false;setBusy(false);}
+    $$('[data-derby-prep],[data-derby-prep-waiver]').forEach(input=>{
+      const save=async()=>{
+        if(!isOwnerOrAdmin()||busy)return;
+        const waiver=input.dataset.derbyPrepWaiver;
+        const identityId=waiver||input.dataset.derbyPrep;
+        const action=waiver?(input.checked?'allow':'automatic'):input.dataset.prepAction;
+        setBusy(true);input.disabled=true;
+        try{await backend.adminPrepareDerbyProfile(preparation.week,identityId,action);await refreshState();}
+        catch(error){if(waiver)input.checked=!input.checked;alert(humanError(error));}
+        finally{input.disabled=false;setBusy(false);}
+      };
+      if(input.dataset.derbyPrepWaiver)input.onchange=save;else input.onclick=save;
+    });
+    $$('[data-derby-roster-identity]').forEach(select=>select.onchange=async()=>{
+      if(!isOwnerOrAdmin()||busy){select.value=select.dataset.originalChoice;return;}
+      const reason=prompt(ui('Kort begrunnelse for korrigeringen:','Short reason for the correction:'),ui('Kontrollert mot deltakerlisten i spillet.','Checked against the participant list in the game.'));
+      if(reason===null){select.value=select.dataset.originalChoice;return;}
+      if(reason.trim().length<5){select.value=select.dataset.originalChoice;alert(ui('Skriv en kort begrunnelse.','Enter a short reason.'));return;}
+      setBusy(true);select.disabled=true;
+      try{await backend.adminCorrectDerbyRoster(select.dataset.derbyEvent,select.dataset.derbyRosterIdentity,select.value==='joined',reason.trim());await refreshState();}
+      catch(error){select.value=select.dataset.originalChoice;alert(humanError(error));}
+      finally{select.disabled=false;setBusy(false);}
     });
     $$('[data-approve]').forEach(b => b.onclick = async () => {
       if(!hasPermission("members.approve"))return alert("Du har ikke rettighet til å godkjenne medlemmer.");
@@ -4290,7 +4313,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.113").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.114").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

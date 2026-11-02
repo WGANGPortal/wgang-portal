@@ -1,4 +1,4 @@
-/* v0.18.0.113 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.114 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -59,6 +59,42 @@
     const normalized=fromName==="jpeg"?"jpg":fromName;
     if(["jpg","png","webp","mp4","mov","webm"].includes(normalized))return normalized;
     return {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+  }
+
+  function applyDerbyRosterCorrections(participations,gameParticipations,corrections) {
+    const games=(gameParticipations||[]).map(row=>({...row}));
+    const members=(participations||[]).map(row=>({...row}));
+    const affected=new Map();
+    for(const row of corrections||[]){
+      const key=`${row.event_id}:${row.game_identity_id}`;
+      const index=games.findIndex(g=>`${g.event_id}:${g.game_identity_id}`===key);
+      const corrected={...(index>=0?games[index]:{}),...row};
+      if(index>=0)games[index]=corrected;else games.push(corrected);
+      affected.set(`${row.event_id}:${row.user_id}`,row);
+    }
+    for(const row of affected.values()){
+      const rows=games.filter(g=>String(g.event_id)===String(row.event_id)&&String(g.user_id)===String(row.user_id));
+      const choice=rows.some(g=>g.choice==='joined')?'joined':rows.some(g=>g.choice==='unsure')?'unsure':rows.some(g=>g.choice==='pause')?'pause':'removed';
+      const index=members.findIndex(g=>String(g.event_id)===String(row.event_id)&&String(g.user_id)===String(row.user_id));
+      const aggregate={...(index>=0?members[index]:{}),event_id:row.event_id,user_id:row.user_id,choice,admin_corrected_at:row.admin_corrected_at};
+      if(index>=0)members[index]=aggregate;else members.push(aggregate);
+    }
+    return {participations:members,gameParticipations:games};
+  }
+  async function loadDerbyRosterCorrections(events) {
+    try{
+      const {data,error}=await client.rpc('wgang_get_derby_roster_corrections',{p_event_ids:(events||[]).map(e=>Number(e.id))});
+      if(error)throw error;
+      return {rows:data||[],available:true};
+    }catch(error){console.warn('Kunne ikke hente korrigert deltakerliste',error);return {rows:[],available:false};}
+  }
+  async function loadDerbyPreparation(role) {
+    if(!['owner','admin'].includes(role))return null;
+    try{
+      const {data,error}=await client.rpc('wgang_get_derby_preparation');
+      if(error)throw error;
+      return data||null;
+    }catch(error){console.warn('Kunne ikke hente derbyklargjøring',error);return null;}
   }
 
   async function loadDerbySignupStatuses(events) {
@@ -271,7 +307,7 @@
     (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
     const part = (participation || []).find(p => p.user_id === row.id);
     const rawChoice = part ? part.choice : "waiting";
-    const participationAcknowledged = rawChoice !== "joined" || Boolean(
+    const participationAcknowledged = rawChoice !== "joined" || !!part?.admin_corrected_at || Boolean(
       part?.rules_acknowledged_at &&
       part?.rules_acknowledgement_version === derbyRulesAckVersionForEvent(expectedEvent) &&
       Number(part?.acknowledged_max_points) === Number(expectedEvent?.max_points || 320)
@@ -420,7 +456,12 @@
     // forsiden, ferdigstatus og historikk.
     const contexts = selectDerbyContexts(events);
     const {current,upcoming,next} = contexts;
-    const derbySignupStatuses=await loadDerbySignupStatuses([current,next]);
+    const [derbySignupStatuses,rosterCorrections,derbyPreparation]=await Promise.all([
+      loadDerbySignupStatuses([current,next]),loadDerbyRosterCorrections(events),loadDerbyPreparation(own.role)
+    ]);
+    const correctedRoster=applyDerbyRosterCorrections(eventParticipationRes.data,gameParticipationRes.data,rosterCorrections.rows);
+    eventParticipationRes.data=correctedRoster.participations;
+    gameParticipationRes.data=correctedRoster.gameParticipations;
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
@@ -477,7 +518,7 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbySignupStatuses,
+      accounts, derby, content, leadershipMessages, derbySignupStatuses, derbyPreparation, derbyRosterCorrectionsAvailable:rosterCorrections.available,
       privateMessages:(privateMessagesRes.data || []).map(row=>({
         id:row.id,senderId:row.sender_id,recipientId:row.recipient_id,
         body:row.body,createdAt:row.created_at,readAt:row.read_at
@@ -744,6 +785,16 @@
       const {data,error}=await client.rpc(gameIdentityId?"wgang_admin_remove_game_participant":"wgang_admin_remove_derby_participant",args);
       if(error)throw error;
       return data;
+    },
+    async adminPrepareDerbyProfile(week,identityId,action) {
+      if(!configured)throw new Error('Klargjøring krever tilkobling til databasen.');
+      const {error}=await client.rpc('wgang_admin_prepare_derby_profile',{p_week:week,p_game_identity_id:Number(identityId),p_action:action});
+      if(error)throw error;
+    },
+    async adminCorrectDerbyRoster(eventId,identityId,participating,reason) {
+      if(!configured)throw new Error('Korrigering krever tilkobling til databasen.');
+      const {error}=await client.rpc('wgang_admin_correct_derby_roster',{p_event_id:Number(eventId),p_game_identity_id:Number(identityId),p_participating:!!participating,p_reason:reason});
+      if(error)throw error;
     },
     async adminSetDerbySignupOverride(eventId,gameIdentityId,allowed) {
       if(!configured)throw new Error("Endring av derbykarantene krever tilkobling til databasen.");
