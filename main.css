@@ -974,3 +974,15 @@ body:not(.admin-mode) .admin-only {
 .content-translation-fallback{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:8px 0 2px}.content-translation-fallback .text-button{font-size:.72rem}.content-translation-fallback small{color:var(--muted);font-size:.62rem}
 .content-translation-note{margin:8px 0 2px;padding:8px 10px;border:1px solid rgba(169,47,96,.14);border-radius:11px;background:#fff8fb;color:var(--muted);font-size:.68rem}.content-translation-note summary{color:var(--pink);font-weight:850;cursor:pointer}.content-translation-note strong{display:block;margin:8px 0 3px;color:var(--ink)}.content-translation-note p{margin:4px 0 0!important;color:var(--muted)!important;font-size:.7rem!important;line-height:1.45!important}
 .private-message-bubble .content-translation-fallback,.leadership-message .content-translation-fallback{margin-top:6px}.private-message-bubble .content-translation-fallback small{display:none}
+
+/* v113: kun admin/eier får disse kontrollene i app.js */
+.derby-suspension-group{margin-block:1.2rem;padding-block:.8rem;border-top:1px solid var(--line,#ddd)}
+.derby-suspension-badge{display:inline-block;width:fit-content;margin-top:.35rem;padding:.25rem .55rem;border-radius:6px;font-size:.78rem;font-weight:700}
+.derby-suspension-badge.blocked{color:#8f1732;background:#ffe5ec}
+.derby-suspension-badge.allowed{color:#205a40;background:#e1f3e7}
+.derby-participant-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;max-width:360px}
+.derby-waiver-control{display:flex!important;align-items:center;gap:.5rem;font-size:.8rem;line-height:1.4;cursor:pointer}
+.derby-waiver-control input{width:1.1rem;height:1.1rem;flex:none;accent-color:#a62b58}
+@media(max-width:600px){.admin-derby-participant{align-items:flex-start;flex-wrap:wrap}.derby-participant-actions{width:100%;max-width:none}}
+
+.derby-suspension-badge.unknown{color:#50545a;background:#eceef0}

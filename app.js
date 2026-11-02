@@ -1,4 +1,4 @@
-/* v0.18.0.112 – Europe/Oslo derby reset / DST test */
+/* v0.18.0.113 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -536,24 +536,14 @@
     if(rows.length)return rows.map(identity=>({...identity,choice:memberChoice==="removed"?"removed":gameIdentityChoice(identity.id,event)}));
     return account?[{id:`legacy-${account.id}`,userId:account.id,name:account.name,playerTag:"",isPrimary:true,choice:account.choice || "waiting",legacy:true}]:[];
   }
+  function derbyEligibilityForIdentity(identity,event=state.derbyManagement?.next) {
+    const status=(state.derbySignupStatuses||[]).find(row=>String(row.event_id)===String(event?.id)&&String(row.game_identity_id)===String(identity?.id));
+    // Database-status er autoritativ. Manglende status skal aldri tolkes som tillatelse.
+    return status?{...status,returning:false,unavailable:false}:{blocked:true,returning:false,unavailable:true};
+  }
   function derbyEligibilityForAccount(account,event=state.derbyManagement?.next) {
-    if(!account?.id||!event?.start_at)return {blocked:false,returning:false};
-    if(derbyRulesAckVersionForEvent(event)!=="WGANG-DERBY-RULES-v2")return {blocked:false,returning:false};
-    const eventStart=new Date(event.start_at).getTime();
-    if(!Number.isFinite(eventStart))return {blocked:false,returning:false};
-    const history=derbyHistoryData();
-    const archives=(history.archives||[]).filter(archive=>{
-      const ended=new Date(archive.ended_at||archive.started_at||0).getTime();
-      return Number.isFinite(ended)&&ended<eventStart;
-    }).sort((a,b)=>new Date(b.ended_at||b.started_at||0)-new Date(a.ended_at||a.started_at||0));
-    const results=(history.results||[]).filter(result=>String(result.user_id)===String(account.id));
-    const previous=archives[0]||null;
-    const previousResult=previous?results.find(result=>String(result.archive_id)===String(previous.id)):null;
-    const latestResult=archives.map(archive=>results.find(result=>String(result.archive_id)===String(archive.id))).find(Boolean)||null;
-    return {
-      blocked:!!previousResult&&resultPercentValue(previousResult)<DERBY_MINIMUM_PERCENT,
-      returning:!previousResult&&!!latestResult&&resultPercentValue(latestResult)<DERBY_MINIMUM_PERCENT
-    };
+    const rows=gameIdentitiesFor(account?.id).map(identity=>derbyEligibilityForIdentity(identity,event));
+    return {blocked:rows.length>0&&rows.every(row=>row.blocked),returning:false};
   }
   function ownGameIdentitySummary(event=state.derbyManagement?.next) {
     const rows=gameIdentityRowsForAccount(current(),event);
@@ -2063,12 +2053,23 @@
     showDialog(derbyResultDialog);
   }
 
+  function resultRegistrationRows(event) {
+    const gameRows=(state.derbyManagement?.gameParticipations||[])
+      .filter(row=>String(row.event_id)===String(event.id)&&validResultParticipation(event,row))
+      .map(row=>({user_id:row.user_id,game_identity_id:row.game_identity_id,
+        display_name_snapshot:(state.gameIdentities||[]).find(g=>String(g.id)===String(row.game_identity_id))?.name||""}));
+    const representedUsers=new Set(gameRows.map(row=>String(row.user_id)));
+    const legacyRows=resultParticipants(event.id)
+      .filter(({row})=>!representedUsers.has(String(row.user_id)))
+      .map(({row,account})=>({user_id:row.user_id,game_identity_id:null,display_name_snapshot:account?.name||""}));
+    return [...gameRows,...legacyRows];
+  }
+
   function populateDerbyResultEditor() {
     const event=(state.derbyManagement?.events||[]).find(item=>String(item.id)===String($("resultEventSelect")?.value));
     if(!event)return;
     const archive=(derbyHistoryData().archives||[]).find(item=>String(item.event_id)===String(event.id));
     const previous=archive?archiveResults(archive.id):[];
-    const participants=resultParticipants(event.id);
     setText("resultDialogTitle",archive?(currentLanguage==="en"?"Correct final result":"Korriger sluttresultat"):(currentLanguage==="en"?"Register final result":"Registrer sluttresultat"));
     $("resultLeague").value=archive?.league||"";
     $("resultPlacement").value=archive?.placement??"";
@@ -2082,7 +2083,7 @@
     const memberBox=$("resultMemberRows");
     const rows=archive
       ? previous
-      : participants.map(({row,account})=>({user_id:row.user_id,display_name_snapshot:account?.name||""}));
+      : resultRegistrationRows(event);
     memberBox.innerHTML=rows.map(row=>resultMemberEditorMarkup(event,row,!!archive)).join("");
     if(!rows.length)addResultMemberRow(event,null,!!archive);
     const resultStatus=$("derbyResultStatus");
@@ -2106,10 +2107,11 @@
     const points=Number(row.points_per_task??event?.max_points??0);
     const selectedUser=String(row.user_id||"");
     const accountOptions=(state.accounts||[]).slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"nb")).map(account=>`<option value="${account.id}" ${String(account.id)===selectedUser?"selected":""}>${esc(account.name||"WGANG-medlem")}${account.status==="removed"?" · tidligere medlem":""}</option>`).join("");
+    const identityOptions=(state.gameIdentities||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,"nb")).map(g=>`<option value="${g.id}" data-user-id="${esc(g.userId)}" ${String(row.game_identity_id||"")===String(g.id)?"selected":""}>${esc(g.name)} · ${esc(state.accounts.find(a=>String(a.id)===String(g.userId))?.name||"")}</option>`).join("");
     const name=row.display_name_snapshot||(state.accounts||[]).find(account=>String(account.id)===selectedUser)?.name||"";
     return `<article class="result-member-editor">
       <div class="result-member-heading"><div><strong data-result-heading>${esc(name||"Ny deltaker")}</strong><small data-result-basis>${historyNumber(included)} × ${historyNumber(points)} = ${historyNumber(included*points)} ${currentLanguage==="en"?"ordinary maximum":"ordinært maksimum"}</small></div><span class="result-member-preview">${currentLanguage==="en"?"Enter result":"Fyll inn resultat"}</span></div>
-      <div class="result-member-identity"><label>${currentLanguage==="en"?"Portal member":"Portalmedlem"}<select data-result-user ${locked?"disabled":""}><option value="">Ikke koblet / tidligere spiller</option>${accountOptions}</select></label><label>${currentLanguage==="en"?"Name in final list":"Navn i sluttlisten"}<input data-result-name maxlength="80" value="${esc(name)}" ${selectedUser||locked?"readonly":""} required></label>${locked?"":`<button type="button" class="button button-ghost button-compact" data-remove-result-member>${currentLanguage==="en"?"Remove":"Fjern"}</button>`}</div>
+      <div class="result-member-identity"><label>${ui("Spillprofil","Game profile")}<select data-result-identity ${locked?"disabled":""}><option value="">${esc(ui("Ikke koblet / eldre resultat","Unlinked / legacy result"))}</option>${identityOptions}</select></label><label>${currentLanguage==="en"?"Portal member":"Portalmedlem"}<select data-result-user ${locked?"disabled":""}><option value="">Ikke koblet / tidligere spiller</option>${accountOptions}</select></label><label>${currentLanguage==="en"?"Name in final list":"Navn i sluttlisten"}<input data-result-name maxlength="80" value="${esc(name)}" ${selectedUser||locked?"readonly":""} required></label>${locked?"":`<button type="button" class="button button-ghost button-compact" data-remove-result-member>${currentLanguage==="en"?"Remove":"Fjern"}</button>`}</div>
       <div class="result-member-fields result-member-fields-v76"><label>${currentLanguage==="en"?"Ordinary tasks":"Ordinære oppgaver"}<input data-result-included type="number" min="1" max="100" value="${included}" required></label><label>${currentLanguage==="en"?"Extra tasks used":"Ekstraoppgaver brukt"}<input data-result-extra type="number" min="0" max="50" value="${extra}" required></label><label>${currentLanguage==="en"?"Tasks completed":"Oppgaver utført"}<input data-result-completed type="number" min="0" max="${included+extra}" value="${row.tasks_completed??""}" required></label><label>${currentLanguage==="en"?"Maximum points per task":"Makspoeng per oppgave"}<input data-result-points-per-task type="number" min="1" max="1000" value="${points}" required></label><label>${currentLanguage==="en"?"Earned points":"Oppnådde poeng"}<input data-result-points type="number" min="0" value="${row.points_earned??""}" required></label></div>
       <p class="result-available-tasks"></p>
     </article>`;
@@ -2128,6 +2130,16 @@
       card.dataset.bound="true";
       card.querySelectorAll("input,select").forEach(input=>input.addEventListener("input",updateResultEditorCalculations));
       const userSelect=card.querySelector("[data-result-user]");
+      const identitySelect=card.querySelector("[data-result-identity]");
+      const updateIdentity=()=>{
+        const identity=(state.gameIdentities||[]).find(g=>String(g.id)===String(identitySelect?.value));
+        if(identity){userSelect.value=String(identity.userId);card.querySelector("[data-result-name]").value=identity.name;}
+        userSelect.disabled=!!identity||identitySelect.disabled;
+        card.querySelector("[data-result-name]").readOnly=!!identity||!!userSelect.value||identitySelect.disabled;
+        updateResultEditorCalculations();
+      };
+      identitySelect?.addEventListener("change",updateIdentity);
+      updateIdentity();
       userSelect?.addEventListener("change",()=>{
         const account=(state.accounts||[]).find(item=>String(item.id)===String(userSelect.value));
         const nameInput=card.querySelector("[data-result-name]");
@@ -2195,7 +2207,7 @@
       if(!Number.isInteger(pointsPerTask)||pointsPerTask<1)throw new Error(`Ugyldig makspoeng for ${displayName}.`);
       if(!Number.isInteger(completed)||completed<0||completed>available)throw new Error(`Ugyldig antall utførte oppgaver for ${displayName}.`);
       if(!Number.isInteger(points)||points<0||points>completed*pointsPerTask)throw new Error(`Ugyldig poengsum for ${displayName}.`);
-      return {user_id:userId,display_name:displayName,included_tasks:included,extra_tasks_used:extra,tasks_completed:completed,points_per_task:pointsPerTask,points_earned:points};
+      return {user_id:userId,game_identity_id:card.querySelector("[data-result-identity]")?.value?Number(card.querySelector("[data-result-identity]").value):null,display_name:displayName,included_tasks:included,extra_tasks_used:extra,tasks_completed:completed,points_per_task:pointsPerTask,points_earned:points};
     });
     if(!results.length)throw new Error("Legg til minst én deltaker.");
     const placementRaw=$("resultPlacement").value, pointsRaw=$("resultNeighborhoodPoints").value, trashedRaw=$("resultTrashedTasks").value;
@@ -2717,6 +2729,7 @@
   }
 
   function renderAdmin() {
+    if(!isOwnerOrAdmin()&&$("adminDerbyParticipantList"))$("adminDerbyParticipantList").innerHTML="";
     if (!canAccessAdmin()) return;
     applyPermissionVisibility();
     syncBunnyAdminCardVisibility();
@@ -2742,13 +2755,25 @@
     const participantList=$("adminDerbyParticipantList");
     if(participantList){
       const canRemove=ownerAdmin&&hasPermission("derby.participation.remove");
-      const visibleRows=adminDerbyRows.filter(row=>row.choice!=="waiting").sort((a,b)=>{
-        const rank={joined:0,pause:1,unsure:2,removed:3};
-        return (rank[a.choice]??9)-(rank[b.choice]??9)||a.account.name.localeCompare(b.account.name,"nb");
-      });
-      const participantRowsHtml=visibleRows.map(row=>`<div class="admin-derby-participant"><span><strong>${esc(row.account.name)}</strong><small>${choiceLabel(row.choice)}</small></span>${canRemove&&row.choice==="joined"&&String(row.account.id)!==String(current()?.id)?`<button type="button" class="button button-small button-danger" data-derby-remove-user="${row.account.id}" data-derby-event="${adminDerbyEvent.id}">Meld av</button>`:""}</div>`).join("") || `<p class="empty-state">Ingen derby-svar er registrert.</p>`;
-      participantList.innerHTML=canViewDerbyStatus&&adminDerbyEvent ? `<div class="admin-derby-list-heading"><strong>${esc(adminDerbyEvent.name || "Derby")}</strong><small>${adminDerbyEvent===currentActiveDerbyEvent()?"Pågår nå":"Neste derby"}</small></div>${participantRowsHtml}` : "";
+      const events=[...new Map([currentActiveDerbyEvent(),state.derbyManagement?.next].filter(Boolean).map(event=>[String(event.id),event])).values()];
+      participantList.innerHTML=canViewDerbyStatus?events.map(event=>{
+        const rows=all.flatMap(account=>gameIdentityRowsForAccount(account,event).map(identity=>({account,identity,status:derbyEligibilityForIdentity(identity,event)})));
+        const html=rows.map(({account,identity,status})=>{
+          const badge=status.unavailable?ui("Status kunne ikke hentes","Status could not be loaded"):status.blocked||status.removed?ui("Utestengt fra derby denne uken","Suspended from Derby this week")
+            :status.override_allowed?ui("Karantene opphevet","Suspension lifted"):"";
+          const detail=status.auto_blocked?ui(`Resultat: ${historyNumber(status.result_percent)} % · karantene i én derbyuke.`,`Result: ${historyNumber(status.result_percent)}% · suspended for one Derby week.`):"";
+          return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(identity.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.unavailable?"unknown":status.blocked||status.removed?"blocked":"allowed"}">${esc(badge)}</span>`:""}${detail?`<small>${esc(detail)}</small>`:""}</span><div class="derby-participant-actions">${canRemove&&identity.choice==="joined"&&String(account.id)!==String(current()?.id)?`<button type="button" class="button button-small button-danger" data-derby-remove-user="${esc(account.id)}" data-derby-remove-identity="${esc(identity.id)}" data-derby-event="${event.id}">${esc(ui("Meld av","Remove"))}</button>`:""}${!identity.legacy&&!status.unavailable?`<label class="derby-waiver-control"><input type="checkbox" data-derby-waiver="${identity.id}" data-derby-event="${event.id}" ${status.override_allowed?"checked":""}><span>${esc(ui("Tillat påmelding (opphev karantene)","Allow registration (lift suspension)"))}</span></label>`:""}</div></div>`;
+        }).join("");
+        return `<section class="derby-suspension-group"><div class="admin-derby-list-heading"><strong>${esc(event.name||"Derby")}</strong><small>${esc(formatDate(event.start_at))} · ${esc(event===currentActiveDerbyEvent()?ui("Pågår nå","Current Derby"):ui("Neste derby","Next Derby"))}</small></div><p class="helper-text">${esc(ui("Tillatelsen gjelder denne derbyuken. Spilleren må selv melde seg på og bekrefte reglene. Fjern avhukingen for å bruke den automatiske regelen igjen.","Permission applies to this Derby week. The player must register and accept the rules. Uncheck to apply the automatic rule again."))}</p>${html||`<p class="empty-state">${esc(ui("Ingen spillprofiler.","No game profiles."))}</p>`}</section>`;
+      }).join(""):"";
     }
+    $$('[data-derby-waiver]').forEach(input=>input.onchange=async()=>{
+      if(!isOwnerOrAdmin()||busy){input.checked=!input.checked;return;}
+      setBusy(true);input.disabled=true;
+      try{await backend.adminSetDerbySignupOverride(input.dataset.derbyEvent,input.dataset.derbyWaiver,input.checked);await refreshState();}
+      catch(error){input.checked=!input.checked;alert(humanError(error));}
+      finally{input.disabled=false;setBusy(false);}
+    });
     $$('[data-approve]').forEach(b => b.onclick = async () => {
       if(!hasPermission("members.approve"))return alert("Du har ikke rettighet til å godkjenne medlemmer.");
       if (busy) return; setBusy(true);
@@ -2769,16 +2794,17 @@
       setBusy(false);
     });
     $$('[data-derby-remove-user]').forEach(button => button.onclick = async () => {
-      if(!hasPermission("derby.participation.remove"))return alert("Bare eier og admin kan melde av derbydeltakere.");
+      if(!isOwnerOrAdmin()||!hasPermission("derby.participation.remove"))return alert("Bare eier og admin kan melde av derbydeltakere.");
       const account=state.accounts.find(item=>String(item.id)===String(button.dataset.derbyRemoveUser));
-      const defaultMessage="Du har ikke innfridd målene de siste ukene og er derfor meldt av dette derbyet.";
-      const message=prompt(`Melding til ${account?.name || "deltakeren"}:`,defaultMessage);
+      const defaultMessage=ui("Spillprofilen er meldt av dette derbyet på grunn av resultat under 95 %.","The game profile has been removed from this Derby due to a result below 95%.");
+      const identity=state.gameIdentities.find(g=>String(g.id)===String(button.dataset.derbyRemoveIdentity));
+      const message=prompt(`${ui("Melding til","Message to")} ${identity?.name||account?.name||"deltakeren"}:`,defaultMessage);
       if(message===null)return;
       if(message.trim().length<10)return alert("Begrunnelsen må være minst 10 tegn.");
-      if(!await portalConfirm(`Melde ${account?.name || "deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
+      if(!await portalConfirm(`Melde ${identity?.name||account?.name||"deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
       if(busy)return;setBusy(true);
       try{
-        await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,"insufficient_results",message.trim());
+        await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,"insufficient_results",message.trim(),button.dataset.derbyRemoveIdentity);
         await refreshState();
       }catch(error){alert(humanError(error));}
       setBusy(false);
@@ -3274,11 +3300,12 @@
     const identities=gameIdentityRowsForAccount(user,state.derbyManagement?.next);
     const eligibility=derbyEligibilityForAccount(user,state.derbyManagement?.next);
     box.innerHTML=identities.map(identity=>{
+      const eligibility=derbyEligibilityForIdentity(identity,state.derbyManagement?.next);
       const choice=identity.choice || "waiting";
       const tag=identity.playerTag?`<small>${esc(identity.playerTag)}</small>`:"";
       const primary=identity.isPrimary?`<span class="game-primary-badge">${esc(ui("Hovedprofil","Primary profile"))}</span>`:"";
       const choices=[["joined",ui("Jeg deltar","I'm participating"),eligibility.blocked?ui("Ikke kvalifisert denne uken","Not eligible this week"):ui("Krever regelbekreftelse","Rule confirmation required")],["pause",ui("Jeg tar pause","I'm taking a break"),ui("Ikke med denne uken","Not participating this week")],["unsure",ui("Jeg er usikker","I'm unsure"),ui("Avklarer før fristen","I'll decide before the deadline")]];
-      return `<article class="game-identity-card participation-${esc(choice)}"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${choices.map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}" aria-pressed="${choice===value?"true":"false"}"${identity.legacy||(value==="joined"&&eligibility.blocked)?" disabled":""}><strong>${esc(label)}</strong><small>${esc(help)}</small></button>`).join("")}</div><p class="game-choice-status"><span aria-hidden="true">${choice==="joined"?"✓":choice==="pause"?"Ⅱ":choice==="unsure"?"?":"○"}</span> ${esc(ui("Status","Status"))}: <strong>${esc(choiceLabel(choice))}</strong></p></article>`;
+      return `<article class="game-identity-card participation-${esc(choice)}"><header><div><strong>${esc(identity.name)}</strong>${tag}</div>${primary}</header><div class="choice-grid game-choice-grid">${choices.map(([value,label,help])=>`<button type="button" class="choice-button${choice===value?" selected":""}" data-game-identity="${esc(identity.id)}" data-choice="${value}" aria-pressed="${choice===value?"true":"false"}"${identity.legacy||(value==="joined"&&(eligibility.blocked||eligibility.removed))?" disabled":""}><strong>${esc(label)}</strong><small>${esc(help)}</small></button>`).join("")}</div><p class="game-choice-status"><span aria-hidden="true">${choice==="joined"?"✓":choice==="pause"?"Ⅱ":choice==="unsure"?"?":"○"}</span> ${esc(ui("Status","Status"))}: <strong>${esc(choiceLabel(choice))}</strong></p></article>`;
     }).join("") || `<p class="empty-state">${esc(ui("Ingen spillprofiler er registrert ennå.","No game profiles have been added yet."))}</p>`;
     box.querySelectorAll("[data-game-identity][data-choice]").forEach(button=>button.onclick=async()=>{
       if(busy||!hasPermission("derby.plan"))return;
@@ -3294,7 +3321,7 @@
     if(addButton)addButton.disabled=busy||full;
     if(addForm)addForm.classList.toggle("identity-limit-reached",full);
     setText("participationStatus",eligibility.blocked
-      ? ui("Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde spillprofilene dine på dette derbyet.","You did not reach the 95% minimum in the previous Derby and therefore cannot register your game profiles for this Derby.")
+      ? ui("Spillprofilene dine kan ikke meldes på dette derbyet. Kontakt admin ved spørsmål.","Your game profiles cannot register for this Derby. Contact an admin if needed.")
       : identities.length?ui(`Registrer ett svar for hver spillprofil. ${ownGameIdentitySummary()}.`,`Save one response for each game profile. ${ownGameIdentitySummary()}.`):ui("Legg til spillprofilen din for å svare på derbyet.","Add your game profile to respond to the Derby."));
     renderParticipationLock();
   }
@@ -3324,8 +3351,10 @@
     }
     const identity=gameIdentitiesFor(current()?.id).find(item=>String(item.id)===String(identityId));
     if(!identity){alert("Spillprofilen ble ikke funnet. Oppdater siden og prøv igjen.");return;}
-    const eligibility=derbyEligibilityForAccount(current(),state.derbyManagement?.next);
-    if(eligibility.blocked){alert("Du nådde ikke minimumskravet på 95 % i forrige derby og kan derfor ikke melde deg på dette derbyet.");return;}
+    const eligibility=derbyEligibilityForIdentity(identity,state.derbyManagement?.next);
+    if(eligibility.blocked||eligibility.removed){alert(eligibility.unavailable
+      ?ui("Kunne ikke kontrollere påmelding. Last siden på nytt.","Could not check registration. Reload the page.")
+      :ui("Denne spillprofilen kan ikke meldes på dette derbyet. Kontakt admin ved spørsmål.","This game profile cannot register for this Derby. Contact an admin if needed."));return;}
     participationGameIdentityId=identity.id;
     const details = derbyCommitmentDetails();
     const number = derbyCommitmentNumber;
@@ -4261,7 +4290,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.112").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.113").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

@@ -1,4 +1,4 @@
-/* v0.18.0.111 – komplett engelsk visning og valgfri innholdsoversettelse */
+/* v0.18.0.113 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -21,6 +21,7 @@
     derbyManagement: { templates: [], events: [], participations: [], gameParticipations: [], next: null, current: null, upcoming: null },
     gameIdentities: [],
     derbyHistory: { archives: [], results: [], changeLog: [] },
+    derbySignupStatuses: [],
     absence: { statuses: [], periods: [] },
     legalAcceptance: null,
     privateMessages: [],
@@ -58,6 +59,22 @@
     const normalized=fromName==="jpeg"?"jpg":fromName;
     if(["jpg","png","webp","mp4","mov","webm"].includes(normalized))return normalized;
     return {"image/jpeg":"jpg","image/png":"png","image/webp":"webp","video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[file?.type] || "";
+  }
+
+  async function loadDerbySignupStatuses(events) {
+    const uniqueEvents=[...new Map((events||[]).filter(event=>event?.id).map(event=>[String(event.id),event])).values()];
+    return (await Promise.all(uniqueEvents.map(async event=>{
+      try {
+        const {data,error}=await client.rpc("wgang_get_derby_signup_status",{p_event_id:Number(event.id)});
+        if(error)throw error;
+        return (data||[]).map(row=>({...row,event_id:event.id}));
+      } catch(error) {
+        // En feil i derbykontrollen skal ikke sperre innlogging eller resten av portalen.
+        // Manglende status holder påmelding stengt inntil status kan kontrolleres.
+        console.warn("Kunne ikke hente derbykarantenestatus",error);
+        return [];
+      }
+    }))).flat();
   }
 
   async function validateWikiMedia(file) {
@@ -384,7 +401,7 @@
       client.from("content_translations").select("target_type,target_id,language,title,body,source_text,updated_at"),
       client.from("activity_notifications").select("id,recipient_id,actor_id,activity_type,target_type,target_id,created_at,read_at").eq("recipient_id",session.user.id).order("created_at",{ascending:false}).limit(100),
       client.from("derby_result_archives").select("id,event_id,derby_name,derby_type,league,placement,neighborhood_points,participant_count,trashed_tasks,started_at,ended_at,configuration_snapshot,notes,created_by,created_at,updated_at").order("started_at",{ascending:false}).limit(100),
-      client.from("derby_member_results").select("id,archive_id,user_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
+      client.from("derby_member_results").select("id,archive_id,user_id,game_identity_id,display_name_snapshot,included_tasks,extra_tasks,tasks_used,tasks_completed,points_per_task,points_earned,possible_points,result_percent,minimum_met,perfect_result,extra_star_earned,extra_stars_earned,notes,created_at,updated_at").order("archive_id",{ascending:false}).limit(3000),
       client.from("derby_result_change_log").select("id,archive_id,action,reason,changed_by,changed_at").order("changed_at",{ascending:false}).limit(200),
       client.rpc("wgang_get_member_absence_statuses"),
       absencePeriodsQuery,
@@ -403,6 +420,7 @@
     // forsiden, ferdigstatus og historikk.
     const contexts = selectDerbyContexts(events);
     const {current,upcoming,next} = contexts;
+    const derbySignupStatuses=await loadDerbySignupStatuses([current,next]);
     const eventParticipation = next ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(next.id)) : [];
     const participationForView = next ? eventParticipation : (participationRes.data || []);
     const currentParticipation = current ? (eventParticipationRes.data || []).filter(p => String(p.event_id) === String(current.id)) : [];
@@ -459,7 +477,7 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages,
+      accounts, derby, content, leadershipMessages, derbySignupStatuses,
       privateMessages:(privateMessagesRes.data || []).map(row=>({
         id:row.id,senderId:row.sender_id,recipientId:row.recipient_id,
         body:row.body,createdAt:row.created_at,readAt:row.read_at
@@ -711,7 +729,7 @@
         if (error) throw error;
       }
     },
-    async adminRemoveDerbyParticipant(eventId,userId,reasonCode,message) {
+    async adminRemoveDerbyParticipant(eventId,userId,reasonCode,message,gameIdentityId=null) {
       if(!configured){
         const rows=localState.derbyManagement?.participations || [];
         const row=rows.find(item=>String(item.event_id)===String(eventId)&&String(item.user_id)===String(userId));
@@ -720,9 +738,19 @@
         (localState.derbyManagement?.gameParticipations || []).filter(item=>String(item.event_id)===String(eventId)&&String(item.user_id)===String(userId)).forEach(item=>{item.choice="removed";item.updated_at=row.updated_at;});
         localSave(localState);return row;
       }
-      const {data,error}=await client.rpc("wgang_admin_remove_derby_participant",{p_event_id:Number(eventId),p_user_id:userId,p_reason_code:reasonCode,p_message:message});
+      const args=gameIdentityId
+        ? {p_event_id:Number(eventId),p_game_identity_id:Number(gameIdentityId),p_reason_code:reasonCode,p_message:message}
+        : {p_event_id:Number(eventId),p_user_id:userId,p_reason_code:reasonCode,p_message:message};
+      const {data,error}=await client.rpc(gameIdentityId?"wgang_admin_remove_game_participant":"wgang_admin_remove_derby_participant",args);
       if(error)throw error;
       return data;
+    },
+    async adminSetDerbySignupOverride(eventId,gameIdentityId,allowed) {
+      if(!configured)throw new Error("Endring av derbykarantene krever tilkobling til databasen.");
+      const {error}=await client.rpc("wgang_admin_set_derby_signup_override",{
+        p_event_id:Number(eventId),p_game_identity_id:Number(gameIdentityId),p_allowed:!!allowed
+      });
+      if(error)throw error;
     },
     async addGameIdentity(gameName, playerTag="") {
       const name=String(gameName || "").trim();
@@ -1041,10 +1069,10 @@
         if (correcting) {
           const previousIds = localState.derbyHistory.results
             .filter(item => String(item.archive_id) === String(archive.id))
-            .map(item => item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name_snapshot || "").trim().toLocaleLowerCase("nb")}`)
+            .map(item => item.game_identity_id ? `g:${item.game_identity_id}` : item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name_snapshot || "").trim().toLocaleLowerCase("nb")}`)
             .sort();
           const submittedIds = payload.results
-            .map(item => item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name || "").trim().toLocaleLowerCase("nb")}`)
+            .map(item => item.game_identity_id ? `g:${item.game_identity_id}` : item.user_id ? `u:${item.user_id}` : `n:${String(item.display_name || "").trim().toLocaleLowerCase("nb")}`)
             .sort();
           const participantBasisChanged = previousIds.length !== submittedIds.length
             || previousIds.some((id, index) => id !== submittedIds[index]);
@@ -1070,8 +1098,8 @@
             ? Math.min(extra,Math.max(0,Math.floor((points - possible) / pointsPerTask)))
             : 0;
           localState.derbyHistory.results.push({
-            id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,
-            display_name_snapshot:localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || String(item.display_name||"").trim() || "Tidligere spiller",
+            id:archiveId * 100 + index,archive_id:archiveId,user_id:item.user_id,game_identity_id:item.game_identity_id||null,
+            display_name_snapshot:String(item.display_name||"").trim() || localState.accounts.find(a=>String(a.id)===String(item.user_id))?.name || "Tidligere spiller",
             included_tasks:included,extra_tasks:extra,tasks_used:used,tasks_completed:Number(item.tasks_completed || 0),
             points_per_task:pointsPerTask,points_earned:points,possible_points:possible,
             result_percent:possible ? Math.min(100, Math.round(points * 10000 / possible) / 100) : 0,
@@ -1088,7 +1116,7 @@
         localSave(localState);
         return archiveId;
       }
-      const { data, error } = await client.rpc("wgang_save_derby_result_v76", {
+      const { data, error } = await client.rpc("wgang_save_derby_result_v113", {
         p_event_id:Number(payload.eventId),
         p_league:String(payload.league || "").trim() || null,
         p_placement:payload.placement===null?null:Number(payload.placement),
