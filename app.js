@@ -1,4 +1,4 @@
-/* v0.18.0.114 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.115 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -2767,7 +2767,17 @@
     if(participantList){
       const prepHtml=canViewDerbyStatus&&prepEvent?`<section class="derby-suspension-group"><div class="admin-derby-list-heading"><strong>${esc(ui('Klargjør neste derby','Prepare next Derby'))} · ${esc(prepEvent.name)}</strong><small>${esc(formatDate(prepEvent.start_at))}</small></div><p class="helper-text">${esc(ui('Åpent for admin/eier fra søndag morgen. Medlemmenes påmelding åpner når derbyet publiseres.','Open for admins/owner from Sunday morning. Member registration opens when the Derby is published.'))}</p>${prepRows.map(({account,identity,status})=>{
         const badge=status.blocked||status.removed?ui('Utestengt fra derby denne uken','Suspended from this Derby'):status.override_allowed?ui('Karantene opphevet','Suspension lifted'):'';
-        return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(status.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.blocked||status.removed?'blocked':'allowed'}">${esc(badge)}</span>`:''}</span><div class="derby-participant-actions"><button type="button" class="button button-small" data-derby-prep="${identity.id}" data-prep-action="${status.choice==='joined'?'pause':'joined'}" ${status.choice!=='joined'&&(status.blocked||status.removed)?'disabled':''}>${esc(status.choice==='joined'?ui('Meld av','Remove'):ui('Meld på','Register'))}</button><label class="derby-waiver-control"><input type="checkbox" data-derby-prep-waiver="${identity.id}" ${status.override_allowed?'checked':''}><span>${esc(ui('Tillat påmelding (opphev karantene)','Allow registration (lift suspension)'))}</span></label></div></div>`;
+        const published=['published','active'].includes(prepEvent.status);
+        const joined=status.choice==='joined';
+        const canRemove=hasPermission('derby.participation.remove')&&String(account.id)!==String(current()?.id);
+        const removalReason=status.auto_blocked?'insufficient_results':'other';
+        let action='';
+        if(joined&&published){
+          if(canRemove)action=`<button type="button" class="button button-small button-danger" data-derby-remove-user="${esc(account.id)}" data-derby-remove-identity="${esc(identity.id)}" data-derby-event="${esc(prepEvent.id)}" data-derby-remove-reason="${removalReason}">${esc(ui('Meld av','Remove'))}</button>`;
+        }else{
+          action=`<button type="button" class="button button-small" data-derby-prep="${esc(identity.id)}" data-prep-action="${joined?'pause':'joined'}" ${!joined&&(status.blocked||status.removed)?'disabled':''}>${esc(joined?ui('Ta ut av klargjøring','Remove from preparation'):ui('Meld på','Register'))}</button>`;
+        }
+        return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(status.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.blocked||status.removed?'blocked':'allowed'}">${esc(badge)}</span>`:''}</span><div class="derby-participant-actions">${action}<label class="derby-waiver-control"><input type="checkbox" data-derby-prep-waiver="${identity.id}" ${status.override_allowed?'checked':''}><span>${esc(ui('Tillat påmelding (opphev karantene)','Allow registration (lift suspension)'))}</span></label></div></div>`;
       }).join('')}</section>`:'';
       const correctingEvent=currentActiveDerbyEvent();
       const correctionHtml=canViewDerbyStatus&&derbyTuesdayCorrectionOpen(correctingEvent)?`<details class="derby-roster-correction"><summary>${esc(ui('Korriger deltakerlisten fra spillet (kun tirsdag)','Correct the in-game participant list (Tuesday only)'))}</summary><p class="helper-text">${esc(ui('Brukes bare hvis listen i spillet ble endret rett før oppstart. Kontroller hvem som faktisk deltar. Korrigering stenger ved midnatt norsk tid.','Only for last-minute changes made in the game before the start. Check who actually participates. Corrections close at midnight Norwegian time.'))}</p>${all.flatMap(account=>gameIdentityRowsForAccount(account,correctingEvent)).filter(identity=>!identity.legacy).map(identity=>`<label class="derby-roster-correction-row"><strong>${esc(identity.name)}</strong><select data-derby-roster-identity="${identity.id}" data-derby-event="${correctingEvent.id}" data-original-choice="${identity.choice==='joined'?'joined':'pause'}" ${state.derbyRosterCorrectionsAvailable?'':'disabled'}><option value="joined" ${identity.choice==='joined'?'selected':''}>${esc(ui('Deltar i spillet','Participating in game'))}</option><option value="pause" ${identity.choice!=='joined'?'selected':''}>${esc(ui('Deltar ikke i spillet','Not participating in game'))}</option></select></label>`).join('')}</details>`:'';
@@ -2819,15 +2829,18 @@
     $$('[data-derby-remove-user]').forEach(button => button.onclick = async () => {
       if(!isOwnerOrAdmin()||!hasPermission("derby.participation.remove"))return alert("Bare eier og admin kan melde av derbydeltakere.");
       const account=state.accounts.find(item=>String(item.id)===String(button.dataset.derbyRemoveUser));
-      const defaultMessage=ui("Spillprofilen er meldt av dette derbyet på grunn av resultat under 95 %.","The game profile has been removed from this Derby due to a result below 95%.");
+      const reasonCode=button.dataset.derbyRemoveReason||"other";
+      const defaultMessage=reasonCode==="insufficient_results"
+        ? ui("Spillprofilen er meldt av dette derbyet på grunn av resultat under 95 %.","The game profile has been removed from this Derby due to a result below 95%.")
+        : "";
       const identity=state.gameIdentities.find(g=>String(g.id)===String(button.dataset.derbyRemoveIdentity));
       const message=prompt(`${ui("Melding til","Message to")} ${identity?.name||account?.name||"deltakeren"}:`,defaultMessage);
       if(message===null)return;
-      if(message.trim().length<10)return alert("Begrunnelsen må være minst 10 tegn.");
+      if(message.trim().length<10||message.trim().length>500)return alert(ui("Begrunnelsen må være mellom 10 og 500 tegn.","The reason must be between 10 and 500 characters."));
       if(!await portalConfirm(`Melde ${identity?.name||account?.name||"deltakeren"} av derbyet? Brukeren får varsel med begrunnelsen.`))return;
       if(busy)return;setBusy(true);
       try{
-        await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,"insufficient_results",message.trim(),button.dataset.derbyRemoveIdentity);
+        await backend.adminRemoveDerbyParticipant(Number(button.dataset.derbyEvent),button.dataset.derbyRemoveUser,reasonCode,message.trim(),button.dataset.derbyRemoveIdentity);
         await refreshState();
       }catch(error){alert(humanError(error));}
       setBusy(false);
@@ -4313,7 +4326,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.114").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.115").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
