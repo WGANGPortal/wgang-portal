@@ -879,21 +879,10 @@
       if (eventError) throw eventError;
       const event=selectDerbyContexts(events).current;
       if (!event || !/normal|standard|power|styrke/i.test(String(event.name||""))) throw new Error("Kunne ikke finne et pågående Normal- eller Power-derby. Oppdater siden og prøv igjen.");
-      const derbyLabel=/power|styrke/i.test(String(event.name||"")) ? "Power Derby" : "Normal Derby";
       if (String(userId) !== String((await getAuthUser())?.id || "")) throw new Error("Du kan bare endre din egen ferdigstatus.");
       if (completed) {
-        const { data:participation, error:participationError } = await client.from("derby_event_participation")
-          .select("choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points")
-          .eq("event_id",event.id)
-          .eq("user_id",userId)
-          .maybeSingle();
-        if (participationError) throw participationError;
-        const confirmedParticipation=participation?.choice === "joined"
-          && !!participation?.rules_acknowledged_at
-          && participation?.rules_acknowledgement_version === derbyRulesAckVersionForEvent(event)
-          && Number(participation?.acknowledged_max_points) === Number(event.max_points || DEFAULT_DERBY.maxPoints);
-        if (!confirmedParticipation) throw new Error(`Du må ha bekreftet påmeldingen og reglene for det pågående ${derbyLabel} før du kan registrere deg som ferdig.`);
         const { error } = await client.from("derby_member_completion").upsert({event_id:event.id,user_id:userId,completed_at:new Date().toISOString()},{onConflict:"event_id,user_id"});
+        if (error?.code === "42501") throw new Error("Du må være registrert som deltaker i det pågående derbyet for å melde deg ferdig.");
         if (error) throw error;
       } else {
         const { error } = await client.from("derby_member_completion").delete().eq("event_id",event.id).eq("user_id",userId);

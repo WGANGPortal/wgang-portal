@@ -1,4 +1,4 @@
-/* v0.18.0.115 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.116 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -4326,7 +4326,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.115").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.116").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
