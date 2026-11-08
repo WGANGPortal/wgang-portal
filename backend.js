@@ -399,11 +399,17 @@
   async function loadRemoteState(session) {
     if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
-    const legalAcceptance = await loadLegalAcceptance(session);
+    const legalAcceptance = own.status==="inactive" ? null : await loadLegalAcceptance(session);
+    let memberReturns=[];
+    if(own.status==="inactive" || (own.status==="approved"&&["owner","admin"].includes(own.role))){
+      const {data,error}=await client.rpc("wgang_get_member_returns");
+      if(error)throw error;
+      memberReturns=data||[];
+    }
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], [], null);
       ownAccount.email = session.user.email || "";
-      return { accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { memberReturns, accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     let preferencesQuery = client.from("task_preferences").select("user_id,task_type,preference");
@@ -518,7 +524,7 @@
     }
 
     return {
-      accounts, derby, content, leadershipMessages, derbySignupStatuses, derbyPreparation, derbyRosterCorrectionsAvailable:rosterCorrections.available,
+      accounts, derby, content, leadershipMessages, memberReturns, derbySignupStatuses, derbyPreparation, derbyRosterCorrectionsAvailable:rosterCorrections.available,
       privateMessages:(privateMessagesRes.data || []).map(row=>({
         id:row.id,senderId:row.sender_id,recipientId:row.recipient_id,
         body:row.body,createdAt:row.created_at,readAt:row.read_at
@@ -591,7 +597,7 @@
         throw new Error("Feil e-post eller passord.");
       }
       const profile = await getOwnProfile(data.user.id);
-      if (profile.status !== "approved") {
+      if (profile.status !== "approved" && profile.status !== "inactive") {
         await client.auth.signOut();
         if (profile.status === "rejected") throw new Error("Medlemssøknaden din er avslått.");
         if (profile.status === "removed") throw new Error("Tilgangen din til WGANG Portal er deaktivert.");
@@ -898,6 +904,16 @@
       } else {
         const { error } = await client.from("task_preferences").upsert({user_id:userId,task_type:taskType,preference,updated_at:new Date().toISOString()},{onConflict:"user_id,task_type"}); if(error)throw error;
       }
+    },
+    async getMembershipStatus() {
+      if(!configured)return null;
+      const user=await getAuthUser();
+      return user ? (await getOwnProfile(user.id)).status : null;
+    },
+    async memberReturnAction(action,userId,confirmed=false) {
+      if(!configured)throw new Error("Denne funksjonen krever tilkobling til databasen.");
+      const {error}=await client.rpc("wgang_member_return_action",{p_action:action,p_user_id:userId,p_confirmed:confirmed});
+      if(error)throw error;
     },
     async approve(userId) {
       if (!configured) { const a=localState.accounts.find(x=>x.id===userId); if(a){a.approved=true;a.status="approved";a.choice="unsure";} localSave(localState); return; }

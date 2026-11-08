@@ -991,3 +991,9 @@ body:not(.admin-mode) .admin-only {
 .derby-roster-correction summary{cursor:pointer;font-weight:600}
 .derby-roster-correction-row{display:flex!important;align-items:center;justify-content:space-between;gap:.8rem;padding:.6rem 0;border-bottom:1px solid #eee}
 .derby-roster-correction-row select{max-width:210px;min-width:0}
+
+.inactive-member-screen{min-height:100vh;display:grid;align-items:center;padding:24px}
+.inactive-member-screen.hidden{display:none}
+.inactive-member-screen>.portal-card{width:100%;max-width:680px;margin:auto}
+.inactive-member-screen p{line-height:1.6}
+.inactive-member-screen .approval-actions{display:flex;flex-wrap:wrap;gap:12px}

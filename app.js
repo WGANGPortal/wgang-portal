@@ -1,4 +1,4 @@
-/* v0.18.0.116 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.117 – derbykarantene per spillprofil og manuell tillatelse */
 (function () {
   "use strict";
 
@@ -9,7 +9,7 @@
     return;
   }
   const PREVIEW_SAFE_BACKEND_METHODS = new Set([
-    "bootstrap","refresh","getAuthIntent","getMfaState","legalVersions","legalAcceptanceRequired",
+    "bootstrap","refresh","getMembershipStatus","getAuthIntent","getMfaState","legalVersions","legalAcceptanceRequired",
     "getBunnyData","getBunnyRoundState","getBunnyRoundSchedule","getWikiMediaUrl","onAuthChange","signOut"
   ]);
   const backend = new Proxy(rawBackend, {
@@ -771,6 +771,8 @@
 
   async function openPortal() {
     const user = current();
+    if(user?.status==="inactive"){showInactiveMember();return;}
+    $("inactiveMemberScreen")?.classList.add("hidden");
     if (!user || !user.approved) { openAuth("login"); return; }
     if(!(await requirePrivilegedMfa()))return;
     if (legalAcceptanceRequired()) { showLegalAcceptanceDialog(); return; }
@@ -792,6 +794,7 @@
     try { await backend.signOut(); } catch (e) { console.warn(e); }
     rolePreviewRole = null;
     state.currentUserId = null;
+    $("inactiveMemberScreen")?.classList.add("hidden");
     portal.classList.add("hidden");
     portal.setAttribute("aria-hidden", "true");
     landing.classList.remove("hidden");
@@ -810,7 +813,11 @@
 
   async function refreshState() {
     state = await backend.refresh();
-    if (current() && current().approved) renderSession();
+    if(current()?.status==="inactive")showInactiveMember();
+    else if(current()?.approved){
+      if(!$("inactiveMemberScreen")?.classList.contains("hidden"))await openPortal();
+      else renderSession();
+    }
   }
 
   function topPreferences(account) {
@@ -1266,6 +1273,7 @@
   function renderSession() {
     const user = current();
     if (!user) return;
+    if(user.status==="inactive"){showInactiveMember();return;}
     applyAccessModeClasses(user);
     applyPermissionVisibility();
     syncRolePreviewUi();
@@ -2753,7 +2761,7 @@
       const lockedOwner = a.role === "owner" && !isOwner();
       const ownAccount = a.id === current().id;
       const ownerOption = isOwner() ? `<option value="owner" ${a.role === "owner" ? "selected" : ""}>Eier</option>` : (a.role === "owner" ? `<option value="owner" selected>Eier</option>` : "");
-      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="senior" ${a.role === "senior" ? "selected" : ""}>Senior</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>`:"")}</td></tr>`;
+      return `<tr><td><strong>${esc(a.name)}</strong></td><td><select class="role-select" data-role-id="${a.id}" ${!hasPermission("members.change_role") || ownAccount || lockedOwner ? "disabled" : ""}><option value="member" ${a.role === "member" ? "selected" : ""}>Medlem</option><option value="senior" ${a.role === "senior" ? "selected" : ""}>Senior</option><option value="assistant_leader" ${a.role === "assistant_leader" ? "selected" : ""}>Ass. leder</option><option value="admin" ${a.role === "admin" ? "selected" : ""}>Administrator</option>${ownerOption}</select></td><td>${choiceLabel(a.choice)}</td><td>${a.id === current().id ? `<span class="logout-note">Din konto</span>` : (hasPermission("members.remove")?`<button class="table-action" data-remove="${a.id}">Fjern</button>${a.role!=="owner"&&(a.role!=="admin"||isOwner())?` <button type="button" class="table-action" data-person-inactive="${a.id}">Sett inaktiv</button>`:""}`:"")}</td></tr>`;
     }).join("") : "";
     const preparation=state.derbyPreparation;
     const prepEvent=preparation?.event;
@@ -2845,6 +2853,7 @@
       }catch(error){alert(humanError(error));}
       setBusy(false);
     });
+    renderMemberReturns();
     renderPermissionMatrix();
     $$('[data-role-id]').forEach(select => select.onchange = async () => {
       if(!hasPermission("members.change_role"))return alert("Du har ikke rettighet til å endre roller.");
@@ -2884,6 +2893,68 @@
       permissionEditMode=false;permissionDraft=null;await refreshState();
     }catch(e){alert(humanError(e));}
   }
+  function showInactiveMember(){
+    rolePreviewRole=null;
+    closeDialog(auth);
+    closeDialog(legalAcceptanceDialog);
+    closeDialog(mfaDialog);
+    portal.classList.add("hidden");
+    portal.setAttribute("aria-hidden","true");
+    landing.classList.add("hidden");
+    sidebar.classList.remove("open");
+    document.body.classList.remove("admin-mode","leadership-mode","admin-access-mode","owner-mode","role-preview-mode","modal-open");
+    $("inactiveMemberScreen").classList.remove("hidden");
+    const entry=(state.memberReturns||[]).find(row=>String(row.user_id)===String(state.currentUserId));
+    const messages={
+      inactive:ui("Du kan sende en forespørsel om å komme tilbake.","You can request to rejoin."),
+      pending:ui("Forespørselen din venter på behandling.","Your request is awaiting review."),
+      waitlisted:ui("Du står på venteliste. Nabolaget er fullt. Admin følger opp når det blir ledig plass.","You are on the waiting list. The neighborhood is full. An admin will follow up when space becomes available.")
+    };
+    $("memberReturnStatus").textContent=messages[entry?.state||"inactive"];
+    $("requestMemberReturn").classList.toggle("hidden",["pending","waitlisted"].includes(entry?.state));
+  }
+
+  function renderMemberReturns(){
+    const list=$("memberReturnsList");
+    if(!list)return;
+    if(!isOwnerOrAdmin()){list.innerHTML="";return;}
+    const rows=state.memberReturns||[];
+    const labels={inactive:ui("Inaktiv","Inactive"),pending:ui("Ønsker å komme tilbake","Requests to rejoin"),waitlisted:ui("På venteliste","On waiting list")};
+    list.innerHTML=rows.map(row=>`<div class="approval-item"><div><strong>${esc(row.name)}</strong><small>${esc((row.profiles||[]).join(" · "))}</small><p>${esc(labels[row.state])}${row.requested_at?" · "+esc(formatDate(row.requested_at)):""}</p></div><div class="approval-actions">${hasPermission("members.approve")?`${row.state==="pending"?`<button type="button" class="button button-small" data-member-return-action="waitlist" data-return-user="${esc(row.user_id)}">${esc(ui("Sett på venteliste","Add to waiting list"))}</button>`:""}<button type="button" class="button button-small button-primary" data-member-return-action="activate" data-return-user="${esc(row.user_id)}">${esc(ui("Aktiver portaltilgang","Restore portal access"))}</button>`:""}</div></div>`).join("")||`<p class="empty-state">${esc(ui("Ingen inaktive medlemmer eller forespørsler.","No inactive members or requests."))}</p>`;
+    $$("[data-person-inactive]").forEach(button=>button.onclick=()=>changeMemberReturn("inactive",button.dataset.personInactive));
+    $$("[data-member-return-action]").forEach(button=>button.onclick=()=>changeMemberReturn(button.dataset.memberReturnAction,button.dataset.returnUser));
+  }
+
+  async function changeMemberReturn(action,userId){
+    if(busy)return;
+    const messages={
+      inactive:ui("Bekreft at personen er inaktiv, og at alle personens spillprofiler er fjernet fra nabolaget i Hay Day. Personen mister portaltilgangen, men kan be om å komme tilbake.","Confirm the person is inactive and all their game profiles have been removed from the Hay Day neighborhood. Portal access will close and they can request to rejoin."),
+      activate:ui("Bekreft at personen har fått plass og er tilbake i nabolaget i Hay Day. Portaltilgangen åpnes nå.","Confirm the person has a place and has rejoined the Hay Day neighborhood. Portal access will now be restored."),
+      waitlist:ui("Sette personen på venteliste? Personen får se statusen ved innlogging.","Add this person to the waiting list? They will see this status when signing in.")
+    };
+    if(messages[action]&&!await portalConfirm(messages[action]))return;
+    setBusy(true);
+    try{await backend.memberReturnAction(action,userId,["inactive","activate"].includes(action));await refreshState();}
+    catch(error){alert(humanError(error));}
+    finally{setBusy(false);}
+  }
+
+  $("requestMemberReturn").onclick=()=>changeMemberReturn("request",state.currentUserId);
+  $("refreshMemberReturn").onclick=async()=>{if(busy)return;setBusy(true);try{await refreshState();}catch(error){alert(humanError(error));}finally{setBusy(false);}};
+  $("inactiveMemberLogout").onclick=logout;
+  let membershipCheckRunning=false;
+  async function checkMembershipAccess(){
+    if(!state.currentUserId||busy||membershipCheckRunning)return;
+    membershipCheckRunning=true;
+    try{
+      const status=await backend.getMembershipStatus();
+      if(status&&(status!==actualCurrent()?.status||status==="inactive"))await refreshState();
+    }catch(error){console.warn("Kunne ikke kontrollere medlemsstatus",error);}
+    finally{membershipCheckRunning=false;}
+  }
+  setInterval(checkMembershipAccess,60000);
+  window.addEventListener("focus",checkMembershipAccess);
+
   function renderPermissionMatrix(){
     const body=$("permissionMatrixBody"), audit=$("permissionAudit"), card=$("permissionsMatrixCard");
     if(!body)return;
@@ -3560,7 +3631,7 @@
   }
 
   function renderAdminActions() {
-    const pendingMembers = hasAnyPermission(["members.approve","members.reject"]) ? state.accounts.filter(a=>a.status==="pending").length : 0;
+    const pendingMembers = hasAnyPermission(["members.approve","members.reject"]) ? state.accounts.filter(a=>a.status==="pending").length+(isOwnerOrAdmin()?(state.memberReturns||[]).filter(row=>row.state==="pending").length:0) : 0;
     const pendingTips = hasPermission("content.pending.view") ? (state.content?.pendingTips?.length || 0) : 0;
     const total = pendingMembers + pendingTips;
     const badge = $("notificationBadge"); if (badge) { badge.textContent = total; badge.classList.toggle("hidden", total===0); }
@@ -3583,6 +3654,7 @@
         return;
       }
       if (state.currentUserId && current() && current().approved) await openPortal();
+      else if(current()?.status==="inactive")showInactiveMember();
       else if (state.currentUserId && current() && !current().approved) {
         await backend.signOut();
         state.currentUserId = null;
@@ -4291,7 +4363,10 @@
 
   backend.onAuthChange((newState, event) => {
     state = newState;
+    if(current()?.status==="inactive")showInactiveMember();
+    else if(current()?.approved&&!$("inactiveMemberScreen")?.classList.contains("hidden"))openPortal().catch(console.error);
     if (!state.currentUserId) {
+      $("inactiveMemberScreen")?.classList.add("hidden");
       portal.classList.add("hidden"); landing.classList.remove("hidden");
     }
     if (event === "PASSWORD_RECOVERY") {
@@ -4326,7 +4401,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.116").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.117").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
