@@ -475,8 +475,13 @@
     const absenceStatusByUser = new Map((absenceStatusesRes.data || []).map(row => [String(row.user_id), !!row.is_inactive]));
     const absencePeriodByUser = new Map((absencePeriodsRes.data || []).map(row => [String(row.user_id), row]));
     const lastActiveByUser = new Map((memberActivityRes.data || []).map(row => [String(row.user_id), row.last_active_at || null]));
+    const primaryGameNames = new Map((gameIdentitiesRes.data || [])
+      .filter(row => row.is_primary)
+      .map(row => [row.user_id, row.game_name]));
     const accounts = (profilesRes.data || []).map(row => {
       const account = mapProfile(row, participationForView, preferencesRes.data, next);
+      const primaryGameName = primaryGameNames.get(row.id);
+      if (primaryGameName) account.name = primaryGameName.toUpperCase();
       const activeAccount = current
         ? mapProfile(row, currentParticipation, [], current)
         : null;
@@ -824,6 +829,30 @@
       const {data,error}=await client.rpc("wgang_add_game_identity",{p_game_name:name,p_player_tag:tag || null});
       if(error)throw error;
       return data;
+    },
+    async renameGameIdentity(gameIdentityId, gameName) {
+      const name = String(gameName ?? "").trim();
+      if (!name || [...name].length > 40 || /[\u0000-\u001f\u007f]/.test(name)) {
+        throw new Error("Spillnavnet må inneholde 1–40 tegn på én linje.");
+      }
+      if (!configured) {
+        const account = localState.accounts.find(row => row.id === localState.currentUserId && row.approved);
+        const identities = localState.gameIdentities || [];
+        const identity = account && identities.find(row => row.userId === account.id && String(row.id) === String(gameIdentityId));
+        if (!identity) throw new Error("Du kan bare endre navnet på egne spillprofiler.");
+        if (identities.some(row => row !== identity && row.userId === account.id && row.name.toLowerCase() === name.toLowerCase())) {
+          throw new Error("Du har allerede en spillprofil med dette navnet.");
+        }
+        identity.name = name.toUpperCase();
+        identity.updatedAt = new Date().toISOString();
+        if (identity.isPrimary) account.name = identity.name;
+        localSave(localState);
+        return;
+      }
+      const {error} = await client.rpc("wgang_rename_game_identity", {
+        p_game_identity_id:gameIdentityId, p_game_name:name
+      });
+      if (error) throw error;
     },
     async setGameParticipation(gameIdentityId, choice, acknowledgement={}) {
       if(!new Set(["joined","pause","unsure"]).has(choice))throw new Error("Ugyldig derby-svar.");

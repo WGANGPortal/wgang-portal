@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.121">
+  <link rel="stylesheet" href="main.css?v=0.18.0.122">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -127,7 +127,7 @@
 </div>
         </nav>
         <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.121</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.122</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -580,7 +580,17 @@
 <p><strong>E-post</strong><br><span id="accountEmail">–</span></p>
 <p><strong>Rolle</strong><br><span id="accountRole">–</span></p>
 <p><strong>Medlem siden</strong><br><span id="accountMemberSince">–</span></p>
-<p class="helper-text">E-postadressen vises bare her på din egen konto og kan ikke endres her.</p></div></div>
+<p class="helper-text">E-postadressen vises bare her på din egen konto og kan ikke endres her.</p></div>
+        <div class="profile-divider"></div>
+        <form id="renameGameIdentityForm" class="auth-form hidden">
+          <h4>Endre spillnavn</h4>
+          <p class="helper-text">Velg gården og skriv navnet slik det står i Hay Day. Tidligere resultater og derbypåmeldinger følger den samme spillprofilen.</p>
+          <label>Spillprofil<select id="renameGameIdentitySelect" required></select></label>
+          <label>Nytt spillnavn<input id="renameGameIdentityName" autocomplete="off" required></label>
+          <button type="submit" class="button button-primary">Lagre spillnavn</button>
+          <p id="renameGameIdentityStatus" class="form-message" aria-live="polite"></p>
+        </form>
+      </div>
       <div id="profileHubPrivacy" class="profile-hub-section hidden">
         <button type="button" class="profile-hub-back">← Tilbake</button>
         <h3>Personvern og data</h3>
@@ -722,6 +732,6 @@
       <div class="approval-actions"><button id="requestMemberReturn" type="button" class="button button-primary">Jeg ønsker å bli med igjen</button><button id="refreshMemberReturn" type="button" class="button">Oppdater status</button><button id="inactiveMemberLogout" type="button" class="button">Logg ut</button></div>
     </article>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.121"></script><script src="backend.js?v=0.18.0.121"></script><script src="app.js?v=0.18.0.121"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.122"></script><script src="backend.js?v=0.18.0.122"></script><script src="app.js?v=0.18.0.122"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* v0.18.0.121 – pleiehendelser */
+/* v0.18.0.122 – pleiehendelser */
 (function () {
   "use strict";
 
@@ -179,6 +179,8 @@
     "DETTE BØR DU GJØRE NÅ":"WHAT TO DO NOW","Svar på derbypåmeldingen":"Respond to the Derby registration","Kontroller spillprofilene dine og registrer om de deltar.":"Check your game profiles and register whether they are participating.",
     "NABOLAGSNYTT":"NEIGHBORHOOD NEWS","Påmeldingen din er registrert":"Your registration has been saved","Du kan kontrollere svarene dine frem til svarfristen.":"You can review your responses until the deadline.","Se påmeldingen":"View registration",
     "Meld på spillprofilene dine og se reglene for derbyet.":"Register your game profiles and review the Derby rules.","Rediger derby":"Edit Derby","Påmelding åpen":"Registration open","Påmelding stengt":"Registration closed","Svar registrert":"Response saved",
+    "Endre spillnavn":"Change game name","Spillprofil":"Game profile","Nytt spillnavn":"New game name","Lagre spillnavn":"Save game name",
+    "Velg gården og skriv navnet slik det står i Hay Day. Tidligere resultater og derbypåmeldinger følger den samme spillprofilen.":"Choose the farm and enter its name as it appears in Hay Day. Past results and Derby registrations stay with the same game profile.",
     "Dine spillprofiler":"Your game profiles","Spillprofilene dine":"Your game profiles","Registrerte svar":"Saved responses","DINE SPILLPROFILER":"YOUR GAME PROFILES","Velg status for hver gård":"Choose a status for each farm",
     "Legg til en spillprofil":"Add a game profile","For medlemmer som spiller med flere gårder. Maks fem profiler per innlogging.":"For members who play with multiple farms. Maximum five profiles per login.","Spillnavn":"Game name","Spill-ID":"Game ID","Legg til spillprofil":"Add game profile",
     "Registrer ett svar for hver spillprofil.":"Save one response for each game profile.","Alle spillprofilene dine har et registrert svar. Du kan endre frem til fristen.":"All your game profiles have a saved response. You can make changes until the deadline.","Svarfristen er utløpt. Registrerte svar er låst.":"The response deadline has passed. Saved responses are locked.",
@@ -4044,7 +4046,7 @@
     openMemberProfile(current().id);
     setTimeout(() => {
       if (typeof showProfileHubSection === "function") showProfileHubSection("menu");
-      if ($("profileHubName")) $("profileHubName").textContent = current()?.gameName || "PROFIL";
+      setText("profileHubName", accountGameNameValue(current()));
     }, 0);
   };
   function refreshLanguageButton() {
@@ -4142,6 +4144,7 @@
     }
     if(section==="account"){
       const u=current();
+      renderGameNameEditor(u);
       if($("accountGameName")) $("accountGameName").textContent=accountGameNameValue(u);
       if($("accountEmail")) $("accountEmail").textContent=accountEmailValue(u);
       if($("accountRole")) $("accountRole").textContent=roleLabel(u?.role);
@@ -4162,6 +4165,55 @@
     }
     if(section==="notifications") renderNotifications();
   }
+  function renderGameNameEditor(user, selectedId) {
+    const identities = user?.approved && !isRolePreviewActive() ? gameIdentitiesFor(user.id) : [];
+    $("renameGameIdentityForm").classList.toggle("hidden", !identities.length);
+    const select = $("renameGameIdentitySelect");
+    select.replaceChildren();
+    for (const identity of identities) {
+      const details = [identity.isPrimary ? ui("Hovedprofil", "Primary profile") : "", identity.playerTag].filter(Boolean);
+      const label = [identity.name, ...details].join(" · ");
+      select.add(new Option(label, identity.id));
+    }
+    if (identities.some(identity => String(identity.id) === selectedId)) select.value = selectedId;
+    select.onchange();
+  }
+
+  $("renameGameIdentitySelect").onchange = () => {
+    $("renameGameIdentityName").value = gameIdentitiesFor(current()?.id)
+      .find(identity => String(identity.id) === $("renameGameIdentitySelect").value)?.name || "";
+    setText("renameGameIdentityStatus", "");
+  };
+  $("renameGameIdentityForm").onsubmit = async event => {
+    event.preventDefault();
+    const user = current();
+    const id = $("renameGameIdentitySelect").value;
+    if (busy || !user?.approved || isRolePreviewActive() ||
+        !gameIdentitiesFor(user.id).some(identity => String(identity.id) === id)) return;
+
+    setBusy(true);
+    setText("renameGameIdentityStatus", ui("Lagrer spillnavn …", "Saving game name …"));
+    try {
+      await backend.renameGameIdentity(id, $("renameGameIdentityName").value);
+      try {
+        await refreshState();
+      } catch (error) {
+        console.warn("Spillnavnet ble lagret, men portalen kunne ikke oppdateres.", error);
+        setText("renameGameIdentityStatus", ui("Spillnavnet er lagret. Oppdater siden for å se endringen.", "The game name was saved. Reload the page to see the change."));
+        return;
+      }
+      if (current()?.id !== user.id || !current().approved) return;
+      renderGameNameEditor(current(), id);
+      setText("accountGameName", accountGameNameValue(current()));
+      setText("memberProfileName", current().name);
+      setText("renameGameIdentityStatus", ui("Spillnavnet er oppdatert.", "The game name has been updated."));
+    } catch (error) {
+      setText("renameGameIdentityStatus", humanError(error, ui("Kunne ikke endre spillnavnet.", "Could not change the game name.")));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   document.querySelectorAll("[data-profile-section]").forEach(btn=>btn.onclick=()=>showProfileHubSection(btn.dataset.profileSection));
   document.querySelectorAll(".profile-hub-back").forEach(btn=>btn.onclick=()=>showProfileHubSection("menu"));
   if($("closeProfileHub")) $("closeProfileHub").onclick=()=>$("memberProfileDialog")?.close();
@@ -4580,7 +4632,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.121").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.122").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
