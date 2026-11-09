@@ -1110,7 +1110,7 @@
     async getCareEvents() {
       if (!configured) return [];
       const {data,error} = await client.from("care_events")
-        .select("id,title,ended_on,reached_level,neighborhood_total,updated_at,care_event_results(placement,farm_name,game_identity_id,contribution,tasks_completed,products_doubled)")
+        .select("id,title,ended_on,reached_level,neighborhood_total,updated_at,care_event_results(placement,farm_name,game_identity_id,contribution)")
         .order("ended_on", {ascending:false, nullsFirst:false})
         .order("id", {ascending:false});
       if (error) throw error;

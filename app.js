@@ -1,4 +1,4 @@
-/* v0.18.0.119 – pleiehendelser */
+/* v0.18.0.120 – pleiehendelser */
 (function () {
   "use strict";
 
@@ -147,9 +147,8 @@
     "Bruk sluttresultatene fra Hay Day når hele pleiehendelsen er avsluttet.":"Use the final results from Hay Day once the entire event has ended.",
     "Navn på hendelsen":"Event name","Sluttdato":"End date","Oppnådd nivå":"Level reached","Nabolagets bidrag":"Neighborhood contribution",
     "Bidrag per gård":"Contributions by farm","Legg til gård":"Add farm","Fjern gård":"Remove farm","Lagre hendelse":"Save event",
-    "Velg spillprofil når du vet hvilken gård det er. Oppgaver og doblede produkter er valgfrie.":"Choose a game profile when you know which farm it is. Tasks and doubled products are optional.",
+    "Velg spillprofil når du vet hvilken gård det er.":"Choose a game profile when you know which farm it is.",
     "Gårdsnavn i spillet":"Farm name in game","Uavklart / ingen profil":"Unlinked / no profile","Bidrag":"Contribution",
-    "Fullførte oppgaver":"Completed tasks","Doblede produkter":"Doubled products",
     "Derbyhistorikk":"Derby history","DERBYHISTORIKK":"DERBY HISTORY","Resultater over tid":"Results over time","Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.":"View the team's Derby archive, your own results and development across multiple Derbies.",
     "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 95 %":"Below 95%","Stjerner":"Stars","fulle ekstraoppgaver med makspoeng":"full extra tasks at maximum points",
     "DERBYARKIV":"DERBY ARCHIVE","WGANGs sluttresultater":"WGANG final results","Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.":"All approved members can view Derby type, date, league, placement, total points and participant count.",
@@ -1982,11 +1981,10 @@
           <span><small>${ui("Nabolagets bidrag","Neighborhood contribution")}</small><b>${cell(event.neighborhood_total)}</b></span></div>
           <h3>${showAll ? ui("Alle gårdsbidrag","All farm contributions") : ui("Mine gårdsbidrag","My farm contributions")}</h3>
           ${rows.length ? `<div class="table-wrap"><table><thead><tr>
-            <th>${ui("Plass","Rank")}</th><th>${ui("Gård","Farm")}</th><th>${ui("Bidrag","Contribution")}</th>
-            <th>${ui("Fullførte oppgaver","Completed tasks")}</th><th>${ui("Doblede produkter","Doubled products")}</th>
+            <th>${ui("Plass","Rank")}</th><th>${ui("Gård","Farm")}</th><th>${ui("Poeng","Points")}</th>
             ${showAll ? `<th>${ui("Profilkobling","Profile link")}</th>` : ""}</tr></thead>
             <tbody>${rows.map(row => `<tr><td>${cell(row.placement)}</td><td>${esc(row.farm_name)}</td>
-            <td>${cell(row.contribution)}</td><td>${cell(row.tasks_completed)}</td><td>${cell(row.products_doubled)}</td>
+            <td>${cell(row.contribution)}</td>
             ${showAll ? `<td>${row.game_identity_id ? ui("Koblet","Linked") : ui("Uavklart","Unlinked")}</td>` : ""}</tr>`).join("")}</tbody></table></div>`
             : `<p class="helper-text">${ui("Ingen bidrag er registrert her.","No contributions are recorded here.")}</p>`}`;
         if (canEditCare()) {
@@ -2016,9 +2014,7 @@
       <label>Plassering<input name="placement" type="number" min="1" max="100" required></label>
       <label>Gårdsnavn i spillet<input name="farm_name" maxlength="80" required></label>
       <label>Spillprofil<select name="game_identity_id"><option value="">Uavklart / ingen profil</option></select></label>
-      <label>Bidrag<input name="contribution" type="number" min="0" max="2147483647" required></label>
-      <label>Fullførte oppgaver<input name="tasks_completed" type="number" min="0" max="2147483647"></label>
-      <label>Doblede produkter<input name="products_doubled" type="number" min="0" max="2147483647"></label>
+      <label>Poeng<input name="contribution" type="number" min="0" max="2147483647" required></label>
       </div><button type="button" class="button button-ghost button-compact">Fjern gård</button>`;
     const profiles = editor.querySelector("select");
     for (const game of [...(state.gameIdentities || [])].sort((a,b) => a.name.localeCompare(b.name, "nb"))) {
@@ -2067,10 +2063,9 @@
     const button = $("saveCareEvent");
     const results = [...$("careResultRows").children].map(row => {
       const value = name => row.querySelector(`[name="${name}"]`).value.trim();
-      const optionalNumber = name => value(name) === "" ? null : Number(value(name));
+      const gameIdentity = value("game_identity_id");
       return {placement:Number(value("placement")), farm_name:value("farm_name"),
-        game_identity_id:optionalNumber("game_identity_id"), contribution:Number(value("contribution")),
-        tasks_completed:optionalNumber("tasks_completed"), products_doubled:optionalNumber("products_doubled")};
+        game_identity_id:gameIdentity === "" ? null : Number(gameIdentity), contribution:Number(value("contribution"))};
     });
     const payload = {...careEditingEvent, title:form.get("title").trim(), ended_on:form.get("ended_on") || null,
       reached_level:Number(form.get("reached_level")), neighborhood_total:Number(form.get("neighborhood_total"))};
@@ -4574,7 +4569,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.119").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.120").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
