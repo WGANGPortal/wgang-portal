@@ -1,4 +1,4 @@
-/* v0.18.0.120 – pleiehendelser */
+/* v0.18.0.121 – pleiehendelser */
 (function () {
   "use strict";
 
@@ -1967,7 +1967,20 @@
       const events = await backend.getCareEvents();
       if (!relevant()) return;
       const showAll = isOwnerOrAdmin(user);
-      const ownIds = new Set((state.gameIdentities || []).filter(g => g.userId === user.id).map(g => String(g.id)));
+      const identities = state.gameIdentities || [];
+      const ownIds = new Set(identities.filter(g => g.userId === user.id).map(g => String(g.id)));
+      const farmNameKey = name => {
+        const normalized = name.normalize("NFKC").toLocaleLowerCase("nb").trim();
+        return normalized.replace(/[^\p{L}\p{M}\p{N}]+/gu, "") || normalized;
+      };
+      const registeredNames = new Set(identities.map(identity => farmNameKey(identity.name)));
+      const farmLabel = row => {
+        if (!showAll || row.game_identity_id != null) return esc(row.farm_name);
+        const note = registeredNames.has(farmNameKey(row.farm_name))
+          ? ui("kobling uavklart", "profile link unconfirmed")
+          : ui("ikke i portalen", "not in the portal");
+        return `${esc(row.farm_name)} <small>(${note})</small>`;
+      };
       status.textContent = events.length ? "" : ui("Ingen pleiehendelser er registrert ennå.", "No care events have been recorded yet.");
       for (const event of events) {
         const rows = (event.care_event_results || []).filter(row => showAll || ownIds.has(String(row.game_identity_id)))
@@ -1981,11 +1994,9 @@
           <span><small>${ui("Nabolagets bidrag","Neighborhood contribution")}</small><b>${cell(event.neighborhood_total)}</b></span></div>
           <h3>${showAll ? ui("Alle gårdsbidrag","All farm contributions") : ui("Mine gårdsbidrag","My farm contributions")}</h3>
           ${rows.length ? `<div class="table-wrap"><table><thead><tr>
-            <th>${ui("Plass","Rank")}</th><th>${ui("Gård","Farm")}</th><th>${ui("Poeng","Points")}</th>
-            ${showAll ? `<th>${ui("Profilkobling","Profile link")}</th>` : ""}</tr></thead>
-            <tbody>${rows.map(row => `<tr><td>${cell(row.placement)}</td><td>${esc(row.farm_name)}</td>
-            <td>${cell(row.contribution)}</td>
-            ${showAll ? `<td>${row.game_identity_id ? ui("Koblet","Linked") : ui("Uavklart","Unlinked")}</td>` : ""}</tr>`).join("")}</tbody></table></div>`
+            <th>${ui("Plass","Rank")}</th><th>${ui("Gård","Farm")}</th><th>${ui("Poeng","Points")}</th></tr></thead>
+            <tbody>${rows.map(row => `<tr><td>${cell(row.placement)}</td><td>${farmLabel(row)}</td>
+            <td>${cell(row.contribution)}</td></tr>`).join("")}</tbody></table></div>`
             : `<p class="helper-text">${ui("Ingen bidrag er registrert her.","No contributions are recorded here.")}</p>`}`;
         if (canEditCare()) {
           const button = document.createElement("button");
@@ -4569,7 +4580,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.120").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.121").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

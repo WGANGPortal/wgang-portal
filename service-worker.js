@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.120-care-history";
+const CACHE_NAME = "wgang-v0.18.0.121-care-history";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.120",
-  "/app.js?v=0.18.0.120", "/backend.js?v=0.18.0.120", "/config.js?v=0.18.0.120",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.121",
+  "/app.js?v=0.18.0.121", "/backend.js?v=0.18.0.121", "/config.js?v=0.18.0.121",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
