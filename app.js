@@ -1,4 +1,4 @@
-/* v0.18.0.118 – pleiehendelser */
+/* v0.18.0.119 – pleiehendelser */
 (function () {
   "use strict";
 
@@ -131,8 +131,20 @@
     "Ingen tips ennå.":"No tips yet.","Venter på godkjenning":"Awaiting approval","Godkjent":"Approved",
     "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
     "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings",
-    "Pleiehendelser":"Care events","Pleiehendelse":"Care event","Registrer hendelse":"Record event",
-    "Se hva nabolaget har oppnådd og bidragene fra dine gårder.":"See what the neighborhood achieved and how your farms contributed.",
+    "Pleiehendelser":"Care events","Pleiehendelse":"Care event",
+    "Se hvordan du deltar, og finn resultatene fra tidligere runder.":"Find out how to take part and see results from previous rounds.",
+    "HENDELSESINFORMASJON":"EVENT INFORMATION","Det festlige bartreet":"The festive evergreen tree",
+    "Runden startet 9. november 2026. Se gjenværende tid i Hay Day.":"The round started on 9 November 2026. Check the time remaining in Hay Day.",
+    "Naboene fullfører gårdsoppgaver og bidrar til at treet vokser og låser opp felles belønninger.":"Neighbors complete farm tasks and contribute to help the tree grow and unlock shared rewards.",
+    "Slik deltar du":"How to take part",
+    "Åpne pleiehendelsen i Hay Day. Fullfør en oppgave og trykk «Bidra» for å levere poengene.":"Open the Neighborhood Nurture event in Hay Day. Complete a task and tap Contribute to submit your points.",
+    "Du får 27 oppgaver per uke i denne runden. Ubrukte oppgaver samles opp, så du kan ta dem igjen senere.":"You get 27 tasks a week this round. Unused tasks carry over so you can catch up later.",
+    "Gården må bidra med minst 2 000 poeng for å kvalifisere til belønninger. Nabolagets første felles belønningstrinn er ved 1 000, 2 000 og 4 000 poeng.":"Your farm must contribute at least 2,000 points to qualify for rewards. The first neighborhood reward milestones are at 1,000, 2,000 and 4,000 points.",
+    "Fordelen «Dobbel produksjon» gir en sjanse til å få to varer på samme tid og med samme mengde ingredienser.":"The Double Production perk gives you a chance to get two items in the same time and with the same amount of ingredients.",
+    "Les mer hos Supercell":"Read more on Supercell Support",
+    "Tidligere hendelser":"Past events",
+    "Poengene for en ny runde registreres først når hele hendelsen er avsluttet.":"Scores are recorded once the entire event has ended.",
+    "Bruk sluttresultatene fra Hay Day når hele pleiehendelsen er avsluttet.":"Use the final results from Hay Day once the entire event has ended.",
     "Navn på hendelsen":"Event name","Sluttdato":"End date","Oppnådd nivå":"Level reached","Nabolagets bidrag":"Neighborhood contribution",
     "Bidrag per gård":"Contributions by farm","Legg til gård":"Add farm","Fjern gård":"Remove farm","Lagre hendelse":"Save event",
     "Velg spillprofil når du vet hvilken gård det er. Oppgaver og doblede produkter er valgfrie.":"Choose a game profile when you know which farm it is. Tasks and doubled products are optional.",
@@ -2036,7 +2048,7 @@
     careEditingEvent = event;
     $("careResultRows").replaceChildren();
     $("careEventStatus").textContent = "";
-    $("careDialogTitle").textContent = event.id ? ui("Korriger pleiehendelse","Edit care event") : ui("Registrer pleiehendelse","Record care event");
+    $("careDialogTitle").textContent = event.id ? ui("Korriger pleiehendelse","Edit care event") : ui("Registrer sluttresultat","Record final results");
     for (const field of ["title","ended_on","reached_level","neighborhood_total"]) {
       form.elements.namedItem(field).value = event[field] ?? "";
     }
@@ -4562,7 +4574,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.118").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.119").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

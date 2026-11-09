@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.118">
+  <link rel="stylesheet" href="main.css?v=0.18.0.119">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -127,7 +127,7 @@
 </div>
         </nav>
         <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.118</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.119</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -233,11 +233,27 @@
         </section>
 
         <section class="page" data-page="care">
-          <div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Pleiehendelser</h1><p>Se hva nabolaget har oppnådd og bidragene fra dine gårder.</p></div>
-            <button type="button" class="button button-primary hidden" id="newCareEvent">Registrer hendelse</button>
-          </div>
-          <p class="form-message" id="careHistoryStatus" role="status"></p>
-          <div class="member-history-list" id="careHistory"></div>
+          <div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Pleiehendelser</h1><p>Se hvordan du deltar, og finn resultatene fra tidligere runder.</p></div></div>
+          <article class="portal-card history-section-card" aria-labelledby="careRoundTitle">
+            <div class="card-header"><div><p class="card-kicker">HENDELSESINFORMASJON</p><h2 id="careRoundTitle">Det festlige bartreet</h2><p>Runden startet 9. november 2026. Se gjenværende tid i Hay Day.</p></div></div>
+            <p>Naboene fullfører gårdsoppgaver og bidrar til at treet vokser og låser opp felles belønninger.</p>
+            <h3>Slik deltar du</h3>
+            <ul>
+              <li>Åpne pleiehendelsen i Hay Day. Fullfør en oppgave og trykk «Bidra» for å levere poengene.</li>
+              <li>Du får 27 oppgaver per uke i denne runden. Ubrukte oppgaver samles opp, så du kan ta dem igjen senere.</li>
+              <li>Gården må bidra med minst 2 000 poeng for å kvalifisere til belønninger. Nabolagets første felles belønningstrinn er ved 1 000, 2 000 og 4 000 poeng.</li>
+              <li>Fordelen «Dobbel produksjon» gir en sjanse til å få to varer på samme tid og med samme mengde ingredienser.</li>
+            </ul>
+            <p class="helper-text"><a href="https://support.supercell.com/hay-day/en/articles/neighborhood-nurture.html" target="_blank" rel="noopener noreferrer">Les mer hos Supercell</a></p>
+          </article>
+          <section class="history-section-card" aria-labelledby="careArchiveTitle">
+            <div class="card-header">
+              <div><h2 id="careArchiveTitle">Tidligere hendelser</h2><p>Poengene for en ny runde registreres først når hele hendelsen er avsluttet.</p></div>
+              <button type="button" class="button button-primary hidden" id="newCareEvent">Registrer sluttresultat</button>
+            </div>
+            <p class="form-message" id="careHistoryStatus" role="status"></p>
+            <div class="member-history-list" id="careHistory"></div>
+          </section>
         </section>
 
         <section class="page members-page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Finn naboene, spillprofilene deres og status for pågående derby.</p></div></div><div class="member-overview" id="memberOverview" aria-label="Medlemsoversikt"><article><span>Medlemmer</span><strong id="memberOverviewTotal">0</strong></article><article><span>Spillprofiler</span><strong id="memberOverviewProfiles">0</strong></article><article><span>Påmeldte profiler</span><strong id="memberOverviewJoined">0</strong></article><article><span>Midlertidig inaktive</span><strong id="memberOverviewInactive">0</strong></article></div><div class="member-toolbar" id="memberToolbar"><label class="member-search-field"><span>Søk i medlemslisten</span><input id="memberSearch" type="search" placeholder="Spillnavn eller spill-ID" autocomplete="off"></label><div class="member-filter-row"><label><span>Derbystatus</span><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></label><label><span>Rolle</span><select id="memberRoleFilter"><option value="all">Alle roller</option><option value="owner">Eier</option><option value="admin">Administrator</option><option value="assistant_leader">Ass. leder</option><option value="senior">Senior</option><option value="member">Medlem</option></select></label><label><span>Sorter</span><select id="memberSort"><option value="name">Navn A–Å</option><option value="role">Rolle</option><option value="activity">Sist aktiv</option></select></label></div><p class="member-result-count" id="memberResultCount" aria-live="polite"></p></div><div class="member-grid" id="memberGrid" aria-live="polite"></div></section>
@@ -492,6 +508,7 @@
   <dialog id="careEventDialog" class="derby-result-dialog" aria-labelledby="careDialogTitle">
     <form id="careEventForm" class="dialog-card derby-result-dialog-card">
       <div class="card-header"><h2 id="careDialogTitle">Pleiehendelse</h2><button type="button" class="icon-button" data-close-dialog="careEventDialog" aria-label="Lukk">×</button></div>
+      <p class="helper-text">Bruk sluttresultatene fra Hay Day når hele pleiehendelsen er avsluttet.</p>
       <label>Navn på hendelsen<input name="title" maxlength="100" required></label>
       <div class="form-grid">
         <label>Sluttdato <small>valgfritt</small><input name="ended_on" type="date"></label>
@@ -705,6 +722,6 @@
       <div class="approval-actions"><button id="requestMemberReturn" type="button" class="button button-primary">Jeg ønsker å bli med igjen</button><button id="refreshMemberReturn" type="button" class="button">Oppdater status</button><button id="inactiveMemberLogout" type="button" class="button">Logg ut</button></div>
     </article>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.118"></script><script src="backend.js?v=0.18.0.118"></script><script src="app.js?v=0.18.0.118"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.119"></script><script src="backend.js?v=0.18.0.119"></script><script src="app.js?v=0.18.0.119"></script>
 </body>
 </html>
