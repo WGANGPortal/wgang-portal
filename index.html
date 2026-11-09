@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="WGANG">
-  <link rel="stylesheet" href="main.css?v=0.18.0.117">
+  <link rel="stylesheet" href="main.css?v=0.18.0.118">
 </head>
 <body>
   <section class="landing" id="landing">
@@ -105,6 +105,7 @@
           <a href="#dashboard" class="active" data-route="dashboard"><span>⌂</span>Oversikt</a>
           <a href="#derby" data-permission-any="derby.view" data-route="derby"><span>◇</span>Påmelding</a>
           <a href="#history" data-permission-any="derby.view" data-route="history"><span>◷</span>Derbyhistorikk</a>
+          <a href="#care" data-route="care"><span>♧</span>Pleiehendelser</a>
           <a href="#members" data-route="members"><span>◎</span>Medlemmer</a>
           <a href="#preferences" data-permission-any="derby.plan" data-route="preferences"><span>✓</span>Oppgaver</a>
           <a href="#announcements" data-permission-any="chat.community.view" data-route="announcements"><span>▣</span>Kunngjøringer</a>
@@ -126,7 +127,7 @@
 </div>
         </nav>
         <button class="role-preview-open hidden" id="openRolePreview" type="button"><span>◉</span><span><strong>Testvisning</strong><small>Se portalen som en annen rolle</small></span></button>
-        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.117</span></div></div>
+        <div class="sidebar-footer"><img src="wgang-icon-pink.webp" alt=""><div><strong>WGANG</strong><span>Portal v0.18.0.118</span></div></div>
       </aside>
       <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Lukk meny"></button>
 
@@ -229,6 +230,14 @@
           <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">DERBYARKIV</p><h2>WGANGs sluttresultater</h2><p class="helper-text">Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.</p></div></div><div class="derby-archive-list" id="derbyArchiveList"></div></article>
           <article class="portal-card history-section-card"><div class="card-header"><div><p class="card-kicker">MIN HISTORIKK</p><h2>Mine derbyresultater</h2><p class="helper-text">Poengprosenten beregnes mot ordinært makspoeng og stopper ved 100 %. Hver hel ekstraoppgave med makspoeng gir én ⭐.</p></div></div><div class="member-history-list" id="myDerbyHistory"></div></article>
           <article class="portal-card history-section-card" data-permission-any="derby.preferences.view,derby.settings.publish" data-result-leadership-only><div class="card-header"><div><p class="card-kicker">LEDEROVERSIKT</p><h2>Gjennomsnitt og utvikling</h2><p class="helper-text">Prosenten stopper ved 100 %. Hver fullførte ekstraoppgave med makspoeng telles som én ⭐.</p></div></div><div class="leader-history-metrics" id="leaderHistoryMetrics"></div><div class="table-wrap"><table class="leader-history-table"><thead><tr><th>Medlem</th><th>Derby</th><th>Snitt</th><th>100 %</th><th>⭐</th><th>Under 95 %</th><th>Ikke brukt</th><th>Utvikling</th></tr></thead><tbody id="leaderHistoryTable"></tbody></table></div></article>
+        </section>
+
+        <section class="page" data-page="care">
+          <div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Pleiehendelser</h1><p>Se hva nabolaget har oppnådd og bidragene fra dine gårder.</p></div>
+            <button type="button" class="button button-primary hidden" id="newCareEvent">Registrer hendelse</button>
+          </div>
+          <p class="form-message" id="careHistoryStatus" role="status"></p>
+          <div class="member-history-list" id="careHistory"></div>
         </section>
 
         <section class="page members-page" data-page="members"><div class="page-heading"><div><p class="eyebrow">FELLESSKAP</p><h1>Medlemmer</h1><p>Finn naboene, spillprofilene deres og status for pågående derby.</p></div></div><div class="member-overview" id="memberOverview" aria-label="Medlemsoversikt"><article><span>Medlemmer</span><strong id="memberOverviewTotal">0</strong></article><article><span>Spillprofiler</span><strong id="memberOverviewProfiles">0</strong></article><article><span>Påmeldte profiler</span><strong id="memberOverviewJoined">0</strong></article><article><span>Midlertidig inaktive</span><strong id="memberOverviewInactive">0</strong></article></div><div class="member-toolbar" id="memberToolbar"><label class="member-search-field"><span>Søk i medlemslisten</span><input id="memberSearch" type="search" placeholder="Spillnavn eller spill-ID" autocomplete="off"></label><div class="member-filter-row"><label><span>Derbystatus</span><select id="memberFilter"><option value="all">Alle statuser</option><option value="inactive">Midlertidig inaktiv</option><option value="joined">Deltar</option><option value="pause">Tar pause</option><option value="waiting">Mangler svar</option><option value="unsure">Usikker</option><option value="removed">Meldt av</option></select></label><label><span>Rolle</span><select id="memberRoleFilter"><option value="all">Alle roller</option><option value="owner">Eier</option><option value="admin">Administrator</option><option value="assistant_leader">Ass. leder</option><option value="senior">Senior</option><option value="member">Medlem</option></select></label><label><span>Sorter</span><select id="memberSort"><option value="name">Navn A–Å</option><option value="role">Rolle</option><option value="activity">Sist aktiv</option></select></label></div><p class="member-result-count" id="memberResultCount" aria-live="polite"></p></div><div class="member-grid" id="memberGrid" aria-live="polite"></div></section>
@@ -480,6 +489,25 @@
     </form>
   </dialog>
 
+  <dialog id="careEventDialog" class="derby-result-dialog" aria-labelledby="careDialogTitle">
+    <form id="careEventForm" class="dialog-card derby-result-dialog-card">
+      <div class="card-header"><h2 id="careDialogTitle">Pleiehendelse</h2><button type="button" class="icon-button" data-close-dialog="careEventDialog" aria-label="Lukk">×</button></div>
+      <label>Navn på hendelsen<input name="title" maxlength="100" required></label>
+      <div class="form-grid">
+        <label>Sluttdato <small>valgfritt</small><input name="ended_on" type="date"></label>
+        <label>Oppnådd nivå<input name="reached_level" type="number" min="1" max="2147483647" required></label>
+        <label>Nabolagets bidrag<input name="neighborhood_total" type="number" min="0" max="2147483647" required></label>
+      </div>
+      <div class="result-member-section">
+        <div class="result-member-section-heading"><h3>Bidrag per gård</h3><button type="button" class="button button-ghost button-compact" id="addCareResult">Legg til gård</button></div>
+        <p class="helper-text">Velg spillprofil når du vet hvilken gård det er. Oppgaver og doblede produkter er valgfrie.</p>
+        <div id="careResultRows" class="result-member-rows"></div>
+      </div>
+      <div class="dialog-actions"><button type="button" class="button button-ghost" data-close-dialog="careEventDialog">Avbryt</button><button type="submit" class="button button-primary" id="saveCareEvent">Lagre hendelse</button></div>
+      <p class="form-message" id="careEventStatus" role="status"></p>
+    </form>
+  </dialog>
+
   <dialog id="derbyParticipationDialog" class="derby-participation-dialog">
     <form id="derbyParticipationForm" class="dialog-card participation-confirm-card">
       <div class="card-header">
@@ -677,6 +705,6 @@
       <div class="approval-actions"><button id="requestMemberReturn" type="button" class="button button-primary">Jeg ønsker å bli med igjen</button><button id="refreshMemberReturn" type="button" class="button">Oppdater status</button><button id="inactiveMemberLogout" type="button" class="button">Logg ut</button></div>
     </article>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.117"></script><script src="backend.js?v=0.18.0.117"></script><script src="app.js?v=0.18.0.117"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js" integrity="sha384-UlHjK3F7TCQCEUpnoa1ohMbP2oaWB3Aypv4gMo511vaZ86uUZ0Zv7UzZ0J1zRUT1" crossorigin="anonymous"></script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script><script src="config.js?v=0.18.0.118"></script><script src="backend.js?v=0.18.0.118"></script><script src="app.js?v=0.18.0.118"></script>
 </body>
 </html>

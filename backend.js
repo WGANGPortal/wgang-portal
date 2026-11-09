@@ -1107,6 +1107,24 @@
       await client.from("derby_settings").upsert({id:1,type:data.name,task_total:data.task_total || 9,max_points:data.max_points || 320,strategy:data.strategy || [],updated_at:new Date().toISOString()},{onConflict:"id"});
       return data;
     },
+    async getCareEvents() {
+      if (!configured) return [];
+      const {data,error} = await client.from("care_events")
+        .select("id,title,ended_on,reached_level,neighborhood_total,updated_at,care_event_results(placement,farm_name,game_identity_id,contribution,tasks_completed,products_doubled)")
+        .order("ended_on", {ascending:false, nullsFirst:false})
+        .order("id", {ascending:false});
+      if (error) throw error;
+      return data || [];
+    },
+    async saveCareEvent(event, results) {
+      if (!configured) throw new Error("Koble til portalen for å lagre pleiehendelser.");
+      const {error} = await client.rpc("wgang_save_care_event", {
+        p_event_id:event.id ?? null, p_updated_at:event.updated_at ?? null, p_title:event.title,
+        p_ended_on:event.ended_on, p_level:event.reached_level, p_total:event.neighborhood_total,
+        p_results:results
+      });
+      if (error) throw error;
+    },
     async saveDerbyResult(payload) {
       if (!payload || !payload.eventId || !Array.isArray(payload.results) || !payload.results.length) {
         throw new Error("Resultatet mangler derby eller medlemsrader.");

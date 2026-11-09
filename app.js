@@ -1,4 +1,4 @@
-/* v0.18.0.117 – derbykarantene per spillprofil og manuell tillatelse */
+/* v0.18.0.118 – pleiehendelser */
 (function () {
   "use strict";
 
@@ -10,7 +10,7 @@
   }
   const PREVIEW_SAFE_BACKEND_METHODS = new Set([
     "bootstrap","refresh","getMembershipStatus","getAuthIntent","getMfaState","legalVersions","legalAcceptanceRequired",
-    "getBunnyData","getBunnyRoundState","getBunnyRoundSchedule","getWikiMediaUrl","onAuthChange","signOut"
+    "getCareEvents","getBunnyData","getBunnyRoundState","getBunnyRoundSchedule","getWikiMediaUrl","onAuthChange","signOut"
   ]);
   const backend = new Proxy(rawBackend, {
     get(target, property, receiver) {
@@ -131,6 +131,13 @@
     "Ingen tips ennå.":"No tips yet.","Venter på godkjenning":"Awaiting approval","Godkjent":"Approved",
     "Velkommen til WGANG Portal":"Welcome to WGANG Portal","Logg inn for å få tilgang til nabolagets medlemsportal.":"Log in to access the Neighborhood member portal.",
     "Varsler":"Notifications","NYTT SIDEN SIST":"NEW SINCE LAST VISIT","Du har nye varsler":"You have new notifications","Varslingsinnstillinger":"Notification settings","Nye kunngjøringer":"New announcements","Nye innlegg i Derbyprat":"New Derby Talk posts","Nye innlegg i Lederprat":"New Leadership Chat messages","Nye medlemssøknader":"New membership applications","Tips som venter på behandling":"Tips awaiting review","Nytt derby publisert":"New Derby published","Påminnelse før svarfrist":"Reminder before response deadline","Lagre varslingsinnstillinger":"Save notification settings",
+    "Pleiehendelser":"Care events","Pleiehendelse":"Care event","Registrer hendelse":"Record event",
+    "Se hva nabolaget har oppnådd og bidragene fra dine gårder.":"See what the neighborhood achieved and how your farms contributed.",
+    "Navn på hendelsen":"Event name","Sluttdato":"End date","Oppnådd nivå":"Level reached","Nabolagets bidrag":"Neighborhood contribution",
+    "Bidrag per gård":"Contributions by farm","Legg til gård":"Add farm","Fjern gård":"Remove farm","Lagre hendelse":"Save event",
+    "Velg spillprofil når du vet hvilken gård det er. Oppgaver og doblede produkter er valgfrie.":"Choose a game profile when you know which farm it is. Tasks and doubled products are optional.",
+    "Gårdsnavn i spillet":"Farm name in game","Uavklart / ingen profil":"Unlinked / no profile","Bidrag":"Contribution",
+    "Fullførte oppgaver":"Completed tasks","Doblede produkter":"Doubled products",
     "Derbyhistorikk":"Derby history","DERBYHISTORIKK":"DERBY HISTORY","Resultater over tid":"Results over time","Se lagets derbyarkiv, dine egne resultater og utviklingen over flere derby.":"View the team's Derby archive, your own results and development across multiple Derbies.",
     "Mine derby":"My Derbies","registrerte resultater":"registered results","Mitt gjennomsnitt":"My average","prosent maksimalt 100 %":"percentage capped at 100%","resultater":"results","Under 95 %":"Below 95%","Stjerner":"Stars","fulle ekstraoppgaver med makspoeng":"full extra tasks at maximum points",
     "DERBYARKIV":"DERBY ARCHIVE","WGANGs sluttresultater":"WGANG final results","Alle godkjente medlemmer kan se derbytype, dato, liga, plassering, totalpoeng og antall deltakere.":"All approved members can view Derby type, date, league, placement, total points and participant count.",
@@ -474,6 +481,7 @@
     leadership:"chat.leadership.view"
   };
   function canAccessRoute(route,user=current()){
+    if(route==="care")return !!user?.approved;
     if(route==="admin" || String(route||"").startsWith("admin-"))return canAccessAdmin(user);
     const key=ROUTE_PERMISSIONS[route];
     return key ? hasPermission(key,user) : true;
@@ -699,6 +707,7 @@
     $("mobileMoreButton")?.classList.toggle("active",!primaryMobileRoutes.has(route));
     sidebar.classList.remove("open");
     if (useHash) location.hash = route;
+    if (route === "care") loadCareHistory();
     portalMain.focus();
     if(route==="leadership"||route==="discussions") scheduleChatEntryFocus(route,previousRoute!==route);
     else if(route==="messages") { renderPrivateMessages(); if(activePrivateUserId) markActivePrivateConversationRead(); window.scrollTo({top:0,behavior:"smooth"}); }
@@ -794,6 +803,7 @@
     try { await backend.signOut(); } catch (e) { console.warn(e); }
     rolePreviewRole = null;
     state.currentUserId = null;
+    clearCareHistory();
     $("inactiveMemberScreen")?.classList.add("hidden");
     portal.classList.add("hidden");
     portal.setAttribute("aria-hidden", "true");
@@ -1301,6 +1311,7 @@
     renderPrivateMessages();
     renderLeadershipChat();
     renderDerbyHistory();
+    if (activePortalRoute === "care") loadCareHistory();
     renderResultManagement();
     renderAdmin();
     if (hasPermission("derby.preferences.view")) renderAdminPreferences();
@@ -1915,6 +1926,154 @@
     }
     return {baseMaximum,pointsEarned,percent,unused,extra,star,starCount,starBadge,starTarget,nextStarTarget,missingToMaximum,missingToStar,missingToNextStar,tone,label};
   }
+
+  let careRequest = 0;
+  let careEditingEvent = null;
+  const canEditCare = () => current()?.approved && isOwnerOrAdmin() && !isRolePreviewActive();
+
+  function clearCareHistory() {
+    careRequest++;
+    careEditingEvent = null;
+    $("careHistory").replaceChildren();
+    $("careHistoryStatus").textContent = "";
+    $("careResultRows").replaceChildren();
+    $("careEventForm").reset();
+    closeDialog($("careEventDialog"));
+  }
+
+  async function loadCareHistory() {
+    const user = current();
+    const request = ++careRequest;
+    const list = $("careHistory");
+    const status = $("careHistoryStatus");
+    list.replaceChildren();
+    $("newCareEvent").classList.toggle("hidden", !canEditCare());
+    if (!user?.approved) return;
+    const relevant = () => request === careRequest && activePortalRoute === "care"
+      && current()?.approved && current().id === user.id && current().role === user.role;
+    status.textContent = ui("Laster pleiehendelser …", "Loading care events …");
+    try {
+      const events = await backend.getCareEvents();
+      if (!relevant()) return;
+      const showAll = isOwnerOrAdmin(user);
+      const ownIds = new Set((state.gameIdentities || []).filter(g => g.userId === user.id).map(g => String(g.id)));
+      status.textContent = events.length ? "" : ui("Ingen pleiehendelser er registrert ennå.", "No care events have been recorded yet.");
+      for (const event of events) {
+        const rows = (event.care_event_results || []).filter(row => showAll || ownIds.has(String(row.game_identity_id)))
+          .sort((a,b) => a.placement - b.placement);
+        const cell = value => value == null ? "–" : historyNumber(value);
+        const card = document.createElement("article");
+        card.className = "portal-card";
+        card.innerHTML = `<div class="card-header"><div><h2>${esc(event.title)}</h2>
+          ${event.ended_on ? `<p>${historyDate(event.ended_on)}</p>` : ""}</div></div>
+          <div class="derby-archive-facts"><span><small>${ui("Oppnådd nivå","Level reached")}</small><b>${cell(event.reached_level)}</b></span>
+          <span><small>${ui("Nabolagets bidrag","Neighborhood contribution")}</small><b>${cell(event.neighborhood_total)}</b></span></div>
+          <h3>${showAll ? ui("Alle gårdsbidrag","All farm contributions") : ui("Mine gårdsbidrag","My farm contributions")}</h3>
+          ${rows.length ? `<div class="table-wrap"><table><thead><tr>
+            <th>${ui("Plass","Rank")}</th><th>${ui("Gård","Farm")}</th><th>${ui("Bidrag","Contribution")}</th>
+            <th>${ui("Fullførte oppgaver","Completed tasks")}</th><th>${ui("Doblede produkter","Doubled products")}</th>
+            ${showAll ? `<th>${ui("Profilkobling","Profile link")}</th>` : ""}</tr></thead>
+            <tbody>${rows.map(row => `<tr><td>${cell(row.placement)}</td><td>${esc(row.farm_name)}</td>
+            <td>${cell(row.contribution)}</td><td>${cell(row.tasks_completed)}</td><td>${cell(row.products_doubled)}</td>
+            ${showAll ? `<td>${row.game_identity_id ? ui("Koblet","Linked") : ui("Uavklart","Unlinked")}</td>` : ""}</tr>`).join("")}</tbody></table></div>`
+            : `<p class="helper-text">${ui("Ingen bidrag er registrert her.","No contributions are recorded here.")}</p>`}`;
+        if (canEditCare()) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "button button-ghost button-compact";
+          button.textContent = ui("Korriger", "Edit");
+          button.onclick = () => openCareEditor(event);
+          card.querySelector(".card-header").append(button);
+        }
+        list.append(card);
+      }
+    } catch (error) {
+      if (relevant()) status.textContent = ui("Kunne ikke laste pleiehendelser. Åpne fanen på nytt for å prøve igjen.",
+        "Could not load care events. Reopen the tab to try again.");
+    }
+  }
+
+  function addCareResult(row = {}) {
+    const container = $("careResultRows");
+    if (container.children.length >= 100) return;
+    const usedRanks = new Set([...container.querySelectorAll('[name="placement"]')].map(input => Number(input.value)));
+    const firstFreeRank = Array.from({length:100}, (_, i) => i + 1).find(rank => !usedRanks.has(rank));
+    const editor = document.createElement("div");
+    editor.className = "result-member-editor";
+    editor.innerHTML = `<div class="form-grid">
+      <label>Plassering<input name="placement" type="number" min="1" max="100" required></label>
+      <label>Gårdsnavn i spillet<input name="farm_name" maxlength="80" required></label>
+      <label>Spillprofil<select name="game_identity_id"><option value="">Uavklart / ingen profil</option></select></label>
+      <label>Bidrag<input name="contribution" type="number" min="0" max="2147483647" required></label>
+      <label>Fullførte oppgaver<input name="tasks_completed" type="number" min="0" max="2147483647"></label>
+      <label>Doblede produkter<input name="products_doubled" type="number" min="0" max="2147483647"></label>
+      </div><button type="button" class="button button-ghost button-compact">Fjern gård</button>`;
+    const profiles = editor.querySelector("select");
+    for (const game of [...(state.gameIdentities || [])].sort((a,b) => a.name.localeCompare(b.name, "nb"))) {
+      profiles.add(new Option(game.playerTag ? `${game.name} · ${game.playerTag}` : game.name, game.id));
+    }
+    if (row.game_identity_id && ![...profiles.options].some(option => option.value === String(row.game_identity_id))) {
+      profiles.add(new Option(row.farm_name, row.game_identity_id));
+    }
+    for (const input of editor.querySelectorAll("[name]")) {
+      input.value = row[input.name] ?? (input.name === "placement" ? firstFreeRank ?? "" : "");
+    }
+    profiles.onchange = () => {
+      const name = editor.querySelector('[name="farm_name"]');
+      if (!name.value.trim() && profiles.value) {
+        name.value = (state.gameIdentities || []).find(game => String(game.id) === profiles.value)?.name || "";
+      }
+    };
+    editor.querySelector("button").onclick = () => editor.remove();
+    container.append(editor);
+    translateUi(editor);
+  }
+
+  function openCareEditor(event = {}) {
+    if (!canEditCare() || $("saveCareEvent").disabled) return;
+    const form = $("careEventForm");
+    form.reset();
+    careEditingEvent = event;
+    $("careResultRows").replaceChildren();
+    $("careEventStatus").textContent = "";
+    $("careDialogTitle").textContent = event.id ? ui("Korriger pleiehendelse","Edit care event") : ui("Registrer pleiehendelse","Record care event");
+    for (const field of ["title","ended_on","reached_level","neighborhood_total"]) {
+      form.elements.namedItem(field).value = event[field] ?? "";
+    }
+    [...(event.care_event_results || [])].sort((a,b) => a.placement - b.placement).forEach(addCareResult);
+    translateUi(form);
+    showDialog($("careEventDialog"));
+  }
+
+  $("newCareEvent").onclick = () => openCareEditor();
+  $("addCareResult").onclick = () => addCareResult();
+  $("careEventForm").onsubmit = async event => {
+    event.preventDefault();
+    if (!canEditCare() || !careEditingEvent || $("saveCareEvent").disabled) return;
+    const form = new FormData(event.currentTarget);
+    const status = $("careEventStatus");
+    const button = $("saveCareEvent");
+    const results = [...$("careResultRows").children].map(row => {
+      const value = name => row.querySelector(`[name="${name}"]`).value.trim();
+      const optionalNumber = name => value(name) === "" ? null : Number(value(name));
+      return {placement:Number(value("placement")), farm_name:value("farm_name"),
+        game_identity_id:optionalNumber("game_identity_id"), contribution:Number(value("contribution")),
+        tasks_completed:optionalNumber("tasks_completed"), products_doubled:optionalNumber("products_doubled")};
+    });
+    const payload = {...careEditingEvent, title:form.get("title").trim(), ended_on:form.get("ended_on") || null,
+      reached_level:Number(form.get("reached_level")), neighborhood_total:Number(form.get("neighborhood_total"))};
+    button.disabled = true;
+    status.textContent = "";
+    try {
+      await backend.saveCareEvent(payload, results);
+      closeDialog($("careEventDialog"));
+      if (activePortalRoute === "care") await loadCareHistory();
+    } catch (error) {
+      status.textContent = humanError(error, ui("Kunne ikke lagre hendelsen.","Could not save the event."));
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   function archiveResults(archiveId) {
     return (derbyHistoryData().results || []).filter(row => String(row.archive_id) === String(archiveId));
@@ -2895,6 +3054,7 @@
   }
   function showInactiveMember(){
     rolePreviewRole=null;
+    clearCareHistory();
     closeDialog(auth);
     closeDialog(legalAcceptanceDialog);
     closeDialog(mfaDialog);
@@ -4362,6 +4522,7 @@
   };
 
   backend.onAuthChange((newState, event) => {
+    if (newState.currentUserId !== state.currentUserId) clearCareHistory();
     state = newState;
     if(current()?.status==="inactive")showInactiveMember();
     else if(current()?.approved&&!$("inactiveMemberScreen")?.classList.contains("hidden"))openPortal().catch(console.error);
@@ -4401,7 +4562,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.117").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.118").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
