@@ -1,4 +1,4 @@
-/* v0.18.0.126 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.127 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -33,7 +33,7 @@
     { icon:"🏭", name:"Produkter", tasks:["Produksjonsoppgaver"] },
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
     { icon:"🚢", name:"Båtoppgaver", tasks:["Båtoppgaver"] },
-    { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende","Spesifikke personer","Spesifikke hus"] },
+    { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende"] },
     { icon:"👥", name:"Bygjester", tasks:["Bygjest: Dame","Bygjest: Danser","Bygjest: Mekaniker","Bygjest: Cowboy","Bygjest: Bodybuilder","Bygjest: Selger","Bygjest: Skuespiller","Bygjest: Oldefar","Bygjest: Lokal"] },
     { icon:"🏘️", name:"Bygninger i byen", tasks:["Bygning: Matbutikk","Bygning: Kino","Bygning: Vertshus","Bygning: Spa","Bygning: Kafé","Bygning: Gavebutikk","Bygning: Strandkafé"] },
     { icon:"🎣", name:"Fiskeoppgaver", tasks:["Fiskeoppgaver"] },
@@ -42,12 +42,13 @@
     { icon:"🧺", name:"Kurvoppgaver", tasks:["Produkter","Dyr","Transportmidler","Annet"] }
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
+  const RETIRED_TASK_TYPES = new Set(["Spesifikke personer","Spesifikke hus"]);
   const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
   // Old preferences describe willingness, never readiness.
   const preferenceValue = value => value === "like" ? "can" : value === "no" ? "avoid" : value;
   const productTask = name => "Produkt: " + String(name).normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("nb-NO");
   function preferenceTaskTypes(accounts=state.accounts) {
-    return [...new Set([...TASK_TYPES,...(state.taskProducts||[]).map(productTask),...accounts.flatMap(a=>Object.keys(a.preferences||{}))])];
+    return [...new Set([...TASK_TYPES,...(state.taskProducts||[]).map(productTask),...accounts.flatMap(a=>Object.keys(a.preferences||{}))])].filter(task=>!RETIRED_TASK_TYPES.has(task));
   }
   const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",can:"I would like to do this – not started",avoid:"I do not like this task"};
   function preferenceTaskLabel(task) {
@@ -4781,7 +4782,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.126").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.127").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4803,6 +4804,7 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 
 

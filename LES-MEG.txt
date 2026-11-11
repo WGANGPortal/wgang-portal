@@ -1,47 +1,26 @@
-WGANG Portal v0.18.0.126 – adminoversikt for oppgaver
+WGANG Portal v0.18.0.127 – fjern doble byvalg
 
-Bygget på gjeldende main v0.18.0.125.
+Basert på gjeldende main v0.18.0.126.
 
-Last opp disse fem nettsidefilene samlet der dagens filer ligger:
+Last opp disse fem filene samlet til samme mappe som dagens nettsidefiler:
   app.js
   backend.js
   index.html
   main.css
   service-worker.js
 
-Ingen ny SQL er nødvendig. Felles produktliste fra v125 brukes videre.
-Nettsidefilene er ikke publisert automatisk. Prøv først på testgren.
+Ingen SQL er nødvendig. Oppdateringen er ikke publisert automatisk.
 
-Endringer:
-- Admin og medlem bruker samme kategorifunksjon, inkludert felles produkter.
-- Fire statuser og farger: Ferdig, Påbegynt, Kan gjøre og Liker ikke.
-- Kategorier og oppgaver kan åpnes for å vise detaljer.
-- Hver oppgave viser antall svar i hver status. Åpne den for å se navn og
-  tidspunkt for siste oppdatering.
-- Søk etter oppgave, produkt eller medlem; filtrer på status eller Ingen svar.
-- Nye produkter inkluderes fra den varige produktlisten, også uten noen svar.
-- Oppdater oversikten henter siste medlemsvalg og nye produkter fra databasen.
-  Produkter krever ingen ny kode eller opplasting når de legges til av medlemmer.
-- Pågående derby prioriteres foran neste publiserte derby.
-- Fullførte deltakere holdes utenfor oversikten for pågående derby.
-- Oversiktsfeltene viser antall registrerte valg, ikke antall unike personer.
-- Eksisterende tillatelse derby.preferences.view er beholdt.
+Byoppgaver inneholder nå bare Besøkende. De generelle valgene Spesifikke
+personer og Spesifikke hus er fjernet fra både medlemstavlen og admin.
+Valgene for hver bygjest og hver bygning er beholdt.
 
-Kontrollert:
-- JavaScript-syntaks for app, backend og service worker.
-- Tester for kategorier, navnevisning, fullførte deltakere, nullsvarprodukter,
-  søk/filter, oppdatering, neste vs. pågående derby og 150 ekstra produktnavn.
-- Tidligere tester for medlemstavle, produktlagring, språk, feilet lagring og
-  escaping bestått etter at kategorikoden ble delt.
-- Nettleserkontroll med eksempeldata på PC og 390 px mobilbredde.
-- Ingen horisontal overflyt i kontrollert mobilvisning.
-- I nettlesereksemplet kom et nytt produkt inn via Oppdater oversikten og ble
-  vist som Ingen svar, med null i alle fire statuser.
+Eldre lagrede svar på de to fjernede typene blir filtrert bort i hele
+oppgaveoversikten: kategorier, Mine valg, medlemspresentasjon, søk, tellere
+og adminstatistikk. De dukker ikke opp igjen under Andre registrerte valg.
+Databaserader er bevart; svar blir ikke automatisk overført til bestemte
+gjester eller bygninger, siden de gamle svarene ikke sier hvilke det gjaldt.
 
-Admin-forhandsvisning.html er en interaktiv eksempelvisning og skal ikke
-erstatte index.html. Oppdater-knappen legger til et eksempelprodukt lokalt.
-
-Før main: Registrer et nytt produkt med en medlemskonto på testgrenen. Bruk
-Oppdater oversikten med admin/eier og kontroller at produkt og riktig status
-vises. Logg inn med en vanlig medlemskonto og kontroller at admin fortsatt er skjult.
-Produksjonsinnlogging er ikke testet som del av denne endringen.
+Kontrollert: JavaScript-syntaks og regresjonstester med gamle svar på begge
+fjernede typer. Besøkende, ni bygjester og sju bygninger er fortsatt med.
+Tidligere tester for produktliste, adminoversikt, søk og statuser er bestått.
