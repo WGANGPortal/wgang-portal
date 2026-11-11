@@ -1,4 +1,4 @@
-/* v0.18.0.127 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.128 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -74,6 +74,11 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const ui = (no, en) => currentLanguage === "en" ? en : no;
   const I18N_EN = {
+    "Kaste eller beholde?":"Discard or keep?",
+    "Kast først":"Discard first",
+    "Disse må beholdes":"Keep these tasks",
+    "Kast først når ingen har ferdig eller påbegynt. Behold når minst én klargjør eller har noe ferdig. Anbefalingene bygger på registrerte svar; oppgaver uten svar vises som «Ingen svar».":"Discard first when nobody has a task ready or in preparation. Keep when at least one participant is preparing or ready. Recommendations use saved responses; tasks without responses are shown as ‘No answers’.",
+
     "Lagets oppgaveoversikt":"Team task overview",
     "Samme kategorier og statuser som medlemmenes oppgavetavle. Nye produkter kommer med når oversikten oppdateres.":"The same categories and statuses as the members’ task board. New products appear when the overview is refreshed.",
     "Oppdater oversikten":"Refresh overview",
@@ -1895,11 +1900,9 @@
   }
 
   function taskRecommendation(s) {
-    if(s.ready>0)return {label:ui("Klar til å tas","Ready to take"),cls:"recommend-keep"};
-    if(s.preparing>0)return {label:ui("Under klargjøring","Being prepared"),cls:"recommend-watch"};
-    if(s.can>0)return {label:ui("Kan være aktuell","May be useful"),cls:"recommend-watch"};
-    if(s.avoid>0)return {label:ui("Vurder å rydde","Consider removing"),cls:"recommend-clear"};
-    return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown"};
+    if(s.ready+s.preparing>0)return {label:ui("Behold","Keep"),cls:"recommend-keep",kind:"keep"};
+    if(s.can+s.avoid>0)return {label:ui("Kast først","Discard first"),cls:"recommend-clear",kind:"discard"};
+    return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown",kind:"unknown"};
   }
 
   const adminPreferenceUi={query:"",status:"all",openGroups:new Set(),openTasks:new Set()};
@@ -1915,15 +1918,26 @@
     const allTasks=preferenceTaskTypes();
     setText("adminPreferenceScope",ui(`${event?.name||"Oppgaveoversikt"} · ${members.length} ${currentActiveDerbyEvent()?"deltakere med oppgaver igjen":"aktuelle medlemmer"}. Ferdige deltakere er utelatt fra pågående derby.`,`${event?.name||"Task overview"} · ${members.length} ${currentActiveDerbyEvent()?"participants with tasks remaining":"eligible members"}. Completed participants are excluded from the active Derby.`));
     $("adminPreferenceSummary").innerHTML=Object.entries(labels).map(([key,label])=>`<article class="readiness-total readiness-${key}"><span>${icons[key]} ${esc(label)}</span><strong>${allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)}</strong><small>${ui(allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)===1?"registrert valg":"registrerte valg","saved choices")}</small></article>`).join("");
+    const recommended=$("adminPreferenceRecommendations");
+    if(recommended){
+      recommended.innerHTML=[{kind:"discard",title:ui("Kast først","Discard first"),icon:"×",note:ui("0 ferdig og 0 påbegynt","0 ready and 0 preparing")},{kind:"keep",title:ui("Disse må beholdes","Keep these tasks"),icon:"✓",note:ui("Minst én har ferdig eller påbegynt","At least one ready or preparing")}].map(group=>{
+        const tasks=allTasks.filter(task=>taskRecommendation(stats[task]).kind===group.kind);
+        return `<article class="admin-recommendation-card recommendation-${group.kind}"><button type="button" data-recommendation-filter="${group.kind}" aria-pressed="${adminPreferenceUi.status===group.kind}"><span><strong>${group.icon} ${esc(group.title)}</strong><small>${esc(group.note)}</small></span><b>${tasks.length}</b></button><p>${tasks.slice(0,5).map(task=>esc(titleFor(task))).join(", ")||ui("Ingen oppgaver akkurat nå","No tasks right now")}${tasks.length>5?ui(` · +${tasks.length-5} til`, ` · +${tasks.length-5} more`):""}</p><small>${ui("Trykk for å vise alle i oversikten","Select to show all in the overview")}</small></article>`;
+      }).join("");
+      recommended.querySelectorAll('[data-recommendation-filter]').forEach(button=>button.onclick=()=>{
+        adminPreferenceUi.status=adminPreferenceUi.status===button.dataset.recommendationFilter?"all":button.dataset.recommendationFilter;
+        adminPreferenceUi.query="";renderAdminPreferences();
+      });
+    }
     let visible=0;
     const list=$("adminPreferenceTable");
     list.innerHTML=groups.map(group=>{
       const tasks=group.tasks.filter(task=>{
         const counts=stats[task],hasResponses=Object.values(counts).some(Boolean);
-        const statusMatch=adminPreferenceUi.status==="all"||(adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
+        const statusMatch=adminPreferenceUi.status==="all"||(["keep","discard"].includes(adminPreferenceUi.status)?taskRecommendation(counts).kind===adminPreferenceUi.status:adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
         const searchMatch=!query||`${preferenceTaskLabel(task)} ${tText(group.name)} ${members.filter(a=>a.preferences?.[task]).map(a=>a.name).join(" ")}`.toLocaleLowerCase().includes(query);
         return statusMatch&&searchMatch;
-      });
+      }).sort((a,b)=>({discard:0,keep:1,unknown:2}[taskRecommendation(stats[a]).kind]-{discard:0,keep:1,unknown:2}[taskRecommendation(stats[b]).kind]));
       if(!tasks.length)return "";
       visible+=tasks.length;
       const open=query||adminPreferenceUi.status!=="all"||adminPreferenceUi.openGroups.has(group.key);
@@ -4782,7 +4796,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.127").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.128").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4804,6 +4818,7 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 
 

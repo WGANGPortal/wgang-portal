@@ -1,26 +1,29 @@
-WGANG Portal v0.18.0.127 – fjern doble byvalg
+WGANG Portal v0.18.0.128 – kast eller behold
 
-Basert på gjeldende main v0.18.0.126.
+Basert på gjeldende main v0.18.0.127. Last opp disse fem nettsidefilene samlet:
+app.js, backend.js, index.html, main.css og service-worker.js.
+Ingen ny SQL er nødvendig. Oppdateringen er ikke publisert automatisk.
 
-Last opp disse fem filene samlet til samme mappe som dagens nettsidefiler:
-  app.js
-  backend.js
-  index.html
-  main.css
-  service-worker.js
+Anbefalinger i admin:
+- Behold: minst én deltaker har valgt Ferdig ELLER Påbegynt.
+- Kast først: null på Ferdig og null på Påbegynt, med minst ett registrert svar
+  på Kan gjøre eller Liker ikke.
+- Ingen svar: ingen registrerte svar. Disse får ingen kasteanbefaling.
+- Kan gjøre alene hindrer ikke at en oppgave anbefales kastet først.
+- Fullførte derbydeltakere er fortsatt utenfor beregningen for pågående derby.
 
-Ingen SQL er nødvendig. Oppdateringen er ikke publisert automatisk.
+To nye felt viser antall oppgavetyper og eksempler. Trykk på Kast først eller
+Disse må beholdes for å vise hele den filtrerte listen. Trykk igjen for Alle.
+De samme valgene finnes under Vis status. Eksisterende søk og detaljer beholdes.
+Oppgavene prioriteres innen kategoriene med Kast først foran Behold og Ingen svar.
+Nye produkter følger samme regel automatisk. Kastingen utføres manuelt i spillet.
 
-Byoppgaver inneholder nå bare Besøkende. De generelle valgene Spesifikke
-personer og Spesifikke hus er fjernet fra både medlemstavlen og admin.
-Valgene for hver bygjest og hver bygning er beholdt.
+Kontrollert:
+- JavaScript-syntaks.
+- 81 kombinasjoner av statusantall.
+- Filtrene Kast først og Behold; fullførte deltakere påvirker ikke anbefalingen.
+- Tidligere regresjonstester for produktliste, kategorier, søk og lagring.
+- Nettleserkontroll med eksempeldata av feltene og snarveien Kast først.
 
-Eldre lagrede svar på de to fjernede typene blir filtrert bort i hele
-oppgaveoversikten: kategorier, Mine valg, medlemspresentasjon, søk, tellere
-og adminstatistikk. De dukker ikke opp igjen under Andre registrerte valg.
-Databaserader er bevart; svar blir ikke automatisk overført til bestemte
-gjester eller bygninger, siden de gamle svarene ikke sier hvilke det gjaldt.
-
-Kontrollert: JavaScript-syntaks og regresjonstester med gamle svar på begge
-fjernede typer. Besøkende, ni bygjester og sju bygninger er fortsatt med.
-Tidligere tester for produktliste, adminoversikt, søk og statuser er bestått.
+Admin-forhandsvisning.html er en interaktiv eksempelvisning, ikke index.html.
+Prøv oppdateringen på testgrenen med ekte medlemsvalg før main.

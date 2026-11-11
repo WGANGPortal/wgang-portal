@@ -1073,6 +1073,18 @@ body:not(.admin-mode) .admin-only {
 .shared-product-note{margin:15px 0 0;color:#85717a;font-size:.75rem;line-height:1.6}
 .readiness-category-body>.readiness-product{margin:16px 0}
 
+/* v128: prioritise discarding tasks with no preparation in progress. */
+.admin-recommendations{margin:20px 0 24px}.admin-recommendations h3{font-size:1rem;margin:0 0 7px}
+.admin-recommendation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}
+.admin-recommendation-card{padding:16px;border:1px solid #e4d1d5;border-radius:14px;background:#fff3f2;min-width:0;overflow-wrap:anywhere}
+.admin-recommendation-card.recommendation-keep{border-color:#cedfce;background:#eff6ef}
+.admin-recommendation-card button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;min-height:48px;padding:0;background:transparent;border:0;text-align:left;color:#963f47;cursor:pointer;font:inherit}
+.recommendation-keep button{color:#376846}.admin-recommendation-card button>span{display:grid;gap:6px}.admin-recommendation-card button strong{font-size:.95rem}.admin-recommendation-card button small{font-size:.73rem;line-height:1.5}.admin-recommendation-card button>b{font-size:1.6rem;flex-shrink:0}
+.admin-recommendation-card button[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:7px;border-radius:6px}
+.admin-recommendation-card p{font-size:.76rem;line-height:1.6;color:#74616a;margin:13px 0 8px}.admin-recommendation-card>small{color:#8d7881;font-size:.68rem}
+.admin-recommendation-card button:focus-visible{outline:3px solid #a92f60;outline-offset:5px}
+@media(max-width:520px){.admin-recommendation-grid{grid-template-columns:1fr}.admin-recommendation-card{padding:15px}}
+
 /* v126: the leadership board follows the member board and shared catalog. */
 .admin-readiness-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:20px 0}
 .admin-readiness-summary article{display:grid;grid-template-columns:1fr auto;gap:6px}.admin-readiness-summary small{grid-column:1/-1;font-size:.65rem;opacity:.8}
@@ -1094,11 +1106,13 @@ body:not(.admin-mode) .admin-only {
 @media(max-width:800px){.admin-task-detail>summary{grid-template-columns:minmax(0,1fr) 14px;gap:10px}.admin-task-counts{grid-column:1;grid-row:2}.admin-task-detail>summary>.category-chevron{grid-column:2;grid-row:1/3}.admin-task-people{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.admin-preference-card>.card-header{flex-direction:column;align-items:stretch}.admin-preference-card>.card-header button{width:100%;min-height:44px}.admin-readiness-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-readiness-toolbar{grid-template-columns:1fr}.admin-readiness-tasks{padding:0 12px}.admin-readiness-category>summary{grid-template-columns:32px minmax(0,1fr) 14px}.admin-status-count{font-size:.62rem}.admin-task-people{grid-template-columns:1fr 1fr}.admin-task-people section{padding:10px}}
 
-</style><style>body{margin:0;background:#f7f2f1;font-family:system-ui,sans-serif}.admin-preview{max-width:1000px;margin:20px auto;padding:0 14px 30px}.preview-label{color:#8c3156;font-size:12px;letter-spacing:.08em;margin:0 0 16px}.admin-preview .portal-card{margin:0}</style></head><body><main class="admin-preview"><p class="preview-label">WGANG · ADMIN · EKSEMPELVISNING</p><article class="portal-card admin-preference-card admin-module admin-module-active" data-permission-any="derby.preferences.view" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Lagets oppgaveoversikt</h2><p class="helper-text">Samme kategorier og statuser som medlemmenes oppgavetavle. Nye produkter kommer med når oversikten oppdateres.</p><p class="helper-text" id="adminPreferenceScope"></p></div><button type="button" class="button button-secondary" id="adminPreferenceRefresh">Oppdater oversikten</button></div><div class="admin-readiness-summary" id="adminPreferenceSummary"></div><div class="admin-readiness-toolbar"><label><span>Søk etter oppgave, produkt eller medlem</span><input type="search" id="adminPreferenceSearch" autocomplete="off"></label><label><span>Vis status</span><select id="adminPreferenceStatus"><option value="all">Alle statuser</option><option value="ready">Ferdig</option><option value="preparing">Påbegynt</option><option value="can">Kan gjøre</option><option value="avoid">Liker ikke</option><option value="unanswered">Ingen svar</option></select></label></div><p class="helper-text" id="adminPreferenceResultCount"></p><p class="admin-readiness-refresh-status" id="adminPreferenceRefreshStatus" role="status" aria-live="polite"></p><div class="admin-readiness-list" id="adminPreferenceTable"></div><p class="helper-text">Felles produkter beholdes i listen selv om ingen har valgt dem. Hvert medlem må selv registrere sin status.</p></article></main><script>
+
+
+</style><style>body{margin:0;background:#f7f2f1;font-family:system-ui,sans-serif}.admin-preview{max-width:1000px;margin:20px auto;padding:0 14px 30px}.preview-label{color:#8c3156;font-size:12px;letter-spacing:.08em;margin:0 0 16px}.admin-preview .portal-card{margin:0}</style></head><body><main class="admin-preview"><p class="preview-label">WGANG · ADMIN · EKSEMPELVISNING</p><article class="portal-card admin-preference-card admin-module admin-module-active" data-permission-any="derby.preferences.view" data-admin-module="board"><div class="card-header"><div><p class="card-kicker">OPPGAVETAVLA</p><h2>Lagets oppgaveoversikt</h2><p class="helper-text">Samme kategorier og statuser som medlemmenes oppgavetavle. Nye produkter kommer med når oversikten oppdateres.</p><p class="helper-text" id="adminPreferenceScope"></p></div><button type="button" class="button button-secondary" id="adminPreferenceRefresh">Oppdater oversikten</button></div><div class="admin-readiness-summary" id="adminPreferenceSummary"></div><section class="admin-recommendations"><h3>Kaste eller beholde?</h3><p class="helper-text">Kast først når ingen har ferdig eller påbegynt. Behold når minst én klargjør eller har noe ferdig. Anbefalingene bygger på registrerte svar; oppgaver uten svar vises som «Ingen svar».</p><div id="adminPreferenceRecommendations" class="admin-recommendation-grid"></div></section><div class="admin-readiness-toolbar"><label><span>Søk etter oppgave, produkt eller medlem</span><input type="search" id="adminPreferenceSearch" autocomplete="off"></label><label><span>Vis status</span><select id="adminPreferenceStatus"><option value="all">Alle statuser</option><option value="discard">Kast først</option><option value="keep">Disse må beholdes</option><option value="ready">Ferdig</option><option value="preparing">Påbegynt</option><option value="can">Kan gjøre</option><option value="avoid">Liker ikke</option><option value="unanswered">Ingen svar</option></select></label></div><p class="helper-text" id="adminPreferenceResultCount"></p><p class="admin-readiness-refresh-status" id="adminPreferenceRefreshStatus" role="status" aria-live="polite"></p><div class="admin-readiness-list" id="adminPreferenceTable"></div><p class="helper-text">Felles produkter beholdes i listen selv om ingen har valgt dem. Hvert medlem må selv registrere sin status.</p></article></main><script>
 let currentLanguage='no',busy=false;
 const event={id:1,name:'Normal Derby'};
 const state={taskProducts:['ostekake','sjokoladekake','bringebærmuffins'],derby:{type:'Normal Derby'},derbyManagement:{next:event},accounts:[
-{id:'one',name:'EKSEMPELGÅRD',approved:true,choice:'joined',preferences:{'Bygning: Kino':'ready','Hvete':'can','Produkt: ostekake':'ready'},preferenceUpdatedAt:{'Produkt: ostekake':'2026-11-11T20:00:00Z'}},
+{id:'one',name:'EKSEMPELGÅRD',approved:true,choice:'joined',preferences:{'Bygning: Kino':'ready','Hvete':'can','Mais':'can','Gruveoppgaver':'avoid','Produkt: ostekake':'ready'},preferenceUpdatedAt:{'Produkt: ostekake':'2026-11-11T20:00:00Z'}},
 {id:'two',name:'GÅRD NUMMER TO',approved:true,choice:'joined',preferences:{'Produkt: ostekake':'preparing','Bygning: Kino':'can'},preferenceUpdatedAt:{'Produkt: ostekake':'2026-11-11T20:20:00Z'}},
 {id:'three',name:'FERDIG GÅRD',approved:true,choice:'joined',derbyCompleted:true,preferences:{'Produkt: ostekake':'ready'}}]};
 const current=()=>state.accounts[0],approved=()=>state.accounts,currentActiveDerbyEvent=()=>event,activeDerbyParticipationChoice=a=>a.choice;
@@ -1115,7 +1129,7 @@ const refreshState=async()=>{state.taskProducts=[...new Set([...state.taskProduc
     { icon:"🏭", name:"Produkter", tasks:["Produksjonsoppgaver"] },
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
     { icon:"🚢", name:"Båtoppgaver", tasks:["Båtoppgaver"] },
-    { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende","Spesifikke personer","Spesifikke hus"] },
+    { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende"] },
     { icon:"👥", name:"Bygjester", tasks:["Bygjest: Dame","Bygjest: Danser","Bygjest: Mekaniker","Bygjest: Cowboy","Bygjest: Bodybuilder","Bygjest: Selger","Bygjest: Skuespiller","Bygjest: Oldefar","Bygjest: Lokal"] },
     { icon:"🏘️", name:"Bygninger i byen", tasks:["Bygning: Matbutikk","Bygning: Kino","Bygning: Vertshus","Bygning: Spa","Bygning: Kafé","Bygning: Gavebutikk","Bygning: Strandkafé"] },
     { icon:"🎣", name:"Fiskeoppgaver", tasks:["Fiskeoppgaver"] },
@@ -1124,12 +1138,13 @@ const refreshState=async()=>{state.taskProducts=[...new Set([...state.taskProduc
     { icon:"🧺", name:"Kurvoppgaver", tasks:["Produkter","Dyr","Transportmidler","Annet"] }
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
+  const RETIRED_TASK_TYPES = new Set(["Spesifikke personer","Spesifikke hus"]);
   const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
   // Old preferences describe willingness, never readiness.
   const preferenceValue = value => value === "like" ? "can" : value === "no" ? "avoid" : value;
   const productTask = name => "Produkt: " + String(name).normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("nb-NO");
   function preferenceTaskTypes(accounts=state.accounts) {
-    return [...new Set([...TASK_TYPES,...(state.taskProducts||[]).map(productTask),...accounts.flatMap(a=>Object.keys(a.preferences||{}))])];
+    return [...new Set([...TASK_TYPES,...(state.taskProducts||[]).map(productTask),...accounts.flatMap(a=>Object.keys(a.preferences||{}))])].filter(task=>!RETIRED_TASK_TYPES.has(task));
   }
   const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",can:"I would like to do this – not started",avoid:"I do not like this task"};
   function preferenceTaskLabel(task) {
@@ -1266,11 +1281,9 @@ const refreshState=async()=>{state.taskProducts=[...new Set([...state.taskProduc
   }
 
   function taskRecommendation(s) {
-    if(s.ready>0)return {label:ui("Klar til å tas","Ready to take"),cls:"recommend-keep"};
-    if(s.preparing>0)return {label:ui("Under klargjøring","Being prepared"),cls:"recommend-watch"};
-    if(s.can>0)return {label:ui("Kan være aktuell","May be useful"),cls:"recommend-watch"};
-    if(s.avoid>0)return {label:ui("Vurder å rydde","Consider removing"),cls:"recommend-clear"};
-    return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown"};
+    if(s.ready+s.preparing>0)return {label:ui("Behold","Keep"),cls:"recommend-keep",kind:"keep"};
+    if(s.can+s.avoid>0)return {label:ui("Kast først","Discard first"),cls:"recommend-clear",kind:"discard"};
+    return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown",kind:"unknown"};
   }
 
   const adminPreferenceUi={query:"",status:"all",openGroups:new Set(),openTasks:new Set()};
@@ -1286,15 +1299,26 @@ const refreshState=async()=>{state.taskProducts=[...new Set([...state.taskProduc
     const allTasks=preferenceTaskTypes();
     setText("adminPreferenceScope",ui(`${event?.name||"Oppgaveoversikt"} · ${members.length} ${currentActiveDerbyEvent()?"deltakere med oppgaver igjen":"aktuelle medlemmer"}. Ferdige deltakere er utelatt fra pågående derby.`,`${event?.name||"Task overview"} · ${members.length} ${currentActiveDerbyEvent()?"participants with tasks remaining":"eligible members"}. Completed participants are excluded from the active Derby.`));
     $("adminPreferenceSummary").innerHTML=Object.entries(labels).map(([key,label])=>`<article class="readiness-total readiness-${key}"><span>${icons[key]} ${esc(label)}</span><strong>${allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)}</strong><small>${ui(allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)===1?"registrert valg":"registrerte valg","saved choices")}</small></article>`).join("");
+    const recommended=$("adminPreferenceRecommendations");
+    if(recommended){
+      recommended.innerHTML=[{kind:"discard",title:ui("Kast først","Discard first"),icon:"×",note:ui("0 ferdig og 0 påbegynt","0 ready and 0 preparing")},{kind:"keep",title:ui("Disse må beholdes","Keep these tasks"),icon:"✓",note:ui("Minst én har ferdig eller påbegynt","At least one ready or preparing")}].map(group=>{
+        const tasks=allTasks.filter(task=>taskRecommendation(stats[task]).kind===group.kind);
+        return `<article class="admin-recommendation-card recommendation-${group.kind}"><button type="button" data-recommendation-filter="${group.kind}" aria-pressed="${adminPreferenceUi.status===group.kind}"><span><strong>${group.icon} ${esc(group.title)}</strong><small>${esc(group.note)}</small></span><b>${tasks.length}</b></button><p>${tasks.slice(0,5).map(task=>esc(titleFor(task))).join(", ")||ui("Ingen oppgaver akkurat nå","No tasks right now")}${tasks.length>5?ui(` · +${tasks.length-5} til`, ` · +${tasks.length-5} more`):""}</p><small>${ui("Trykk for å vise alle i oversikten","Select to show all in the overview")}</small></article>`;
+      }).join("");
+      recommended.querySelectorAll('[data-recommendation-filter]').forEach(button=>button.onclick=()=>{
+        adminPreferenceUi.status=adminPreferenceUi.status===button.dataset.recommendationFilter?"all":button.dataset.recommendationFilter;
+        adminPreferenceUi.query="";renderAdminPreferences();
+      });
+    }
     let visible=0;
     const list=$("adminPreferenceTable");
     list.innerHTML=groups.map(group=>{
       const tasks=group.tasks.filter(task=>{
         const counts=stats[task],hasResponses=Object.values(counts).some(Boolean);
-        const statusMatch=adminPreferenceUi.status==="all"||(adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
+        const statusMatch=adminPreferenceUi.status==="all"||(["keep","discard"].includes(adminPreferenceUi.status)?taskRecommendation(counts).kind===adminPreferenceUi.status:adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
         const searchMatch=!query||`${preferenceTaskLabel(task)} ${tText(group.name)} ${members.filter(a=>a.preferences?.[task]).map(a=>a.name).join(" ")}`.toLocaleLowerCase().includes(query);
         return statusMatch&&searchMatch;
-      });
+      }).sort((a,b)=>({discard:0,keep:1,unknown:2}[taskRecommendation(stats[a]).kind]-{discard:0,keep:1,unknown:2}[taskRecommendation(stats[b]).kind]));
       if(!tasks.length)return "";
       visible+=tasks.length;
       const open=query||adminPreferenceUi.status!=="all"||adminPreferenceUi.openGroups.has(group.key);
