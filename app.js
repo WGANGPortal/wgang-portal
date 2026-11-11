@@ -1,4 +1,4 @@
-/* v0.18.0.125 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.126 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -73,6 +73,15 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const ui = (no, en) => currentLanguage === "en" ? en : no;
   const I18N_EN = {
+    "Lagets oppgaveoversikt":"Team task overview",
+    "Samme kategorier og statuser som medlemmenes oppgavetavle. Nye produkter kommer med når oversikten oppdateres.":"The same categories and statuses as the members’ task board. New products appear when the overview is refreshed.",
+    "Oppdater oversikten":"Refresh overview",
+    "Søk etter oppgave, produkt eller medlem":"Search for a task, product or member",
+    "Vis status":"Show status",
+    "Alle statuser":"All statuses",
+    "Ingen svar":"No answers",
+    "Felles produkter beholdes i listen selv om ingen har valgt dem. Hvert medlem må selv registrere sin status.":"Shared products remain in the list even when nobody has selected them. Each member records their own status.",
+
     "Hva har du klart?":"What have you prepared?",
     "Del det du vil at lederne skal vite. Du trenger ikke svare på alt.":"Share what you want the leaders to know. You do not have to answer everything.",
     "Alle oppgaver":"All tasks",
@@ -1776,6 +1785,16 @@
     finally{setBusy(false);}
   }
 
+  function preferenceGroups(accounts=state.accounts) {
+    const types=preferenceTaskTypes(accounts);
+    const groups=TASK_GROUPS.map((g,i)=>({...g,key:g.name==="Produkter"?"products":String(i),tasks:[...g.tasks]}));
+    const products=groups.find(g=>g.key==="products");
+    products.tasks.push(...types.filter(t=>t.startsWith("Produkt: ")).sort((a,b)=>a.localeCompare(b,currentLanguage==="en"?"en":"nb-NO")));
+    const other=types.filter(t=>!TASK_TYPES.includes(t)&&!t.startsWith("Produkt: "));
+    if(other.length)groups.push({icon:"📋",name:ui("Andre registrerte valg","Other saved choices"),key:"other",tasks:other});
+    return groups;
+  }
+
   const preferenceUi={userId:null,query:"",onlyMine:false,openGroups:new Set()};
   function renderPreferences() {
     const user=current(),list=$("preferenceList");
@@ -1783,12 +1802,7 @@
     if(preferenceUi.userId!==user.id){
       preferenceUi.userId=user.id;preferenceUi.query="";preferenceUi.onlyMine=false;preferenceUi.openGroups.clear();
     }
-    const types=preferenceTaskTypes([user]);
-    const groups=TASK_GROUPS.map((g,i)=>({...g,key:g.name==="Produkter"?"products":String(i),tasks:[...g.tasks]}));
-    const products=groups.find(g=>g.key==="products");
-    products.tasks.push(...types.filter(t=>t.startsWith("Produkt: ")).sort((a,b)=>a.localeCompare(b,currentLanguage==="en"?"en":"nb-NO")));
-    const other=types.filter(t=>!TASK_TYPES.includes(t)&&!t.startsWith("Produkt: "));
-    if(other.length)groups.push({icon:"📋",name:ui("Andre registrerte valg","Other saved choices"),key:"other",tasks:other});
+    const types=preferenceTaskTypes([user]),groups=preferenceGroups([user]);
     const selectedCount=types.filter(task=>!!user.preferences?.[task]).length;
     setText("preferenceSelectionSummary",ui(`${selectedCount} valg delt`,`${selectedCount} choices shared`));
     const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",can:"Willing",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",can:"Kan gjøre",avoid:"Liker ikke"};
@@ -1857,17 +1871,15 @@
     return null;
   }
 
+  function adminPreferenceContext() {
+    return currentActiveDerbyEvent() || state.derbyManagement?.next || null;
+  }
   function adminPreferenceAccounts() {
-    const members=approved();
-    const scope=preferenceDerbyScope();
-    if(!scope)return members;
-    const currentEvent=currentActiveDerbyEvent();
-    const contextEvent=state.derbyManagement?.next;
-    const contextIsCurrent=!!(currentEvent&&contextEvent&&String(currentEvent.id)===String(contextEvent.id));
+    const members=approved(),currentEvent=currentActiveDerbyEvent(),event=adminPreferenceContext();
+    if(!preferenceDerbyScope(event?.name))return members;
     return members.filter(account=>{
-      const choice=contextIsCurrent?activeDerbyParticipationChoice(account):account.choice;
-      const completed=contextIsCurrent?!!account.derbyCompleted:false;
-      return choice==="joined"&&!completed;
+      const choice=currentEvent?activeDerbyParticipationChoice(account):account.choice;
+      return choice==="joined"&&!(currentEvent&&account.derbyCompleted);
     });
   }
 
@@ -1889,31 +1901,56 @@
     return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown"};
   }
 
+  const adminPreferenceUi={query:"",status:"all",openGroups:new Set(),openTasks:new Set()};
   function renderAdminPreferences() {
-    if (!hasPermission("derby.preferences.view")) return;
-    const scopedMembers=adminPreferenceAccounts();
-    const derbyScope=preferenceDerbyScope();
-    const participantScope=!!derbyScope;
-    const stats = preferenceStats();
-    const rows = preferenceTaskTypes().map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
-    const scopeText=$("adminPreferenceScope");
-    if(scopeText) scopeText.textContent=participantScope
-      ? (currentLanguage === "en"
-        ? `Showing ${scopedMembers.length} participating member${scopedMembers.length===1?"":"s"} who still have tasks remaining in this ${derbyScope.label}.`
-        : `Viser ${scopedMembers.length===1?"det ene medlemmet":`de ${scopedMembers.length} medlemmene`} som deltar og fortsatt har oppgaver igjen i ${derbyScope.label}.`)
-      : (currentLanguage === "en" ? "Showing approved members according to the current setup for this Derby type." : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.");
-    $("adminPreferenceTable").innerHTML=rows.map(x=>`<tr><td><strong>${esc(preferenceTaskLabel(x.t))}</strong></td><td>${x.s.ready}</td><td>${x.s.preparing}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td><span class="recommendation ${x.r.cls}">${esc(x.r.label)}</span></td></tr>`).join("");
-    const ready=rows.filter(x=>x.s.ready>0).sort((a,b)=>b.s.ready-a.s.ready).slice(0,3);
-    const preparing=rows.filter(x=>x.s.preparing>0).sort((a,b)=>b.s.preparing-a.s.preparing).slice(0,3);
-    $("adminPreferenceSummary").innerHTML=[{title:ui("Ferdig klargjort","Prepared and ready"),items:ready},{title:ui("Påbegynt klargjøring","Preparation started"),items:preparing}].map(group=>`<article><span>${esc(group.title)}</span><strong>${group.items.map(x=>esc(preferenceTaskLabel(x.t))).join(", ")||ui("Ingen registrert","None saved")}</strong><small>${ui("Basert på deltakernes siste valg","Based on participants’ latest choices")}</small></article>`).join("");
-    const memberBox=$("adminPreferenceMembers");
-    if(memberBox){
-      memberBox.className="preference-member-grid";
-      memberBox.innerHTML=scopedMembers.map(a=>`<article class="preference-member-card"><h4>${esc(a.name)}</h4>${Object.entries(currentLanguage==="en"?PREF_EN:PREF_LABELS).map(([key,label])=>{
-        const tasks=preferenceTaskTypes([a]).filter(t=>preferenceValue(a.preferences?.[t])===key);
-        return tasks.length?`<p><strong>${esc(label)}:</strong> ${tasks.map(t=>`${esc(preferenceTaskLabel(t))}${a.preferenceUpdatedAt?.[t]?` <small>(${esc(formatDate(a.preferenceUpdatedAt[t]))})</small>`:""}`).join(", ")}</p>`:"";
-      }).join("")}</article>`).join("")||`<p class="empty-state">${ui("Ingen deltakere med oppgaver igjen akkurat nå.","No participants with tasks remaining right now.")}</p>`;
-    }
+    if(!hasPermission("derby.preferences.view"))return;
+    const members=adminPreferenceAccounts(),stats=preferenceStats(),event=adminPreferenceContext();
+    const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",can:"Willing",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",can:"Kan gjøre",avoid:"Liker ikke"};
+    const icons={ready:"✓",preparing:"◷",can:"+",avoid:"×"};
+    const query=adminPreferenceUi.query.trim().toLocaleLowerCase();
+    const peopleFor=(task,key)=>members.filter(a=>preferenceValue(a.preferences?.[task])===key);
+    const titleFor=task=>task==="Produksjonsoppgaver"?ui("Produksjon generelt","Production in general"):task==="Produkter"?ui("Produktkurver","Product baskets"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
+    const groups=preferenceGroups();
+    const allTasks=preferenceTaskTypes();
+    setText("adminPreferenceScope",ui(`${event?.name||"Oppgaveoversikt"} · ${members.length} ${currentActiveDerbyEvent()?"deltakere med oppgaver igjen":"aktuelle medlemmer"}. Ferdige deltakere er utelatt fra pågående derby.`,`${event?.name||"Task overview"} · ${members.length} ${currentActiveDerbyEvent()?"participants with tasks remaining":"eligible members"}. Completed participants are excluded from the active Derby.`));
+    $("adminPreferenceSummary").innerHTML=Object.entries(labels).map(([key,label])=>`<article class="readiness-total readiness-${key}"><span>${icons[key]} ${esc(label)}</span><strong>${allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)}</strong><small>${ui(allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)===1?"registrert valg":"registrerte valg","saved choices")}</small></article>`).join("");
+    let visible=0;
+    const list=$("adminPreferenceTable");
+    list.innerHTML=groups.map(group=>{
+      const tasks=group.tasks.filter(task=>{
+        const counts=stats[task],hasResponses=Object.values(counts).some(Boolean);
+        const statusMatch=adminPreferenceUi.status==="all"||(adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
+        const searchMatch=!query||`${preferenceTaskLabel(task)} ${tText(group.name)} ${members.filter(a=>a.preferences?.[task]).map(a=>a.name).join(" ")}`.toLocaleLowerCase().includes(query);
+        return statusMatch&&searchMatch;
+      });
+      if(!tasks.length)return "";
+      visible+=tasks.length;
+      const open=query||adminPreferenceUi.status!=="all"||adminPreferenceUi.openGroups.has(group.key);
+      return `<details class="readiness-category admin-readiness-category" data-admin-pref-group="${group.key}" ${open?"open":""}><summary><span class="readiness-category-icon" aria-hidden="true">${group.icon}</span><span class="readiness-category-heading"><strong>${esc(tText(group.name))}</strong><small>${tasks.length} ${ui(tasks.length===1?"oppgavetype":"oppgavetyper",tasks.length===1?"task type":"task types")}${group.key==="products"?ui(" · felles produktliste"," · shared product list"):""}</small></span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="admin-readiness-tasks">${tasks.map(task=>{
+        const counts=stats[task],recommendation=taskRecommendation(counts);
+        return `<details class="admin-task-detail" data-admin-pref-task="${esc(task)}" ${adminPreferenceUi.openTasks.has(task)?"open":""}><summary><span class="admin-task-title"><strong>${esc(titleFor(task))}</strong><span class="recommendation ${recommendation.cls}">${esc(recommendation.label)}</span></span><span class="admin-task-counts">${Object.entries(labels).map(([key,label])=>`<span class="admin-status-count readiness-${key}" aria-label="${esc(label)}: ${counts[key]}"><span>${icons[key]} ${esc(label)}</span><b>${counts[key]}</b></span>`).join("")}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="admin-task-people">${Object.entries(labels).map(([key,label])=>`<section><h4>${icons[key]} ${esc(label)}</h4>${peopleFor(task,key).map(a=>`<p><strong>${esc(a.name)}</strong>${a.preferenceUpdatedAt?.[task]?`<small>${ui("Oppdatert","Updated")} ${esc(formatDate(a.preferenceUpdatedAt[task]))}</small>`:""}</p>`).join("")||`<p class="admin-no-choice">${ui("Ingen registrert","None saved")}</p>`}</section>`).join("")}</div></details>`;
+      }).join("")}</div></details>`;
+    }).join("")||`<p class="readiness-empty">${ui("Ingen oppgaver passer søket eller filteret.","No tasks match the search or filter.")}</p>`;
+    setText("adminPreferenceResultCount",ui(`${visible} ${visible===1?"oppgavetype":"oppgavetyper"} · Åpne en oppgave for å se navn og siste oppdatering.`,`${visible} task types · Open a task to see names and last updates.`));
+    list.querySelectorAll('[data-admin-pref-group]').forEach(details=>details.ontoggle=()=>{
+      if(!query&&adminPreferenceUi.status==="all"){
+        if(details.open)adminPreferenceUi.openGroups.add(details.dataset.adminPrefGroup);else adminPreferenceUi.openGroups.delete(details.dataset.adminPrefGroup);
+      }
+    });
+    list.querySelectorAll('[data-admin-pref-task]').forEach(details=>details.ontoggle=()=>{
+      if(details.open)adminPreferenceUi.openTasks.add(details.dataset.adminPrefTask);else adminPreferenceUi.openTasks.delete(details.dataset.adminPrefTask);
+    });
+    const search=$("adminPreferenceSearch"),filter=$("adminPreferenceStatus");
+    if(search){search.value=adminPreferenceUi.query;search.oninput=()=>{adminPreferenceUi.query=search.value;renderAdminPreferences();};}
+    if(filter){filter.value=adminPreferenceUi.status;filter.onchange=()=>{adminPreferenceUi.status=filter.value;renderAdminPreferences();};}
+    const refresh=$("adminPreferenceRefresh");
+    if(refresh)refresh.onclick=async()=>{
+      if(busy||!hasPermission("derby.preferences.view"))return;
+      setBusy(true);refresh.disabled=true;setText("adminPreferenceRefreshStatus",ui("Henter siste valg og produkter …","Loading latest choices and products …"));
+      try{await refreshState();renderAdminPreferences();setText("adminPreferenceRefreshStatus",ui("Oversikten er oppdatert","Overview updated"));}
+      catch(e){setText("adminPreferenceRefreshStatus",ui("Kunne ikke oppdatere. Prøv igjen.","Could not refresh. Try again."));alert(humanError(e));}
+      finally{setBusy(false);refresh.disabled=false;}
+    };
   }
 
   function formatDate(value) {
@@ -4744,7 +4781,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.125").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.126").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4766,5 +4803,6 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 

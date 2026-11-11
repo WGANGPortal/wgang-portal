@@ -1,49 +1,47 @@
-WGANG Portal v0.18.0.125 – felles produkter
+WGANG Portal v0.18.0.126 – adminoversikt for oppgaver
 
-Basert på gjeldende main v0.18.0.124.
+Bygget på gjeldende main v0.18.0.125.
 
-Last opp disse fem filene samlet til samme mappe som dagens nettsidefiler:
+Last opp disse fem nettsidefilene samlet der dagens filer ligger:
   app.js
   backend.js
   index.html
   main.css
   service-worker.js
 
-Endringen er ikke publisert automatisk. Prøv først på testgrenen.
+Ingen ny SQL er nødvendig. Felles produktliste fra v125 brukes videre.
+Nettsidefilene er ikke publisert automatisk. Prøv først på testgren.
 
-Ny oppførsel:
-- Kategorien Produkter inneholder både produksjon generelt, konkrete produkter
-  og muligheten Legg til et produkt.
-- Produktnavn lagres i en varig felles liste for nabolaget.
-- Listen følger ikke ett bestemt derby og er tilgjengelig i senere derby.
-- Andre medlemmer får samme produktliste ved ny innlasting av portalen.
-- Hvert medlem registrerer sin egen status. Andres status blir ikke kopiert.
-- Et produkt beholdes i felleslisten når et medlem fjerner sitt eget valg.
-- Mellomrom og store/små bokstaver normaliseres. Like navn blir ett produkt.
-  Ulike stavemåter og ulike språk kan fortsatt gi forskjellige produkter.
-- Under Kurvoppgaver vises det generelle produktvalget som Produktkurver.
-- Produktlisten inneholder bare navn, uten opplysninger om hvem som la dem inn.
-
-Databasetilpasningen shared_task_product_catalog_v125 er allerede installert
-i Supabase. database-change.sql er bare dokumentasjon og skal ikke kjøres på
-nytt eller lastes opp som en nettsidefil.
+Endringer:
+- Admin og medlem bruker samme kategorifunksjon, inkludert felles produkter.
+- Fire statuser og farger: Ferdig, Påbegynt, Kan gjøre og Liker ikke.
+- Kategorier og oppgaver kan åpnes for å vise detaljer.
+- Hver oppgave viser antall svar i hver status. Åpne den for å se navn og
+  tidspunkt for siste oppdatering.
+- Søk etter oppgave, produkt eller medlem; filtrer på status eller Ingen svar.
+- Nye produkter inkluderes fra den varige produktlisten, også uten noen svar.
+- Oppdater oversikten henter siste medlemsvalg og nye produkter fra databasen.
+  Produkter krever ingen ny kode eller opplasting når de legges til av medlemmer.
+- Pågående derby prioriteres foran neste publiserte derby.
+- Fullførte deltakere holdes utenfor oversikten for pågående derby.
+- Oversiktsfeltene viser antall registrerte valg, ikke antall unike personer.
+- Eksisterende tillatelse derby.preferences.view er beholdt.
 
 Kontrollert:
-- Syntakskontroll av app.js, backend.js og service-worker.js.
-- Funksjonstester for plassering av skjema, felles produktliste, egne statuser,
-  bevaring etter fjerning, søk, Mine valg, validering og HTML-escaping.
-- Sidevis innlasting av mer enn 1000 katalog-/preferanserader.
-- Databasetest med to medlemsroller: automatisk katalogregistrering, varig
-  produkt etter fjerning, gjenbruk av andre med uavhengig status og ingen dublett.
-- Ugyldige produktnavn avvises. Inaktive og utloggede har ikke tilgang.
-- Direkte endring og sletting av katalogen er sperret for medlemsklienten.
-- Testdata ble rullet tilbake. Sikkerhetskontrollen ga ingen nye funn for denne
-  tabellen eller funksjonen. Eksisterende regler på task_preferences er beholdt.
-- Nettleserkontroll på mobilbredde med eksempeldata viser skjema under Produkter.
+- JavaScript-syntaks for app, backend og service worker.
+- Tester for kategorier, navnevisning, fullførte deltakere, nullsvarprodukter,
+  søk/filter, oppdatering, neste vs. pågående derby og 150 ekstra produktnavn.
+- Tidligere tester for medlemstavle, produktlagring, språk, feilet lagring og
+  escaping bestått etter at kategorikoden ble delt.
+- Nettleserkontroll med eksempeldata på PC og 390 px mobilbredde.
+- Ingen horisontal overflyt i kontrollert mobilvisning.
+- I nettlesereksemplet kom et nytt produkt inn via Oppdater oversikten og ble
+  vist som Ingen svar, med null i alle fire statuser.
 
-Forhandsvisning.html er en interaktiv eksempelvisning med eksempelprodukter.
-Den lagrer ikke i databasen og skal ikke erstatte portalens index.html.
+Admin-forhandsvisning.html er en interaktiv eksempelvisning og skal ikke
+erstatte index.html. Oppdater-knappen legger til et eksempelprodukt lokalt.
 
-Før main: På testgrenen, registrer et produkt med konto A. Last siden på nytt
-med konto B og kontroller at produktet finnes, uten at konto As status er valgt
-for konto B. Fjern As valg og kontroller at produktnavnet fortsatt er tilgjengelig.
+Før main: Registrer et nytt produkt med en medlemskonto på testgrenen. Bruk
+Oppdater oversikten med admin/eier og kontroller at produkt og riktig status
+vises. Logg inn med en vanlig medlemskonto og kontroller at admin fortsatt er skjult.
+Produksjonsinnlogging er ikke testet som del av denne endringen.
