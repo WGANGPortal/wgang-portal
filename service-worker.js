@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.123-task-readiness";
+const CACHE_NAME = "wgang-v0.18.0.124-task-board-design";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.123",
-  "/app.js?v=0.18.0.123", "/backend.js?v=0.18.0.123", "/config.js?v=0.18.0.123",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.124",
+  "/app.js?v=0.18.0.124", "/backend.js?v=0.18.0.124", "/config.js?v=0.18.0.124",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -222,3 +222,4 @@ self.addEventListener("notificationclick", event => {
     if (clients.openWindow) await clients.openWindow(url.toString());
   })());
 });
+

@@ -1,53 +1,47 @@
-WGANG Portal v0.18.0.123 – oppgavetavle
+WGANG Portal v0.18.0.124 – enklere oppgavetavle
 
-Bygget på de gjeldende filene fra WGANGPortal/wgang-portal sin main-gren.
+Basert på gjeldende main-versjon v0.18.0.123 fra WGANGPortal/wgang-portal.
 
-Last opp disse FEM filene samlet i samme mappe som dagens filer:
+Last opp disse fem nettsidefilene samlet til samme plass som dagens filer:
   app.js
   backend.js
   index.html
   main.css
   service-worker.js
 
-Prøv først på testgren. Frontend er ikke publisert av denne oppdateringen.
-Databasetilpasningen er allerede installert i WGANGPortal Supabase:
-  task_preferences_readiness_v123
-database-change.sql er kun dokumentasjon. Den skal ikke kjøres på nytt eller
-lastes opp som en nettsidefil.
+Ingen SQL-endring er nødvendig. Denne pakken er ikke publisert automatisk.
+Prøv oppdateringen på testgrenen før main.
 
-Ny oppførsel i Normal/Standard og Power Derby:
-- Oppgavevalg kan endres gjennom uka, også etter at medlemmet har registrert
-  fullført derby. Fullførte deltakere er fortsatt utenfor aktiv statistikk.
-- Fire valg: ferdig klargjort, påbegynt klargjøring, kan gjerne gjøre,
-  liker ikke. Samme svar trykket igjen fjerner valget.
-- Bygjester: Dame, Danser, Mekaniker, Cowboy, Bodybuilder, Selger,
-  Skuespiller, Oldefar og Lokal.
-- Bygninger: Matbutikk, Kino, Vertshus, Spa, Kafé, Gavebutikk og Strandkafé.
-- Medlemmet kan legge inn navnet på et konkret produkt med en status.
-  Mellomrom og store/små bokstaver normaliseres for nye produktnavn.
-- Tidspunkt for siste endring vises for lagrede valg.
-- Lederoversikten viser hvem som har hva klart, og summerer alle fire statuser.
-- Tidligere liker = kan gjerne gjøre. Tidligere kan ikke = liker ikke.
-  Historiske svar blir aldri tolket som ferdig klargjort.
-- Valgene er per portalmedlem, som tidligere, og beholdes til de endres eller
-  fjernes. De er ingen reservasjon av oppgaver i spillet.
+Utforming og bruk:
+- Korte knapper: Ferdig, Påbegynt, Kan gjøre, Liker ikke.
+- Valgte svar har egen farge, tydelig kant og tilgjengelig valgt-status.
+- Kategorier åpnes ved behov. Åpne kategorier beholdes ved lagring.
+- Mine valg viser bare oppgaver medlemmet allerede har delt.
+- Søk finner oppgaver, bygjester, bygninger og egne produktnavn.
+- Fire små oversiktsfelt viser antall valg i hver status.
+- Forklaring av valgene er samlet under Hva betyr valgene?
+- Bekreftelse ved lagring/fjerning og tydelig beskjed hvis lagring feiler.
+- Nye produkter vises og får fokus etter vellykket lagring, også etter søk.
+- Lange navn brytes, og knapper har minst 44 piksler trykkhøyde.
+- Mobil har to knapper per rad; store skjermer har fire.
+- Tekster og nye kontroller støtter norsk og engelsk.
+
+Eksisterende lagring, statuser, rettigheter, derby-påmelding og lederstatistikk
+brukes videre. Medlemmet velger selv hvilke oppgaver de deler status for.
 
 Kontrollert:
-- JavaScript-syntaks for app.js, backend.js og service-worker.js.
-- Funksjonstester for endring/fjerning, produktnavn, språk, gamle svar,
-  fullførtstatus, statistikk, feilet lagring, rettighetskontroll og HTML-escaping.
-- Innlasting av mer enn 1000 oppgavevalg, samt filtrering på eget medlem.
-- Databasetest av egne skriveoperasjoner, avvisning av endring av andres valg,
-  og sperret tilgang for inaktive/utloggede. Testdata ble rullet tilbake.
-- Alle 418 eksisterende oppgavevalg er bevart; fem RLS-policyer er uendret.
+- Syntakskontroll av JavaScript-filene.
+- Funksjonstester for søk, Mine valg, tomt søkeresultat, statusendring/fjerning,
+  egne produkter, gamle svar, språk, fullført derby, feilhåndtering og escaping.
+- Nettleserkontroll med eksempeldata på PC og i en 390 px bred mobilvisning.
+- Søk, Mine valg, endring/fjerning og innlegging av nytt produkt prøvd i nettleser.
+- Ingen horisontal overflyt i kontrollert mobilvisning.
+- Lagreknapper kaller samme backend-metode som før. Produksjonsinnlogging og
+  lagring med ekte medlemskonto er ikke testet som del av denne designendringen.
 
-Gjenstår før produksjon:
-- Visuell test på mobil og PC med innlogging mot testgrenen. Lokal Chromium
-  kunne ikke startes i kontrollmiljøet, så visuell nettlesertest er ikke utført.
-- Test med to innloggede kontoer: medlem lagrer et produkt som ferdig;
-  leder oppdaterer siden og ser riktig medlem, produkt, tidspunkt og antall.
-- Endre til påbegynt, fjern valget, og kontroller samme flyt etter ny innlogging.
-- Kontroller at harepusplanen og påmeldingsfristene fortsatt oppfører seg som før.
+Forhandsvisning.html i pakken er en interaktiv eksempelvisning. Den viser
+utseendet og lar deg prøve valgene uten å lagre noe i portalen.
+Den skal IKKE lastes opp som erstatning for portalens index.html.
 
-Bygningene er kontrollert mot Supercells byoversikt:
-https://support.supercell.com/hay-day/en/articles/town-introduction.html
+Før main: Logg inn på testgrenen på mobil, endre et valg, last siden på nytt
+og kontroller at valget består. Kontroller også lederoversikten og harepusplanen.
