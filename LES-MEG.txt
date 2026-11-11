@@ -1,29 +1,27 @@
-WGANG Portal v0.18.0.128 – kast eller behold
+WGANG Portal v0.18.0.129 – Vis alle rettet
 
-Basert på gjeldende main v0.18.0.127. Last opp disse fem nettsidefilene samlet:
-app.js, backend.js, index.html, main.css og service-worker.js.
-Ingen ny SQL er nødvendig. Oppdateringen er ikke publisert automatisk.
+Bygger på v0.18.0.128 fra main.
 
-Anbefalinger i admin:
-- Behold: minst én deltaker har valgt Ferdig ELLER Påbegynt.
-- Kast først: null på Ferdig og null på Påbegynt, med minst ett registrert svar
-  på Kan gjøre eller Liker ikke.
-- Ingen svar: ingen registrerte svar. Disse får ingen kasteanbefaling.
-- Kan gjøre alene hindrer ikke at en oppgave anbefales kastet først.
-- Fullførte derbydeltakere er fortsatt utenfor beregningen for pågående derby.
+Rettet: Hele kortene «Kast først» og «Disse må beholdes» er klikkbare,
+også oppgavenavnene og teksten «Trykk for å vise alle i oversikten».
+Trykk filtrerer listen, åpner relevante kategorier og flytter visningen til resultatet.
+Trykk på det valgte kortet igjen for å vise alle statuser.
+Anbefalingsreglene og tilgangskontrollen er beholdt.
 
-To nye felt viser antall oppgavetyper og eksempler. Trykk på Kast først eller
-Disse må beholdes for å vise hele den filtrerte listen. Trykk igjen for Alle.
-De samme valgene finnes under Vis status. Eksisterende søk og detaljer beholdes.
-Oppgavene prioriteres innen kategoriene med Kast først foran Behold og Ingen svar.
-Nye produkter følger samme regel automatisk. Kastingen utføres manuelt i spillet.
+Last opp og erstatt disse fem filene i portalen:
+app.js
+backend.js
+index.html
+main.css
+service-worker.js
 
-Kontrollert:
-- JavaScript-syntaks.
-- 81 kombinasjoner av statusantall.
-- Filtrene Kast først og Behold; fullførte deltakere påvirker ikke anbefalingen.
-- Tidligere regresjonstester for produktliste, kategorier, søk og lagring.
-- Nettleserkontroll med eksempeldata av feltene og snarveien Kast først.
+Ingen SQL eller databaseendringer er nødvendig.
+Denne pakken er ikke publisert. Bruk gjerne en testgren før main.
 
-Admin-forhandsvisning.html er en interaktiv eksempelvisning, ikke index.html.
-Prøv oppdateringen på testgrenen med ekte medlemsvalg før main.
+Admin-forhandsvisning.html er en selvstendig demo med eksempeldata.
+Den skal ikke erstatte index.html og kobler ikke til databasen.
+
+Kontrollert: Begge kortenes tekst nederst er trykket i mobilvisning.
+Filtrert liste, automatisk flytting og tilbakestilling av filter fungerer.
+JavaScript-syntaks og regresjonskontroller er bestått, inkludert anbefalinger,
+nye produkter, ferdige deltakere, søk og tilgangskontroll.

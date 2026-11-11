@@ -1,4 +1,4 @@
-/* v0.18.0.128 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.129 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -1922,11 +1922,14 @@
     if(recommended){
       recommended.innerHTML=[{kind:"discard",title:ui("Kast først","Discard first"),icon:"×",note:ui("0 ferdig og 0 påbegynt","0 ready and 0 preparing")},{kind:"keep",title:ui("Disse må beholdes","Keep these tasks"),icon:"✓",note:ui("Minst én har ferdig eller påbegynt","At least one ready or preparing")}].map(group=>{
         const tasks=allTasks.filter(task=>taskRecommendation(stats[task]).kind===group.kind);
-        return `<article class="admin-recommendation-card recommendation-${group.kind}"><button type="button" data-recommendation-filter="${group.kind}" aria-pressed="${adminPreferenceUi.status===group.kind}"><span><strong>${group.icon} ${esc(group.title)}</strong><small>${esc(group.note)}</small></span><b>${tasks.length}</b></button><p>${tasks.slice(0,5).map(task=>esc(titleFor(task))).join(", ")||ui("Ingen oppgaver akkurat nå","No tasks right now")}${tasks.length>5?ui(` · +${tasks.length-5} til`, ` · +${tasks.length-5} more`):""}</p><small>${ui("Trykk for å vise alle i oversikten","Select to show all in the overview")}</small></article>`;
+        return `<button type="button" class="admin-recommendation-card recommendation-${group.kind}" data-recommendation-filter="${group.kind}" aria-pressed="${adminPreferenceUi.status===group.kind}" aria-controls="adminPreferenceTable"><span class="recommendation-card-heading"><span><strong>${group.icon} ${esc(group.title)}</strong><small>${esc(group.note)}</small></span><b>${tasks.length}</b></span><span class="recommendation-task-preview">${tasks.slice(0,5).map(task=>esc(titleFor(task))).join(", ")||ui("Ingen oppgaver akkurat nå","No tasks right now")}${tasks.length>5?ui(` · +${tasks.length-5} til`, ` · +${tasks.length-5} more`):""}</span><span class="recommendation-hint">${ui("Trykk for å vise alle i oversikten","Select to show all in the overview")}</span></button>`;
       }).join("");
       recommended.querySelectorAll('[data-recommendation-filter]').forEach(button=>button.onclick=()=>{
         adminPreferenceUi.status=adminPreferenceUi.status===button.dataset.recommendationFilter?"all":button.dataset.recommendationFilter;
         adminPreferenceUi.query="";renderAdminPreferences();
+        const results=$("adminPreferenceTable");
+        results?.focus({preventScroll:true});
+        results?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
       });
     }
     let visible=0;
@@ -4796,7 +4799,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.128").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.129").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4818,6 +4821,7 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 
 
