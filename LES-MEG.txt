@@ -1,47 +1,49 @@
-WGANG Portal v0.18.0.124 – enklere oppgavetavle
+WGANG Portal v0.18.0.125 – felles produkter
 
-Basert på gjeldende main-versjon v0.18.0.123 fra WGANGPortal/wgang-portal.
+Basert på gjeldende main v0.18.0.124.
 
-Last opp disse fem nettsidefilene samlet til samme plass som dagens filer:
+Last opp disse fem filene samlet til samme mappe som dagens nettsidefiler:
   app.js
   backend.js
   index.html
   main.css
   service-worker.js
 
-Ingen SQL-endring er nødvendig. Denne pakken er ikke publisert automatisk.
-Prøv oppdateringen på testgrenen før main.
+Endringen er ikke publisert automatisk. Prøv først på testgrenen.
 
-Utforming og bruk:
-- Korte knapper: Ferdig, Påbegynt, Kan gjøre, Liker ikke.
-- Valgte svar har egen farge, tydelig kant og tilgjengelig valgt-status.
-- Kategorier åpnes ved behov. Åpne kategorier beholdes ved lagring.
-- Mine valg viser bare oppgaver medlemmet allerede har delt.
-- Søk finner oppgaver, bygjester, bygninger og egne produktnavn.
-- Fire små oversiktsfelt viser antall valg i hver status.
-- Forklaring av valgene er samlet under Hva betyr valgene?
-- Bekreftelse ved lagring/fjerning og tydelig beskjed hvis lagring feiler.
-- Nye produkter vises og får fokus etter vellykket lagring, også etter søk.
-- Lange navn brytes, og knapper har minst 44 piksler trykkhøyde.
-- Mobil har to knapper per rad; store skjermer har fire.
-- Tekster og nye kontroller støtter norsk og engelsk.
+Ny oppførsel:
+- Kategorien Produkter inneholder både produksjon generelt, konkrete produkter
+  og muligheten Legg til et produkt.
+- Produktnavn lagres i en varig felles liste for nabolaget.
+- Listen følger ikke ett bestemt derby og er tilgjengelig i senere derby.
+- Andre medlemmer får samme produktliste ved ny innlasting av portalen.
+- Hvert medlem registrerer sin egen status. Andres status blir ikke kopiert.
+- Et produkt beholdes i felleslisten når et medlem fjerner sitt eget valg.
+- Mellomrom og store/små bokstaver normaliseres. Like navn blir ett produkt.
+  Ulike stavemåter og ulike språk kan fortsatt gi forskjellige produkter.
+- Under Kurvoppgaver vises det generelle produktvalget som Produktkurver.
+- Produktlisten inneholder bare navn, uten opplysninger om hvem som la dem inn.
 
-Eksisterende lagring, statuser, rettigheter, derby-påmelding og lederstatistikk
-brukes videre. Medlemmet velger selv hvilke oppgaver de deler status for.
+Databasetilpasningen shared_task_product_catalog_v125 er allerede installert
+i Supabase. database-change.sql er bare dokumentasjon og skal ikke kjøres på
+nytt eller lastes opp som en nettsidefil.
 
 Kontrollert:
-- Syntakskontroll av JavaScript-filene.
-- Funksjonstester for søk, Mine valg, tomt søkeresultat, statusendring/fjerning,
-  egne produkter, gamle svar, språk, fullført derby, feilhåndtering og escaping.
-- Nettleserkontroll med eksempeldata på PC og i en 390 px bred mobilvisning.
-- Søk, Mine valg, endring/fjerning og innlegging av nytt produkt prøvd i nettleser.
-- Ingen horisontal overflyt i kontrollert mobilvisning.
-- Lagreknapper kaller samme backend-metode som før. Produksjonsinnlogging og
-  lagring med ekte medlemskonto er ikke testet som del av denne designendringen.
+- Syntakskontroll av app.js, backend.js og service-worker.js.
+- Funksjonstester for plassering av skjema, felles produktliste, egne statuser,
+  bevaring etter fjerning, søk, Mine valg, validering og HTML-escaping.
+- Sidevis innlasting av mer enn 1000 katalog-/preferanserader.
+- Databasetest med to medlemsroller: automatisk katalogregistrering, varig
+  produkt etter fjerning, gjenbruk av andre med uavhengig status og ingen dublett.
+- Ugyldige produktnavn avvises. Inaktive og utloggede har ikke tilgang.
+- Direkte endring og sletting av katalogen er sperret for medlemsklienten.
+- Testdata ble rullet tilbake. Sikkerhetskontrollen ga ingen nye funn for denne
+  tabellen eller funksjonen. Eksisterende regler på task_preferences er beholdt.
+- Nettleserkontroll på mobilbredde med eksempeldata viser skjema under Produkter.
 
-Forhandsvisning.html i pakken er en interaktiv eksempelvisning. Den viser
-utseendet og lar deg prøve valgene uten å lagre noe i portalen.
-Den skal IKKE lastes opp som erstatning for portalens index.html.
+Forhandsvisning.html er en interaktiv eksempelvisning med eksempelprodukter.
+Den lagrer ikke i databasen og skal ikke erstatte portalens index.html.
 
-Før main: Logg inn på testgrenen på mobil, endre et valg, last siden på nytt
-og kontroller at valget består. Kontroller også lederoversikten og harepusplanen.
+Før main: På testgrenen, registrer et produkt med konto A. Last siden på nytt
+med konto B og kontroller at produktet finnes, uten at konto As status er valgt
+for konto B. Fjern As valg og kontroller at produktnavnet fortsatt er tilgjengelig.

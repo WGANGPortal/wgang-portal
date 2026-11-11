@@ -15,6 +15,7 @@
     ]
   };
   const EMPTY_LOCAL_STATE = {
+    taskProducts: [],
     accounts: [],
     derby: DEFAULT_DERBY,
     content: { announcements: [], derbyPosts: [], tips: [], pendingTips: [] },
@@ -398,7 +399,7 @@
   }
 
   async function loadRemoteState(session) {
-    if (!session || !session.user) return { accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
+    if (!session || !session.user) return { taskProducts:[], accounts: [], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance:null, currentUserId: null };
     const own = await getOwnProfile(session.user.id);
     const legalAcceptance = own.status==="inactive" ? null : await loadLegalAcceptance(session);
     let memberReturns=[];
@@ -410,7 +411,7 @@
     if (own.status !== "approved") {
       const ownAccount = mapProfile(own, [], [], null);
       ownAccount.email = session.user.email || "";
-      return { memberReturns, accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
+      return { taskProducts:[], memberReturns, accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
     // Concrete products can bring the board above the API's default row cap.
@@ -425,6 +426,15 @@
         if((result.data||[]).length<pageSize)return {data,error:null};
       }
     };
+    const loadTaskProducts=async()=>{
+      const data=[],pageSize=500;
+      for(let offset=0;;offset+=pageSize){
+        const result=await client.from("task_product_catalog").select("name").order("name").range(offset,offset+pageSize-1);
+        if(result.error)return {data:[],error:result.error};
+        data.push(...(result.data||[]));
+        if((result.data||[]).length<pageSize)return {data,error:null};
+      }
+    };
     let absencePeriodsQuery = client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at");
     if (!loadMemberActivity) {
       // RLS håndhever samme begrensning i databasen. Disse filtrene sørger i
@@ -433,7 +443,7 @@
     }
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
     // derfor ikke tilgang til den privilegerte overgangsfunksjonen.
-    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
+    const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes, taskProductsRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
       loadTaskPreferences(),
@@ -459,7 +469,8 @@
       client.rpc("wgang_get_member_absence_statuses"),
       absencePeriodsQuery,
       client.rpc("wgang_touch_my_portal_activity"),
-      loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null})
+      loadMemberActivity ? client.rpc("wgang_get_member_portal_activity") : Promise.resolve({data:[],error:null}),
+      loadTaskProducts()
     ]);
     for (const result of [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes]) {
       if (result.error) throw result.error;
@@ -540,6 +551,8 @@
     }
 
     return {
+      taskProducts:(taskProductsRes.data||[]).map(row=>row.name),
+      taskProductsAvailable:!taskProductsRes.error,
       accounts, derby, content, leadershipMessages, memberReturns, derbySignupStatuses, derbyPreparation, derbyRosterCorrectionsAvailable:rosterCorrections.available,
       privateMessages:(privateMessagesRes.data || []).map(row=>({
         id:row.id,senderId:row.sender_id,recipientId:row.recipient_id,
@@ -937,6 +950,7 @@
     },
     async setPreference(userId, taskType, preference) {
       if (!configured) {
+        if(preference&&taskType.startsWith("Produkt: "))localState.taskProducts=[...new Set([...(localState.taskProducts||[]),taskType.slice(9)])];
         const a=localState.accounts.find(x=>x.id===userId); if(a){a.preferences=a.preferences||{};a.preferenceUpdatedAt=a.preferenceUpdatedAt||{};if(preference){a.preferences[taskType]=preference;a.preferenceUpdatedAt[taskType]=new Date().toISOString();}else{delete a.preferences[taskType];delete a.preferenceUpdatedAt[taskType];}} localSave(localState); return;
       }
       if (!preference) {
@@ -1547,4 +1561,5 @@
 
   window.WGANG_BACKEND = api;
 })();
+
 

@@ -1067,3 +1067,8 @@ body:not(.admin-mode) .admin-only {
 @media(max-width:520px){.readiness-intro{padding:21px 18px 17px;flex-wrap:wrap;gap:11px}.readiness-intro h2{font-size:1.5rem}.readiness-intro p:not(.card-kicker){font-size:.81rem}.readiness-count{font-size:.68rem;padding:5px 10px}.readiness-totals{padding:15px 18px;gap:6px}.readiness-total{flex-direction:column;align-items:flex-start;padding:10px 8px;gap:7px}.readiness-total span{font-size:.64rem}.readiness-total strong{font-size:1.15rem}.readiness-toolbar{padding:0 18px 10px}.readiness-help{margin:0 18px}.readiness-help dl{grid-template-columns:1fr}.readiness-save-status{margin:4px 18px 5px}.readiness-workspace .preference-list{padding:0 12px 15px;gap:9px}.readiness-category>summary{padding:14px 12px;grid-template-columns:32px minmax(0,1fr) 14px;gap:10px;min-height:77px}.readiness-category-icon{width:32px;height:32px;font-size:1.05rem}.readiness-category-heading>strong{font-size:.88rem}.readiness-category-heading>small{font-size:.67rem}.category-status-list{display:none}.readiness-category-body{padding:0 13px}.readiness-task{padding:15px 0}.readiness-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.readiness-option{justify-content:flex-start;padding:11px 10px;font-size:.75rem;gap:8px}.readiness-option>span{width:14px;text-align:center}.readiness-footer{padding:0 18px 19px;font-size:.7rem}}
 @media(prefers-reduced-motion:reduce){.readiness-workspace .category-chevron{transition:none}}
 
+
+
+/* v125: shared product entry stays within its category. */
+.shared-product-note{margin:15px 0 0;color:#85717a;font-size:.75rem;line-height:1.6}
+.readiness-category-body>.readiness-product{margin:16px 0}
