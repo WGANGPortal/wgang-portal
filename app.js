@@ -1,4 +1,4 @@
-/* v0.18.0.122 – pleiehendelser */
+/* v0.18.0.123 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -34,13 +34,27 @@
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
     { icon:"🚢", name:"Båtoppgaver", tasks:["Båtoppgaver"] },
     { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende","Spesifikke personer","Spesifikke hus"] },
+    { icon:"👥", name:"Bygjester", tasks:["Bygjest: Dame","Bygjest: Danser","Bygjest: Mekaniker","Bygjest: Cowboy","Bygjest: Bodybuilder","Bygjest: Selger","Bygjest: Skuespiller","Bygjest: Oldefar","Bygjest: Lokal"] },
+    { icon:"🏘️", name:"Bygninger i byen", tasks:["Bygning: Matbutikk","Bygning: Kino","Bygning: Vertshus","Bygning: Spa","Bygning: Kafé","Bygning: Gavebutikk","Bygning: Strandkafé"] },
     { icon:"🎣", name:"Fiskeoppgaver", tasks:["Fiskeoppgaver"] },
     { icon:"⛏️", name:"Gruveoppgaver", tasks:["Gruveoppgaver"] },
     { icon:"🤝", name:"Hjelpeoppgaver", tasks:["Hjelpeoppgaver"] },
     { icon:"🧺", name:"Kurvoppgaver", tasks:["Produkter","Dyr","Transportmidler","Annet"] }
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
-  const PREF_LABELS = { like:"Liker", can:"Kan ta", avoid:"Helst ikke", no:"Kan ikke" };
+  const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
+  // Old preferences describe willingness, never readiness.
+  const preferenceValue = value => value === "like" ? "can" : value === "no" ? "avoid" : value;
+  const productTask = name => "Produkt: " + String(name).normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("nb-NO");
+  function preferenceTaskTypes(accounts=state.accounts) {
+    return [...new Set([...TASK_TYPES,...accounts.flatMap(a=>Object.keys(a.preferences||{}))])];
+  }
+  const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",can:"I would like to do this – not started",avoid:"I do not like this task"};
+  function preferenceTaskLabel(task) {
+    if(currentLanguage!=="en") return task;
+    const labels={"Bygjest: Dame":"Town visitor: Lady","Bygjest: Danser":"Town visitor: Dancer","Bygjest: Mekaniker":"Town visitor: Mechanic","Bygjest: Cowboy":"Town visitor: Cowboy","Bygjest: Bodybuilder":"Town visitor: Strongman","Bygjest: Selger":"Town visitor: Salesman","Bygjest: Skuespiller":"Town visitor: Actress","Bygjest: Oldefar":"Town visitor: Grand Master","Bygjest: Lokal":"Town visitor: Local","Bygning: Matbutikk":"Building: Grocery store","Bygning: Kino":"Building: Cinema","Bygning: Vertshus":"Building: Bed and Breakfast","Bygning: Spa":"Building: Spa","Bygning: Kafé":"Building: Diner","Bygning: Gavebutikk":"Building: Gift shop","Bygning: Strandkafé":"Building: Beach café"};
+    return labels[task] || (task.startsWith("Produkt: ") ? "Product: "+task.slice(9) : tText(task));
+  }
   const DERBY_MINIMUM_PERCENT = 95;
   const DERBY_RULES_V2_EFFECTIVE_AT = Date.parse("2026-10-13T08:00:00Z");
   const derbyRulesAckVersionForEvent = event => {
@@ -67,6 +81,18 @@
     "Åpne derby-senter":"Open Derby Center","Under utvikling":"Under development","Medlem":"Member","Senior":"Senior","Ass. leder":"Assistant leader","Administrator":"Administrator","Eier":"Owner",
     "Derby-senter":"Derby Center","Planlegg deltakelsen og følg fremdriften.":"Plan your participation and follow progress.",
     "Medlemsoversikt":"Member overview","Finn naboene dine og se derby-status.":"Find your neighbors and see their Derby status.",
+    "Bygjester":"Town visitors",
+    "Bygninger i byen":"Town buildings",
+    "✓ Ferdig klargjort":"✓ Prepared and ready",
+    "◷ Påbegynt":"◷ Preparation started",
+    "+ Kan gjerne gjøre":"+ Willing to do",
+    "× Liker ikke":"× Dislike",
+    "✓ Ferdig":"✓ Ready",
+    "+ Kan gjøre":"+ Willing",
+    "Hvem har hva klart?":"Who has what ready?",
+    "Mine aktuelle oppgaver":"My current task choices",
+    "Se hvem som har oppgaver ferdig klargjort, hvem som sparer opp, og hvilke oppgaver som er aktuelle. Kontroller tidspunktet for siste oppdatering.":"See who has tasks ready, who is preparing and which tasks are of interest. Check when each choice was last updated.",
+    "Du kan endre svarene gjennom hele uka. De lagres med én gang. Oppdater når du har samlet inn eller startet ny klargjøring. Svarene beholdes til du endrer eller fjerner dem.":"You can change your choices throughout the week. They are saved immediately. Update after collecting or starting new preparation. Choices remain until you change or remove them.",
     "Oppgavepreferanser":"Task preferences","Velg hva som passer deg best.":"Choose what suits you best.",
     "NORMAL DERBY":"NORMAL DERBY","POWER DERBY":"POWER DERBY",
     "Oppgavepreferansene hjelper lederne å velge hva som bør beholdes eller slettes.":"Task preferences help leaders decide what should remain on or be removed from the board.",
@@ -844,7 +870,7 @@
   }
 
   function topPreferences(account) {
-    return TASK_TYPES.filter(t => ["like","can"].includes(account.preferences?.[t])).slice(0, 3);
+    return preferenceTaskTypes([account]).filter(t => ["ready","preparing","can"].includes(preferenceValue(account.preferences?.[t]))).slice(0, 3);
   }
 
   const NOTIFICATION_DEFAULTS = {
@@ -1664,7 +1690,7 @@
         const absenceDates=isLeadership()&&a.absencePeriod?`<div class="member-absence-dates"><span>Inaktiv periode · kun ledelsen</span><strong>${formatAbsenceDate(a.absencePeriod.starts_on)}–${formatAbsenceDate(a.absencePeriod.ends_on)}</strong></div>`:"";
         const lastActive=isLeadership()?`<div class="member-activity"><span>Sist aktiv i portalen</span><strong>${esc(formatLastActive(a.lastActiveAt))}</strong></div>`:"";
         const privateButton=String(a.id)!==String(current()?.id)?`<button type="button" class="text-button member-message-button" data-private-message-user="${a.id}">✉ Send privat melding</button>`:"";
-        const preferenceBlock=prefs.length?`<div class="member-preferences"><span>Oppgaver jeg liker</span><div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div></div>`:`<p class="member-no-preferences">Ingen oppgaveønsker registrert.</p>`;
+        const preferenceBlock=prefs.length?`<div class="member-preferences"><span>Mine aktuelle oppgaver</span><div class="tag-list">${prefs.map(t => `<span class="task-tag like">${esc(t)}</span>`).join("")}</div></div>`:`<p class="member-no-preferences">Ingen oppgaveønsker registrert.</p>`;
         return `<article class="member-card member-card-clickable" data-profile-id="${a.id}" tabindex="0" role="button" aria-label="Åpne profil for ${esc(a.name)}"><div class="member-head"><div class="member-identity"><span class="avatar">${esc(a.name[0])}</span><div><h3>${esc(a.name)}</h3><span class="member-role member-role-${esc(a.role)}">${roleLabel(a.role)}</span></div></div><div class="member-status-stack">${absenceBadge}</div></div>${identityList}${lastActive||absenceDates?`<div class="member-leadership-meta">${lastActive}${absenceDates}</div>`:""}${preferenceBlock}<div class="member-card-actions"><span class="profile-open-hint">Se profil →</span>${privateButton}</div></article>`;
       }).join("") || `<p class="empty-state">Ingen medlemmer matcher søket.</p>`;
     $$('[data-profile-id]').forEach(card => {
@@ -1712,30 +1738,46 @@
     translateUi(memberProfileDialog);
   }
 
+  async function saveTaskPreference(task, next) {
+    if(busy || !hasPermission("derby.plan") || !current()) return;
+    const me=current();
+    setBusy(true);
+    try {
+      await backend.setPreference(me.id,task,next);
+      me.preferences=me.preferences||{};
+      me.preferenceUpdatedAt=me.preferenceUpdatedAt||{};
+      if(next){me.preferences[task]=next;me.preferenceUpdatedAt[task]=new Date().toISOString();}
+      else {delete me.preferences[task];delete me.preferenceUpdatedAt[task];}
+      renderPreferences();renderMembers();renderAdminPreferences();
+    } catch(e){alert(humanError(e));}
+    finally{setBusy(false);}
+  }
+
   function renderPreferences() {
-    const user = current();
-    const list = $("preferenceList");
-    if (!user || !list) return;
-    const preferenceIcons={like:"♥",can:"✓",avoid:"–",no:"×"};
-    const selectedCount=TASK_TYPES.filter(task=>!!user.preferences?.[task]).length;
-    setText("preferenceSelectionSummary",ui(`${selectedCount} av ${TASK_TYPES.length} vurdert`,`${selectedCount} of ${TASK_TYPES.length} reviewed`));
+    const user=current(),list=$("preferenceList");
+    if(!user||!list)return;
+    const types=preferenceTaskTypes([user]);
+    const groups=TASK_GROUPS.map(g=>({...g,tasks:[...g.tasks]}));
+    groups.push({icon:"📦",name:ui("Konkrete produkter og andre registrerte valg","Specific products and other saved choices"),tasks:types.filter(t=>!TASK_TYPES.includes(t))});
+    const selectedCount=types.filter(task=>!!user.preferences?.[task]).length;
+    setText("preferenceSelectionSummary",ui(`${selectedCount} valg registrert`,`${selectedCount} choices saved`));
     const progress=$("preferenceSelectionProgress");
-    if(progress)progress.style.width=`${TASK_TYPES.length?selectedCount/TASK_TYPES.length*100:0}%`;
-    list.innerHTML = TASK_GROUPS.map(group => `<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2><p>${group.tasks.length} ${group.tasks.length===1?"oppgavetype":"oppgavetyper"}</p></div></div>${group.tasks.map(task => `<div class="preference-row"><strong>${esc(tText(task))}</strong><div class="preference-actions">${Object.entries(PREF_LABELS).map(([key,label]) => {const selected=user.preferences?.[task]===key;return `<button type="button" data-pref-task="${esc(tText(task))}" data-pref-value="${key}" class="${selected?"selected":""}" aria-pressed="${selected?"true":"false"}"><span aria-hidden="true">${preferenceIcons[key]}</span><span>${label}</span></button>`;}).join("")}</div></div>`).join("")}</section>`).join("");
-    $$('[data-pref-task]').forEach(button => button.onclick = async () => {
-      if (busy || !hasPermission("derby.plan")) return;
-      const me = current();
-      const task = button.dataset.prefTask;
-      const next = me.preferences?.[task] === button.dataset.prefValue ? null : button.dataset.prefValue;
-      setBusy(true);
-      try {
-        await backend.setPreference(me.id, task, next);
-        if (!me.preferences) me.preferences = {};
-        if (next) me.preferences[task] = next; else delete me.preferences[task];
-        renderPreferences(); renderMembers(); renderAdminPreferences();
-      } catch (e) { alert(humanError(e)); }
-      setBusy(false);
+    if(progress)progress.style.width=`${types.length?selectedCount/types.length*100:0}%`;
+    const icons={ready:"✓",preparing:"◷",can:"+",avoid:"×"};
+    const labels=currentLanguage==="en"?PREF_EN:PREF_LABELS;
+    list.innerHTML=groups.map(group=>`<section class="preference-group"><div class="preference-group-heading"><span>${group.icon}</span><div><h2>${esc(tText(group.name))}</h2></div></div>${group.tasks.map(task=>`<div class="preference-row"><div><strong>${esc(preferenceTaskLabel(task))}</strong>${user.preferenceUpdatedAt?.[task]?`<small class="preference-updated">${ui("Oppdatert","Updated")} ${esc(formatDate(user.preferenceUpdatedAt[task]))}</small>`:""}</div><div class="preference-actions">${Object.entries(labels).map(([key,label])=>`<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="${preferenceValue(user.preferences?.[task])===key?"selected":""}" aria-pressed="${preferenceValue(user.preferences?.[task])===key}"><span aria-hidden="true">${icons[key]}</span><span>${esc(label)}</span></button>`).join("")}</div></div>`).join("")}</section>`).join("");
+    list.insertAdjacentHTML("beforeend",`<form id="productPreferenceForm" class="product-preference-form"><h3>${ui("Legg til et konkret produkt","Add a specific product")}</h3><label>${ui("Produktnavn","Product name")}<input name="product" required maxlength="60" placeholder="${ui("For eksempel ostekake eller blå ullue","For example cheesecake or blue woolly hat")}"></label><label>${ui("Status","Status")}<select name="status">${Object.entries(labels).map(([key,label])=>`<option value="${key}">${esc(label)}</option>`).join("")}</select></label><button type="submit" class="button button-primary">${ui("Lagre produkt","Save product")}</button><p class="helper-text">${ui("Bruk navnet i spillet. Ferdig betyr at varene er klare til innsamling for oppgaven. Oppdater valget etter at du har samlet dem inn. Trykk på et valgt svar igjen for å fjerne det.","Use the in-game name. Ready means the products are prepared for collection for the task. Update the choice after collecting them. Click a selected answer again to remove it.")}</p></form>`);
+    list.querySelectorAll('[data-pref-task]').forEach(button=>button.onclick=()=>{
+      const task=button.dataset.prefTask;
+      return saveTaskPreference(task,preferenceValue(current()?.preferences?.[task])===button.dataset.prefValue?null:button.dataset.prefValue);
     });
+    $("productPreferenceForm").onsubmit=async event=>{
+      event.preventDefault();
+      const form=event.currentTarget;
+      const task=productTask(form.elements.product.value);
+      if(task.length<=9||/[<>\x00-\x1f]/.test(task)){alert(ui("Skriv et gyldig produktnavn.","Enter a valid product name."));return;}
+      await saveTaskPreference(task,form.elements.status.value);
+    };
   }
 
   function preferenceDerbyScope(nameOverride) {
@@ -1761,20 +1803,20 @@
 
   function preferenceStats() {
     const stats = {};
-    TASK_TYPES.forEach(t => stats[t] = {like:0,can:0,avoid:0,no:0});
+    preferenceTaskTypes().forEach(t => stats[t] = {ready:0,preparing:0,can:0,avoid:0});
     adminPreferenceAccounts().forEach(a => Object.entries(a.preferences || {}).forEach(([task,value]) => {
-      if (stats[task] && stats[task][value] != null) stats[task][value]++;
+      const status=preferenceValue(value);
+      if (stats[task] && stats[task][status] != null) stats[task][status]++;
     }));
     return stats;
   }
 
   function taskRecommendation(s) {
-    const positive = s.like + s.can, negative = s.avoid + s.no;
-    if (s.like >= 2) return {label:"La stå",cls:"recommend-keep"};
-    if (positive === 0 && negative > 0) return {label:"Slett raskt",cls:"recommend-clear"};
-    if (positive === 0 && negative === 0) return {label:"Ukjent",cls:"recommend-unknown"};
-    if (positive >= negative) return {label:"Kan stå litt",cls:"recommend-watch"};
-    return {label:"Vurder å slette",cls:"recommend-clear"};
+    if(s.ready>0)return {label:ui("Klar til å tas","Ready to take"),cls:"recommend-keep"};
+    if(s.preparing>0)return {label:ui("Under klargjøring","Being prepared"),cls:"recommend-watch"};
+    if(s.can>0)return {label:ui("Kan være aktuell","May be useful"),cls:"recommend-watch"};
+    if(s.avoid>0)return {label:ui("Vurder å rydde","Consider removing"),cls:"recommend-clear"};
+    return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown"};
   }
 
   function renderAdminPreferences() {
@@ -1783,25 +1825,24 @@
     const derbyScope=preferenceDerbyScope();
     const participantScope=!!derbyScope;
     const stats = preferenceStats();
-    const rows = TASK_TYPES.map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
+    const rows = preferenceTaskTypes().map(t => ({t,s:stats[t],r:taskRecommendation(stats[t])}));
     const scopeText=$("adminPreferenceScope");
     if(scopeText) scopeText.textContent=participantScope
       ? (currentLanguage === "en"
         ? `Showing ${scopedMembers.length} participating member${scopedMembers.length===1?"":"s"} who still have tasks remaining in this ${derbyScope.label}.`
         : `Viser ${scopedMembers.length===1?"det ene medlemmet":`de ${scopedMembers.length} medlemmene`} som deltar og fortsatt har oppgaver igjen i ${derbyScope.label}.`)
       : (currentLanguage === "en" ? "Showing approved members according to the current setup for this Derby type." : "Viser godkjente medlemmer etter gjeldende oppsett for denne derbytypen.");
-    $("adminPreferenceTable").innerHTML = rows.map(x => `<tr><td><strong>${esc(x.t)}</strong></td><td>${x.s.like}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td>${x.s.no}</td><td><span class="recommendation ${x.r.cls}">${x.r.label}</span></td></tr>`).join("");
-    const most = rows.slice().sort((a,b) => (b.s.like*2+b.s.can)-(a.s.like*2+a.s.can)).slice(0,3);
-    const clear = rows.slice().sort((a,b) => (b.s.no*2+b.s.avoid)-(a.s.no*2+a.s.avoid)).filter(x => x.s.no+x.s.avoid>0).slice(0,3);
-    $("adminPreferenceSummary").innerHTML = `<article><span>WGANG liker best</span><strong>${most.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>${participantScope?`Basert på ${scopedMembers.length} påmeldte derbydeltakere`:"Basert på medlemmenes valg"}</small></article><article><span>Aktuelle å rydde</span><strong>${clear.map(x=>esc(x.t)).join(", ") || "Ingen data"}</strong><small>Bruk som støtte – poengkrav følger derbytypen</small></article>`;
-    const memberBox = $("adminPreferenceMembers");
-    if (memberBox) {
-      memberBox.className = "preference-member-grid";
-      memberBox.innerHTML = scopedMembers.map(a => {
-        const likes = TASK_TYPES.filter(t => a.preferences?.[t] === "like");
-        const can = TASK_TYPES.filter(t => a.preferences?.[t] === "can");
-        return `<article class="preference-member-card"><h4>${esc(a.name)}</h4><p><strong>❤️ Liker:</strong> ${likes.map(esc).join(", ") || "Ikke registrert"}</p><p><strong>👍 Kan ta:</strong> ${can.map(esc).join(", ") || "Ikke registrert"}</p></article>`;
-      }).join("") || `<p class="empty-state">${participantScope?"Ingen deltakere med oppgaver igjen er med i statistikken akkurat nå.":"Ingen preferanser registrert ennå."}</p>`;
+    $("adminPreferenceTable").innerHTML=rows.map(x=>`<tr><td><strong>${esc(preferenceTaskLabel(x.t))}</strong></td><td>${x.s.ready}</td><td>${x.s.preparing}</td><td>${x.s.can}</td><td>${x.s.avoid}</td><td><span class="recommendation ${x.r.cls}">${esc(x.r.label)}</span></td></tr>`).join("");
+    const ready=rows.filter(x=>x.s.ready>0).sort((a,b)=>b.s.ready-a.s.ready).slice(0,3);
+    const preparing=rows.filter(x=>x.s.preparing>0).sort((a,b)=>b.s.preparing-a.s.preparing).slice(0,3);
+    $("adminPreferenceSummary").innerHTML=[{title:ui("Ferdig klargjort","Prepared and ready"),items:ready},{title:ui("Påbegynt klargjøring","Preparation started"),items:preparing}].map(group=>`<article><span>${esc(group.title)}</span><strong>${group.items.map(x=>esc(preferenceTaskLabel(x.t))).join(", ")||ui("Ingen registrert","None saved")}</strong><small>${ui("Basert på deltakernes siste valg","Based on participants’ latest choices")}</small></article>`).join("");
+    const memberBox=$("adminPreferenceMembers");
+    if(memberBox){
+      memberBox.className="preference-member-grid";
+      memberBox.innerHTML=scopedMembers.map(a=>`<article class="preference-member-card"><h4>${esc(a.name)}</h4>${Object.entries(currentLanguage==="en"?PREF_EN:PREF_LABELS).map(([key,label])=>{
+        const tasks=preferenceTaskTypes([a]).filter(t=>preferenceValue(a.preferences?.[t])===key);
+        return tasks.length?`<p><strong>${esc(label)}:</strong> ${tasks.map(t=>`${esc(preferenceTaskLabel(t))}${a.preferenceUpdatedAt?.[t]?` <small>(${esc(formatDate(a.preferenceUpdatedAt[t]))})</small>`:""}`).join(", ")}</p>`:"";
+      }).join("")}</article>`).join("")||`<p class="empty-state">${ui("Ingen deltakere med oppgaver igjen akkurat nå.","No participants with tasks remaining right now.")}</p>`;
     }
   }
 
@@ -3503,7 +3544,7 @@
     }
     setText("derbyCompletionStatus",completed&&user.derbyCompletedAt?ui(`Registrert ${new Date(user.derbyCompletedAt).toLocaleString("nb-NO")}.`,`Saved ${new Date(user.derbyCompletedAt).toLocaleString("en-GB")}.`):"");
     const preferenceList=$("preferenceList");
-    if(preferenceList) preferenceList.classList.toggle("preferences-inactive",visible&&completed);
+    if(preferenceList) preferenceList.classList.remove("preferences-inactive");
   }
 
   async function toggleDerbyCompletion() {
@@ -3542,8 +3583,8 @@
       setText("taskHubEyebrow",tText(derbyScope.eyebrow));setText("taskHubTitle",ui("Oppgavetavle","Task board"));setText("taskHubIntro",ui("Vis hva du kan ta, slik at lederne kan holde tavla i bevegelse.","Show which tasks you can do, so the leaders can keep the board moving."));setText("preferenceTaskHubKicker",tText(derbyScope.eyebrow));
       setText("taskBoardStatus",tText(derbyScope.label));setText("taskBoardGuideTitle",ui("Prioriter dine oppgaver","Prioritize your tasks"));
       setText("taskBoardStepOneTitle",ui("Vurder oppgavetypene","Review the task types"));setText("taskBoardStepOneText",ui("Tenk på tid og kapasitet.","Consider your time and capacity."));
-      setText("taskBoardStepTwoTitle",ui("Registrer ett valg","Select one option"));setText("taskBoardStepTwoText",ui("Liker, kan ta eller bør unngås.","Like, can do or should avoid."));
-      setText("taskBoardStepThreeTitle",ui("Hold tavla i bevegelse","Keep the board moving"));setText("taskBoardStepThreeText",ui("Lederne rydder etter felles behov.","The leaders manage the board based on the team's needs."));
+      setText("taskBoardStepTwoTitle",ui("Registrer ett valg","Select one option"));setText("taskBoardStepTwoText",ui("Ferdig, påbegynt, kan gjøre eller liker ikke.","Ready, preparing, willing or dislike."));
+      setText("taskBoardStepThreeTitle",ui("Oppdater gjennom uka","Update throughout the week"));setText("taskBoardStepThreeText",ui("Endre status når du klargjør eller samler inn.","Update your status when preparing or collecting."));
     }else{
       setText("taskHubEyebrow",tText(type.toUpperCase()));setText("taskHubTitle",ui(`Oppgavetavle – ${type}`,`Task board – ${tText(type)}`));setText("taskHubIntro",ui("Oppgavetavla tilpasses derbytypen som pågår.","The task board adapts to the current Derby type."));setText("genericTaskHubTitle",ui(`Oppgaver for ${type}`,`Tasks for ${tText(type)}`));
       setText("taskBoardStatus",tText(type));setText("taskBoardGuideTitle",ui("Følg planen for derbyet","Follow the Derby plan"));
@@ -4632,7 +4673,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.122").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.123").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;

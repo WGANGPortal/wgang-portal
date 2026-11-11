@@ -1,12 +1,53 @@
-WGANG – kun HTML-fallback (testgren)
+WGANG Portal v0.18.0.123 – oppgavetavle
 
-Last opp bare index.html fra denne pakken til GitHub-grenen
-test/derby-dst-correction. Erstatt eksisterende index.html.
-Ikke last opp til main og ikke opprett pull request ennå.
+Bygget på de gjeldende filene fra WGANGPortal/wgang-portal sin main-gren.
 
-Endringer:
-- Midlertidig starttekst uten fast vinter-/sommerklokkeslett
-- Midlertidig tekst for neste derby uten fast kl. 10
-- app.js oppdaterer begge tekstene dynamisk ved lasting
+Last opp disse FEM filene samlet i samme mappe som dagens filer:
+  app.js
+  backend.js
+  index.html
+  main.css
+  service-worker.js
 
-Ingen JavaScript, database eller tilgangsregler er endret.
+Prøv først på testgren. Frontend er ikke publisert av denne oppdateringen.
+Databasetilpasningen er allerede installert i WGANGPortal Supabase:
+  task_preferences_readiness_v123
+database-change.sql er kun dokumentasjon. Den skal ikke kjøres på nytt eller
+lastes opp som en nettsidefil.
+
+Ny oppførsel i Normal/Standard og Power Derby:
+- Oppgavevalg kan endres gjennom uka, også etter at medlemmet har registrert
+  fullført derby. Fullførte deltakere er fortsatt utenfor aktiv statistikk.
+- Fire valg: ferdig klargjort, påbegynt klargjøring, kan gjerne gjøre,
+  liker ikke. Samme svar trykket igjen fjerner valget.
+- Bygjester: Dame, Danser, Mekaniker, Cowboy, Bodybuilder, Selger,
+  Skuespiller, Oldefar og Lokal.
+- Bygninger: Matbutikk, Kino, Vertshus, Spa, Kafé, Gavebutikk og Strandkafé.
+- Medlemmet kan legge inn navnet på et konkret produkt med en status.
+  Mellomrom og store/små bokstaver normaliseres for nye produktnavn.
+- Tidspunkt for siste endring vises for lagrede valg.
+- Lederoversikten viser hvem som har hva klart, og summerer alle fire statuser.
+- Tidligere liker = kan gjerne gjøre. Tidligere kan ikke = liker ikke.
+  Historiske svar blir aldri tolket som ferdig klargjort.
+- Valgene er per portalmedlem, som tidligere, og beholdes til de endres eller
+  fjernes. De er ingen reservasjon av oppgaver i spillet.
+
+Kontrollert:
+- JavaScript-syntaks for app.js, backend.js og service-worker.js.
+- Funksjonstester for endring/fjerning, produktnavn, språk, gamle svar,
+  fullførtstatus, statistikk, feilet lagring, rettighetskontroll og HTML-escaping.
+- Innlasting av mer enn 1000 oppgavevalg, samt filtrering på eget medlem.
+- Databasetest av egne skriveoperasjoner, avvisning av endring av andres valg,
+  og sperret tilgang for inaktive/utloggede. Testdata ble rullet tilbake.
+- Alle 418 eksisterende oppgavevalg er bevart; fem RLS-policyer er uendret.
+
+Gjenstår før produksjon:
+- Visuell test på mobil og PC med innlogging mot testgrenen. Lokal Chromium
+  kunne ikke startes i kontrollmiljøet, så visuell nettlesertest er ikke utført.
+- Test med to innloggede kontoer: medlem lagrer et produkt som ferdig;
+  leder oppdaterer siden og ser riktig medlem, produkt, tidspunkt og antall.
+- Endre til påbegynt, fjern valget, og kontroller samme flyt etter ny innlogging.
+- Kontroller at harepusplanen og påmeldingsfristene fortsatt oppfører seg som før.
+
+Bygningene er kontrollert mot Supercells byoversikt:
+https://support.supercell.com/hay-day/en/articles/town-introduction.html

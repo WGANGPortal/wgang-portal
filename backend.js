@@ -303,8 +303,8 @@
   }
 
   function mapProfile(row, participation, preferences, expectedEvent) {
-    const prefMap = {};
-    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; });
+    const prefMap = {}, prefUpdatedAt = {};
+    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; prefUpdatedAt[p.task_type] = p.updated_at; });
     const part = (participation || []).find(p => p.user_id === row.id);
     const rawChoice = part ? part.choice : "waiting";
     const participationAcknowledged = rawChoice !== "joined" || !!part?.admin_corrected_at || Boolean(
@@ -329,6 +329,7 @@
       participationNeedsConfirmation: rawChoice === "joined" && !participationAcknowledged,
       participationRulesAcknowledgedAt: participationAcknowledged ? part?.rules_acknowledged_at || null : null,
       preferences: prefMap,
+      preferenceUpdatedAt: prefUpdatedAt,
       createdAt: row.created_at || null,
       updatedAt: row.updated_at || null
     };
@@ -412,12 +413,22 @@
       return { memberReturns, accounts: [ownAccount], derby: clone(DEFAULT_DERBY), content:{announcements:[],derbyPosts:[],tips:[],pendingTips:[]}, leadershipMessages:[], privateMessages:[], gameIdentities:[], derbyManagement:{templates:[],events:[],participations:[],gameParticipations:[],next:null,current:null,upcoming:null}, derbyHistory:{archives:[],results:[],changeLog:[]}, absence:{statuses:[],periods:[]}, legalAcceptance, currentUserId: own.id };
     }
     const loadMemberActivity = ["owner","admin","assistant_leader","senior"].includes(own.role);
-    let preferencesQuery = client.from("task_preferences").select("user_id,task_type,preference");
+    // Concrete products can bring the board above the API's default row cap.
+    const loadTaskPreferences=async()=>{
+      const data=[],pageSize=500;
+      for(let offset=0;;offset+=pageSize){
+        let query=client.from("task_preferences").select("user_id,task_type,preference,updated_at").order("user_id").order("task_type").range(offset,offset+pageSize-1);
+        if(!loadMemberActivity)query=query.eq("user_id",session.user.id);
+        const result=await query;
+        if(result.error)return {data:null,error:result.error};
+        data.push(...(result.data||[]));
+        if((result.data||[]).length<pageSize)return {data,error:null};
+      }
+    };
     let absencePeriodsQuery = client.from("member_absence_periods").select("user_id,starts_on,ends_on,updated_at");
     if (!loadMemberActivity) {
       // RLS håndhever samme begrensning i databasen. Disse filtrene sørger i
       // tillegg for at ordinære medlemmer ikke engang ber om andres private data.
-      preferencesQuery = preferencesQuery.eq("user_id", session.user.id);
       absencePeriodsQuery = absencePeriodsQuery.eq("user_id", session.user.id);
     }
     // Neste derby opprettes av Supabase Cron søndag kl. 12. Portalen trenger
@@ -425,7 +436,7 @@
     const [profilesRes, participationRes, preferencesRes, derbyRes, contentRes, templatesRes, eventsRes, eventParticipationRes, gameIdentitiesRes, gameParticipationRes, completionRes, leadershipRes, privateMessagesRes, notificationPrefsRes, notificationReadRes, likesRes, commentsRes, translationsRes, activityNotificationsRes, archivesRes, memberResultsRes, resultChangeLogRes, absenceStatusesRes, absencePeriodsRes, portalTouchRes, memberActivityRes] = await Promise.all([
       client.from("profiles").select("id,hay_day_name,role,status,bio,age_group,country_place,hay_day_since,favorite_game_aspect,languages,other_languages,created_at,updated_at").order("hay_day_name"),
       client.from("derby_participation").select("user_id,choice,rules_acknowledged_at,rules_acknowledgement_version,acknowledged_max_points"),
-      preferencesQuery,
+      loadTaskPreferences(),
       client.from("derby_settings").select("id,type,task_total,max_points,strategy").eq("id", 1).maybeSingle(),
       client.from("community_content").select("id,author_id,kind,title,body,category,status,created_at,published_at,video_path,video_mime_type,video_size_bytes,video_original_name,attachment_path,attachment_mime_type").order("created_at", {ascending:false}),
       client.from("derby_templates").select("id,slug,name,description,default_task_total,default_extra_tasks,default_max_points,daily_task_limit,rules,strategy,is_active,updated_by,updated_at").eq("is_active", true).order("name"),
@@ -926,7 +937,7 @@
     },
     async setPreference(userId, taskType, preference) {
       if (!configured) {
-        const a=localState.accounts.find(x=>x.id===userId); if(a){a.preferences=a.preferences||{}; if(preference)a.preferences[taskType]=preference; else delete a.preferences[taskType];} localSave(localState); return;
+        const a=localState.accounts.find(x=>x.id===userId); if(a){a.preferences=a.preferences||{};a.preferenceUpdatedAt=a.preferenceUpdatedAt||{};if(preference){a.preferences[taskType]=preference;a.preferenceUpdatedAt[taskType]=new Date().toISOString();}else{delete a.preferences[taskType];delete a.preferenceUpdatedAt[taskType];}} localSave(localState); return;
       }
       if (!preference) {
         const { error } = await client.from("task_preferences").delete().eq("user_id",userId).eq("task_type",taskType); if(error)throw error;
