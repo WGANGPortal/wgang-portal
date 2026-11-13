@@ -1,4 +1,4 @@
-/* v0.18.0.129 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.130 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -34,7 +34,7 @@
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
     { icon:"🚢", name:"Båtoppgaver", tasks:["Båtoppgaver"] },
     { icon:"🚂", name:"Byoppgaver", tasks:["Besøkende"] },
-    { icon:"👥", name:"Bygjester", tasks:["Bygjest: Dame","Bygjest: Danser","Bygjest: Mekaniker","Bygjest: Cowboy","Bygjest: Bodybuilder","Bygjest: Selger","Bygjest: Skuespiller","Bygjest: Oldefar","Bygjest: Lokal"] },
+    { icon:"👥", name:"Bygjester", tasks:["Bygjest: Dame","Bygjest: Danser","Bygjest: Mekaniker","Bygjest: Cowboy","Bygjest: Bodybuilder","Bygjest: Selger","Bygjest: Skuespiller","Bygjest: Oldefar","Bygjest: Lokal","Bygjest: Lærer"] },
     { icon:"🏘️", name:"Bygninger i byen", tasks:["Bygning: Matbutikk","Bygning: Kino","Bygning: Vertshus","Bygning: Spa","Bygning: Kafé","Bygning: Gavebutikk","Bygning: Strandkafé"] },
     { icon:"🎣", name:"Fiskeoppgaver", tasks:["Fiskeoppgaver"] },
     { icon:"⛏️", name:"Gruveoppgaver", tasks:["Gruveoppgaver"] },
@@ -43,17 +43,17 @@
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
   const RETIRED_TASK_TYPES = new Set(["Spesifikke personer","Spesifikke hus"]);
-  const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
-  // Old preferences describe willingness, never readiness.
-  const preferenceValue = value => value === "like" ? "can" : value === "no" ? "avoid" : value;
+  const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",like:"Denne liker jeg å ta",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
+  // Legacy dislikes remain compatible; liking never implies readiness.
+  const preferenceValue = value => value === "no" ? "avoid" : value;
   const productTask = name => "Produkt: " + String(name).normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("nb-NO");
   function preferenceTaskTypes(accounts=state.accounts) {
     return [...new Set([...TASK_TYPES,...(state.taskProducts||[]).map(productTask),...accounts.flatMap(a=>Object.keys(a.preferences||{}))])].filter(task=>!RETIRED_TASK_TYPES.has(task));
   }
-  const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",can:"I would like to do this – not started",avoid:"I do not like this task"};
+  const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",like:"I like doing this task",can:"I would like to do this – not started",avoid:"I do not like this task"};
   function preferenceTaskLabel(task) {
     if(currentLanguage!=="en") return task;
-    const labels={"Bygjest: Dame":"Town visitor: Lady","Bygjest: Danser":"Town visitor: Dancer","Bygjest: Mekaniker":"Town visitor: Mechanic","Bygjest: Cowboy":"Town visitor: Cowboy","Bygjest: Bodybuilder":"Town visitor: Strongman","Bygjest: Selger":"Town visitor: Salesman","Bygjest: Skuespiller":"Town visitor: Actress","Bygjest: Oldefar":"Town visitor: Grand Master","Bygjest: Lokal":"Town visitor: Local","Bygning: Matbutikk":"Building: Grocery store","Bygning: Kino":"Building: Cinema","Bygning: Vertshus":"Building: Bed and Breakfast","Bygning: Spa":"Building: Spa","Bygning: Kafé":"Building: Diner","Bygning: Gavebutikk":"Building: Gift shop","Bygning: Strandkafé":"Building: Beach café"};
+    const labels={"Bygjest: Dame":"Town visitor: Lady","Bygjest: Danser":"Town visitor: Dancer","Bygjest: Mekaniker":"Town visitor: Mechanic","Bygjest: Cowboy":"Town visitor: Cowboy","Bygjest: Bodybuilder":"Town visitor: Strongman","Bygjest: Selger":"Town visitor: Salesman","Bygjest: Skuespiller":"Town visitor: Actress","Bygjest: Oldefar":"Town visitor: Grand Master","Bygjest: Lokal":"Town visitor: Local","Bygjest: Lærer":"Town visitor: Teacher","Bygning: Matbutikk":"Building: Grocery store","Bygning: Kino":"Building: Cinema","Bygning: Vertshus":"Building: Bed and Breakfast","Bygning: Spa":"Building: Spa","Bygning: Kafé":"Building: Diner","Bygning: Gavebutikk":"Building: Gift shop","Bygning: Strandkafé":"Building: Beach café"};
     return labels[task] || (task.startsWith("Produkt: ") ? "Product: "+task.slice(9) : tText(task));
   }
   const DERBY_MINIMUM_PERCENT = 95;
@@ -74,6 +74,10 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const ui = (no, en) => currentLanguage === "en" ? en : no;
   const I18N_EN = {
+    "♥ Liker":"♥ Like","+ Kan ta":"+ Can do","Liker":"Like","Kan ta":"Can do","Vurder å kaste":"Consider discarding","Behold":"Keep","Klargjøres – vurder ventetid":"Preparing – assess wait","Ønsket":"Preferred",
+    "En oppgave du foretrekker, uten at du har startet å klargjøre.":"A task you prefer, before you start preparing.",
+    "Du sparer opp eller gjør klart nå. Legg gjerne inn forventet klartid. Dette reserverer ikke oppgaven.":"You are preparing now. Add an estimated ready time. This does not reserve the task.",
+    "Behold når noen har ferdig klargjort. Ved påbegynt vurderer ledelsen ventetiden. «Liker» viser etterspørsel uten reservasjon. Oppgaver uten svar vises som «Ingen svar».":"Keep when someone is ready. Leadership assesses waiting times for preparation. Likes show demand without reservation. Tasks without responses show ‘No answers’.",
     "Kaste eller beholde?":"Discard or keep?",
     "Kast først":"Discard first",
     "Disse må beholdes":"Keep these tasks",
@@ -903,7 +907,7 @@
   }
 
   function topPreferences(account) {
-    return preferenceTaskTypes([account]).filter(t => ["ready","preparing","can"].includes(preferenceValue(account.preferences?.[t]))).slice(0, 3);
+    return preferenceTaskTypes([account]).filter(t => ["ready","preparing","like","can"].includes(preferenceValue(account.preferences?.[t]))).slice(0, 3);
   }
 
   const NOTIFICATION_DEFAULTS = {
@@ -1771,13 +1775,37 @@
     translateUi(memberProfileDialog);
   }
 
-  async function saveTaskPreference(task, next) {
+  const PREPARATION_MINUTES=[15,30,60,120,180,240,300,360,420,480];
+  function preparationOptions() {
+    return PREPARATION_MINUTES.map(m=>`<option value="${m}">${ui("Innen ","Within ")}${m<60?`${m} min`:ui(`${m/60} ${m===60?"time":"timer"}`,`${m/60} ${m===60?"hour":"hours"}`)}</option>`).join("")+`<option value="unknown">${ui("Over 8 timer / usikker","Over 8 hours / unsure")}</option>`;
+  }
+  function preparationCountdown(value,now=Date.now()) {
+    if(!value)return ui("Over 8 timer / usikker","Over 8 hours / unsure");
+    const ms=Date.parse(value)-now;
+    if(!Number.isFinite(ms))return ui("Tidsanslag mangler","No estimate");
+    if(ms<=0)return ui("Anslått klartid passert – må bekreftes","Estimated ready time passed – please confirm");
+    const mins=Math.ceil(ms/60000),h=Math.floor(mins/60),m=mins%60;
+    return ui("Klar innen ","Ready within ")+(h?`${h} ${ui("t","h")} `:"")+(m||!h?`${m} min`:"");
+  }
+  function preparationBadge(account,task) {
+    if(preferenceValue(account.preferences?.[task])!=="preparing")return "";
+    const value=account.preferenceReadyBy?.[task]||"";
+    return `<small class="preparation-countdown" data-preparation-ready-by="${esc(value)}">${esc(preparationCountdown(value))}</small>`;
+  }
+  function tickPreparationCountdowns(){document.querySelectorAll('[data-preparation-ready-by]').forEach(el=>{el.textContent=preparationCountdown(el.dataset.preparationReadyBy);});}
+  setInterval(tickPreparationCountdowns,30000);
+  document.addEventListener("visibilitychange",tickPreparationCountdowns);
+
+  async function saveTaskPreference(task, next, minutes) {
     if(busy || !hasPermission("derby.plan") || !current()) return;
     const me=current();
     setBusy(true);
     try {
       setText("preferenceSaveStatus",ui("Lagrer …","Saving …"));
-      await backend.setPreference(me.id,task,next);
+      const readyBy=next==="preparing"?(minutes===undefined?me.preferenceReadyBy?.[task]||null:PREPARATION_MINUTES.includes(Number(minutes))?new Date(Date.now()+Number(minutes)*60000).toISOString():null):null;
+      await backend.setPreference(me.id,task,next,readyBy);
+      me.preferenceReadyBy=me.preferenceReadyBy||{};
+      if(readyBy)me.preferenceReadyBy[task]=readyBy;else delete me.preferenceReadyBy[task];
       me.preferences=me.preferences||{};
       me.preferenceUpdatedAt=me.preferenceUpdatedAt||{};
       if(next){me.preferences[task]=next;me.preferenceUpdatedAt[task]=new Date().toISOString();
@@ -1811,14 +1839,14 @@
     const types=preferenceTaskTypes([user]),groups=preferenceGroups([user]);
     const selectedCount=types.filter(task=>!!user.preferences?.[task]).length;
     setText("preferenceSelectionSummary",ui(`${selectedCount} valg delt`,`${selectedCount} choices shared`));
-    const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",can:"Willing",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",can:"Kan gjøre",avoid:"Liker ikke"};
-    const icons={ready:"✓",preparing:"◷",can:"+",avoid:"×"};
+    const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",like:"Like",can:"Can do",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",like:"Liker",can:"Kan ta",avoid:"Liker ikke"};
+    const icons={ready:"✓",preparing:"◷",like:"♥",can:"+",avoid:"×"};
     const descriptions=currentLanguage==="en"?PREF_EN:PREF_LABELS;
     const totals=Object.fromEntries(Object.keys(labels).map(key=>[key,types.filter(t=>preferenceValue(user.preferences?.[t])===key).length]));
     const totalsEl=$("preferenceStatusTotals");
     if(totalsEl)totalsEl.innerHTML=Object.entries(labels).map(([key,label])=>`<div class="readiness-total readiness-${key}"><span>${icons[key]} ${esc(label)}</span><strong>${totals[key]}</strong></div>`).join("");
     const query=preferenceUi.query.toLocaleLowerCase(currentLanguage==="en"?"en":"nb-NO");
-    const addProduct=`<details class="readiness-product" ${preferenceUi.openGroups.has("add-product")?"open":""} data-preference-group="add-product"><summary><span aria-hidden="true">＋</span><span><strong>${ui("Legg til et produkt","Add a product")}</strong><small>${ui("Del akkurat hva du klargjør","Share exactly what you are preparing")}</small></span><span class="category-chevron" aria-hidden="true">⌄</span></summary><form id="productPreferenceForm" class="product-preference-form"><label>${ui("Produktnavn i spillet","In-game product name")}<input name="product" required maxlength="60" placeholder="${ui("For eksempel ostekake","For example cheesecake")}"></label><label>${ui("Hvor langt har du kommet?","How far along are you?")}<select name="status" required><option value="" disabled selected>${ui("Velg status","Choose a status")}</option>${Object.entries(labels).map(([key,label])=>`<option value="${key}">${esc(label)}</option>`).join("")}</select></label><button type="submit" class="button button-primary">${ui("Del produktet","Share product")}</button></form></details>`;
+    const addProduct=`<details class="readiness-product" ${preferenceUi.openGroups.has("add-product")?"open":""} data-preference-group="add-product"><summary><span aria-hidden="true">＋</span><span><strong>${ui("Legg til et produkt","Add a product")}</strong><small>${ui("Del akkurat hva du klargjør","Share exactly what you are preparing")}</small></span><span class="category-chevron" aria-hidden="true">⌄</span></summary><form id="productPreferenceForm" class="product-preference-form"><label>${ui("Produktnavn i spillet","In-game product name")}<input name="product" required maxlength="60" placeholder="${ui("For eksempel ostekake","For example cheesecake")}"></label><label>${ui("Hvor langt har du kommet?","How far along are you?")}<select name="status" required><option value="" disabled selected>${ui("Velg status","Choose a status")}</option>${Object.entries(labels).map(([key,label])=>`<option value="${key}">${esc(label)}</option>`).join("")}</select></label><label data-product-estimate hidden>${ui("Når regner du med å være klar?","When do you expect to be ready?")}<select name="estimate"><option value="unknown" selected disabled>${ui("Velg tidsanslag","Choose estimate")}</option>${preparationOptions()}</select></label><button type="submit" class="button button-primary">${ui("Del produktet","Share product")}</button></form></details>`;
     let visibleCount=0;
     list.innerHTML=groups.map(group=>{
       const chosen=group.tasks.filter(task=>!!user.preferences?.[task]).length;
@@ -1830,8 +1858,8 @@
       const summary=Object.entries(labels).filter(([key])=>group.tasks.some(task=>preferenceValue(user.preferences?.[task])===key)).map(([key,label])=>`<span class="category-status readiness-${key}">${icons[key]} ${group.tasks.filter(task=>preferenceValue(user.preferences?.[task])===key).length}<span class="sr-only"> ${esc(label)}</span></span>`).join("");
       return `<details class="readiness-category" data-preference-group="${group.key}" ${open?"open":""}><summary><span class="readiness-category-icon" aria-hidden="true">${group.icon}</span><span class="readiness-category-heading"><strong>${esc(tText(group.name))}</strong><small>${chosen?ui(`${chosen} valg delt`,`${chosen} choices shared`):ui("Åpne og velg det som passer deg","Open and choose what suits you")}</small></span><span class="category-status-list">${summary}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="readiness-category-body">${group.key==="products"?`<p class="shared-product-note">${ui("Produktene er felles for nabolaget og kan brukes i senere derby. Velg din egen status for produktene du vil dele.","Products are shared with the Neighborhood and can be reused in later Derbies. Choose your own status for the products you want to share.")}${state.taskProductsAvailable===false?` <strong>${ui("Felleslisten kunne ikke hentes. Prøv å laste siden på nytt.","The shared list could not be loaded. Try refreshing the page.")}</strong>`:""}</p>`:""}${tasks.map(task=>{
         const status=preferenceValue(user.preferences?.[task]);
-        const title=task==="Produkter"?ui("Produktkurver","Product baskets"):task==="Produksjonsoppgaver"?ui("Produksjon generelt","Production in general"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
-        return `<div class="readiness-task ${status?`has-choice choice-${status}`:""}"><div class="readiness-task-heading"><strong>${esc(title)}</strong>${user.preferenceUpdatedAt?.[task]?`<small class="preference-updated">${ui("Oppdatert","Updated")} ${esc(formatDate(user.preferenceUpdatedAt[task]))}</small>`:""}</div><div class="readiness-options" role="group" aria-label="${esc(ui("Din status for ","Your status for ")+title)}">${Object.entries(labels).map(([key,label])=>`<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="readiness-option readiness-${key} ${status===key?"selected":""}" aria-pressed="${status===key}" title="${esc(descriptions[key])}"><span aria-hidden="true">${icons[key]}</span>${esc(label)}</button>`).join("")}</div></div>`;
+        const title=task==="Produkter"?ui("Produktkurver","Product baskets"):task==="Produksjonsoppgaver"?ui("Alle produksjonsoppgaver","All production tasks"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
+        return `<div class="readiness-task ${status?`has-choice choice-${status}`:""}"><div class="readiness-task-heading"><strong>${esc(title)}</strong>${user.preferenceUpdatedAt?.[task]?`<small class="preference-updated">${ui("Oppdatert","Updated")} ${esc(formatDate(user.preferenceUpdatedAt[task]))}</small>`:""}</div><div class="readiness-options" role="group" aria-label="${esc(ui("Din status for ","Your status for ")+title)}">${Object.entries(labels).map(([key,label])=>`<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="readiness-option readiness-${key} ${status===key?"selected":""}" aria-pressed="${status===key}" title="${esc(descriptions[key])}"><span aria-hidden="true">${icons[key]}</span>${esc(label)}</button>`).join("")}</div>${status==="preparing"?`<div class="preparation-estimate">${preparationBadge(user,task)}<label>${ui("Oppdater forventet klartid","Update estimated ready time")}<select data-preparation-task="${esc(task)}"><option value="" selected disabled>${ui("Velg nytt tidsanslag","Choose a new estimate")}</option>${preparationOptions()}</select></label><small>${ui("Tidsanslaget gir ingen reservasjon. Ledelsen vurderer ventetiden.","An estimate does not reserve a task. Leadership assesses the wait.")}</small></div>`:""}</div>`;
       }).join("")}${showProductForm?addProduct:""}</div></details>`;
     }).join("");
     if(!visibleCount)list.innerHTML=`<div class="readiness-empty"><strong>${ui("Ingen oppgaver å vise","No tasks to show")}</strong><p>${query?ui("Prøv et annet søkeord eller vis alle oppgaver.","Try another search or show all tasks."):ui("Du har ikke delt noen valg ennå. Velg «Alle oppgaver» for å komme i gang.","You have not shared any choices yet. Choose ‘All tasks’ to get started.")}</p></div>`;
@@ -1851,18 +1879,20 @@
       const replacement=[...list.querySelectorAll('[data-pref-task]')].find(el=>el.dataset.prefTask===task&&el.dataset.prefValue===key);
       replacement?.focus({preventScroll:true});
     });
+    list.querySelectorAll('[data-preparation-task]').forEach(select=>select.onchange=()=>saveTaskPreference(select.dataset.preparationTask,"preparing",select.value));
     const search=$("preferenceSearch");
     if(search){search.value=preferenceUi.query;search.oninput=()=>{preferenceUi.query=search.value;renderPreferences();};}
     const all=$("preferenceShowAll"),mine=$("preferenceShowMine");
     if(all){all.setAttribute("aria-pressed",String(!preferenceUi.onlyMine));all.onclick=()=>{preferenceUi.onlyMine=false;renderPreferences();};}
     if(mine){mine.setAttribute("aria-pressed",String(preferenceUi.onlyMine));mine.onclick=()=>{preferenceUi.onlyMine=true;renderPreferences();};}
     const productForm=$("productPreferenceForm");
+    if(productForm)productForm.elements.status.onchange=()=>{productForm.querySelector('[data-product-estimate]').hidden=productForm.elements.status.value!=="preparing";};
     if(productForm)productForm.onsubmit=async event=>{
       event.preventDefault();
       const form=event.currentTarget,task=productTask(form.elements.product.value),status=form.elements.status.value;
       if(task.length<=9||task.length>69||/[<>\x00-\x1f]/.test(task)||!Object.hasOwn(PREF_LABELS,status)){alert(ui("Skriv et produktnavn og velg status.","Enter a product name and choose a status."));return;}
       preferenceUi.openGroups.add("products");
-      const saved=await saveTaskPreference(task,status);
+      const saved=await saveTaskPreference(task,status,status==="preparing"?form.elements.estimate.value:undefined);
       if(saved){
         preferenceUi.query="";renderPreferences();
         [...list.querySelectorAll('[data-pref-task]')].find(el=>el.dataset.prefTask===task&&el.dataset.prefValue===status)?.focus();
@@ -1891,7 +1921,7 @@
 
   function preferenceStats() {
     const stats = {};
-    preferenceTaskTypes().forEach(t => stats[t] = {ready:0,preparing:0,can:0,avoid:0});
+    preferenceTaskTypes().forEach(t => stats[t] = {ready:0,preparing:0,like:0,can:0,avoid:0});
     adminPreferenceAccounts().forEach(a => Object.entries(a.preferences || {}).forEach(([task,value]) => {
       const status=preferenceValue(value);
       if (stats[task] && stats[task][status] != null) stats[task][status]++;
@@ -1900,8 +1930,10 @@
   }
 
   function taskRecommendation(s) {
-    if(s.ready+s.preparing>0)return {label:ui("Behold","Keep"),cls:"recommend-keep",kind:"keep"};
-    if(s.can+s.avoid>0)return {label:ui("Kast først","Discard first"),cls:"recommend-clear",kind:"discard"};
+    if(s.ready>0)return {label:ui("Behold","Keep"),cls:"recommend-keep",kind:"keep"};
+    if(s.preparing>0)return {label:ui("Klargjøres – vurder ventetid","Preparing – assess wait"),cls:"recommend-wait",kind:"wait"};
+    if(s.like>0)return {label:ui("Ønsket","Preferred"),cls:"recommend-wanted",kind:"wanted"};
+    if(s.can+s.avoid>0)return {label:ui("Vurder å kaste","Consider discarding"),cls:"recommend-clear",kind:"discard"};
     return {label:ui("Ingen svar","No answers"),cls:"recommend-unknown",kind:"unknown"};
   }
 
@@ -1909,18 +1941,18 @@
   function renderAdminPreferences() {
     if(!hasPermission("derby.preferences.view"))return;
     const members=adminPreferenceAccounts(),stats=preferenceStats(),event=adminPreferenceContext();
-    const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",can:"Willing",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",can:"Kan gjøre",avoid:"Liker ikke"};
-    const icons={ready:"✓",preparing:"◷",can:"+",avoid:"×"};
+    const labels=currentLanguage==="en"?{ready:"Ready",preparing:"Preparing",like:"Like",can:"Can do",avoid:"Dislike"}:{ready:"Ferdig",preparing:"Påbegynt",like:"Liker",can:"Kan ta",avoid:"Liker ikke"};
+    const icons={ready:"✓",preparing:"◷",like:"♥",can:"+",avoid:"×"};
     const query=adminPreferenceUi.query.trim().toLocaleLowerCase();
     const peopleFor=(task,key)=>members.filter(a=>preferenceValue(a.preferences?.[task])===key);
-    const titleFor=task=>task==="Produksjonsoppgaver"?ui("Produksjon generelt","Production in general"):task==="Produkter"?ui("Produktkurver","Product baskets"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
+    const titleFor=task=>task==="Produksjonsoppgaver"?ui("Alle produksjonsoppgaver","All production tasks"):task==="Produkter"?ui("Produktkurver","Product baskets"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
     const groups=preferenceGroups();
     const allTasks=preferenceTaskTypes();
     setText("adminPreferenceScope",ui(`${event?.name||"Oppgaveoversikt"} · ${members.length} ${currentActiveDerbyEvent()?"deltakere med oppgaver igjen":"aktuelle medlemmer"}. Ferdige deltakere er utelatt fra pågående derby.`,`${event?.name||"Task overview"} · ${members.length} ${currentActiveDerbyEvent()?"participants with tasks remaining":"eligible members"}. Completed participants are excluded from the active Derby.`));
     $("adminPreferenceSummary").innerHTML=Object.entries(labels).map(([key,label])=>`<article class="readiness-total readiness-${key}"><span>${icons[key]} ${esc(label)}</span><strong>${allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)}</strong><small>${ui(allTasks.reduce((sum,task)=>sum+(stats[task]?.[key]||0),0)===1?"registrert valg":"registrerte valg","saved choices")}</small></article>`).join("");
     const recommended=$("adminPreferenceRecommendations");
     if(recommended){
-      recommended.innerHTML=[{kind:"discard",title:ui("Kast først","Discard first"),icon:"×",note:ui("0 ferdig og 0 påbegynt","0 ready and 0 preparing")},{kind:"keep",title:ui("Disse må beholdes","Keep these tasks"),icon:"✓",note:ui("Minst én har ferdig eller påbegynt","At least one ready or preparing")}].map(group=>{
+      recommended.innerHTML=[{kind:"discard",title:ui("Vurder å kaste","Consider discarding"),icon:"×",note:ui("Ingen har ferdig, påbegynt eller liker","Nobody ready, preparing or preferring")},{kind:"keep",title:ui("Behold","Keep"),icon:"✓",note:ui("Minst én har ferdig klargjort","At least one participant is ready")},{kind:"wait",title:ui("Klargjøres – vurder ventetid","Preparing – assess wait"),icon:"◷",note:ui("Se spillernes tidsanslag før dere bestemmer","Review estimates before deciding")},{kind:"wanted",title:ui("Ønsket","Preferred"),icon:"♥",note:ui("Noen liker oppgaven – ingen reservasjon","Preferred by someone – not reserved")}].map(group=>{
         const tasks=allTasks.filter(task=>taskRecommendation(stats[task]).kind===group.kind);
         return `<button type="button" class="admin-recommendation-card recommendation-${group.kind}" data-recommendation-filter="${group.kind}" aria-pressed="${adminPreferenceUi.status===group.kind}" aria-controls="adminPreferenceTable"><span class="recommendation-card-heading"><span><strong>${group.icon} ${esc(group.title)}</strong><small>${esc(group.note)}</small></span><b>${tasks.length}</b></span><span class="recommendation-task-preview">${tasks.slice(0,5).map(task=>esc(titleFor(task))).join(", ")||ui("Ingen oppgaver akkurat nå","No tasks right now")}${tasks.length>5?ui(` · +${tasks.length-5} til`, ` · +${tasks.length-5} more`):""}</span><span class="recommendation-hint">${ui("Trykk for å vise alle i oversikten","Select to show all in the overview")}</span></button>`;
       }).join("");
@@ -1937,16 +1969,16 @@
     list.innerHTML=groups.map(group=>{
       const tasks=group.tasks.filter(task=>{
         const counts=stats[task],hasResponses=Object.values(counts).some(Boolean);
-        const statusMatch=adminPreferenceUi.status==="all"||(["keep","discard"].includes(adminPreferenceUi.status)?taskRecommendation(counts).kind===adminPreferenceUi.status:adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
+        const statusMatch=adminPreferenceUi.status==="all"||(["keep","wait","wanted","discard"].includes(adminPreferenceUi.status)?taskRecommendation(counts).kind===adminPreferenceUi.status:adminPreferenceUi.status==="unanswered"?!hasResponses:counts[adminPreferenceUi.status]>0);
         const searchMatch=!query||`${preferenceTaskLabel(task)} ${tText(group.name)} ${members.filter(a=>a.preferences?.[task]).map(a=>a.name).join(" ")}`.toLocaleLowerCase().includes(query);
         return statusMatch&&searchMatch;
-      }).sort((a,b)=>({discard:0,keep:1,unknown:2}[taskRecommendation(stats[a]).kind]-{discard:0,keep:1,unknown:2}[taskRecommendation(stats[b]).kind]));
+      }).sort((a,b)=>({keep:0,wait:1,wanted:2,discard:3,unknown:4}[taskRecommendation(stats[a]).kind]-{keep:0,wait:1,wanted:2,discard:3,unknown:4}[taskRecommendation(stats[b]).kind]));
       if(!tasks.length)return "";
       visible+=tasks.length;
       const open=query||adminPreferenceUi.status!=="all"||adminPreferenceUi.openGroups.has(group.key);
       return `<details class="readiness-category admin-readiness-category" data-admin-pref-group="${group.key}" ${open?"open":""}><summary><span class="readiness-category-icon" aria-hidden="true">${group.icon}</span><span class="readiness-category-heading"><strong>${esc(tText(group.name))}</strong><small>${tasks.length} ${ui(tasks.length===1?"oppgavetype":"oppgavetyper",tasks.length===1?"task type":"task types")}${group.key==="products"?ui(" · felles produktliste"," · shared product list"):""}</small></span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="admin-readiness-tasks">${tasks.map(task=>{
         const counts=stats[task],recommendation=taskRecommendation(counts);
-        return `<details class="admin-task-detail" data-admin-pref-task="${esc(task)}" ${adminPreferenceUi.openTasks.has(task)?"open":""}><summary><span class="admin-task-title"><strong>${esc(titleFor(task))}</strong><span class="recommendation ${recommendation.cls}">${esc(recommendation.label)}</span></span><span class="admin-task-counts">${Object.entries(labels).map(([key,label])=>`<span class="admin-status-count readiness-${key}" aria-label="${esc(label)}: ${counts[key]}"><span>${icons[key]} ${esc(label)}</span><b>${counts[key]}</b></span>`).join("")}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="admin-task-people">${Object.entries(labels).map(([key,label])=>`<section><h4>${icons[key]} ${esc(label)}</h4>${peopleFor(task,key).map(a=>`<p><strong>${esc(a.name)}</strong>${a.preferenceUpdatedAt?.[task]?`<small>${ui("Oppdatert","Updated")} ${esc(formatDate(a.preferenceUpdatedAt[task]))}</small>`:""}</p>`).join("")||`<p class="admin-no-choice">${ui("Ingen registrert","None saved")}</p>`}</section>`).join("")}</div></details>`;
+        return `<details class="admin-task-detail" data-admin-pref-task="${esc(task)}" ${adminPreferenceUi.openTasks.has(task)?"open":""}><summary><span class="admin-task-title"><strong>${esc(titleFor(task))}</strong><span class="recommendation ${recommendation.cls}">${esc(recommendation.label)}</span></span><span class="admin-task-counts">${Object.entries(labels).map(([key,label])=>`<span class="admin-status-count readiness-${key}" aria-label="${esc(label)}: ${counts[key]}"><span>${icons[key]} ${esc(label)}</span><b>${counts[key]}</b></span>`).join("")}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="admin-task-people">${Object.entries(labels).map(([key,label])=>`<section><h4>${icons[key]} ${esc(label)}</h4>${peopleFor(task,key).map(a=>`<p><strong>${esc(a.name)}</strong>${preparationBadge(a,task)}${a.preferenceUpdatedAt?.[task]?`<small>${ui("Oppdatert","Updated")} ${esc(formatDate(a.preferenceUpdatedAt[task]))}</small>`:""}</p>`).join("")||`<p class="admin-no-choice">${ui("Ingen registrert","None saved")}</p>`}</section>`).join("")}</div></details>`;
       }).join("")}</div></details>`;
     }).join("")||`<p class="readiness-empty">${ui("Ingen oppgaver passer søket eller filteret.","No tasks match the search or filter.")}</p>`;
     setText("adminPreferenceResultCount",ui(`${visible} ${visible===1?"oppgavetype":"oppgavetyper"} · Åpne en oppgave for å se navn og siste oppdatering.`,`${visible} task types · Open a task to see names and last updates.`));
@@ -3130,7 +3162,7 @@
         }else{
           action=`<button type="button" class="button button-small" data-derby-prep="${esc(identity.id)}" data-prep-action="${joined?'pause':'joined'}" ${!joined&&(status.blocked||status.removed)?'disabled':''}>${esc(joined?ui('Ta ut av klargjøring','Remove from preparation'):ui('Meld på','Register'))}</button>`;
         }
-        return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(status.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.blocked||status.removed?'blocked':'allowed'}">${esc(badge)}</span>`:''}</span><div class="derby-participant-actions">${action}<label class="derby-waiver-control"><input type="checkbox" data-derby-prep-waiver="${identity.id}" ${status.override_allowed?'checked':''}><span>${esc(ui('Tillat påmelding (opphev karantene)','Allow registration (lift suspension)'))}</span></label></div></div>`;
+        return `<div class="admin-derby-participant"><span><strong>${esc(identity.name)}</strong><small>${esc(account.name)} · ${choiceLabel(status.choice)}</small>${badge?`<span class="derby-suspension-badge ${status.blocked||status.removed?'blocked':'allowed'}">${esc(badge)}</span>`:''}</span><div class="derby-participant-actions">${action}<label class="derby-waiver-control"><input type="checkbox" data-derby-prep-waiver="${identity.id}" ${status.override_allowed?'checked':''}><span>${esc(ui('Tillat påmelding (opphev karantene)','Allow registration (lift suspension)'))}</span></label></div>${status==="preparing"?`<div class="preparation-estimate">${preparationBadge(user,task)}<label>${ui("Oppdater forventet klartid","Update estimated ready time")}<select data-preparation-task="${esc(task)}"><option value="" selected disabled>${ui("Velg nytt tidsanslag","Choose a new estimate")}</option>${preparationOptions()}</select></label><small>${ui("Tidsanslaget gir ingen reservasjon. Ledelsen vurderer ventetiden.","An estimate does not reserve a task. Leadership assesses the wait.")}</small></div>`:""}</div>`;
       }).join('')}</section>`:'';
       const correctingEvent=currentActiveDerbyEvent();
       const correctionHtml=canViewDerbyStatus&&derbyTuesdayCorrectionOpen(correctingEvent)?`<details class="derby-roster-correction"><summary>${esc(ui('Korriger deltakerlisten fra spillet (kun tirsdag)','Correct the in-game participant list (Tuesday only)'))}</summary><p class="helper-text">${esc(ui('Brukes bare hvis listen i spillet ble endret rett før oppstart. Kontroller hvem som faktisk deltar. Korrigering stenger ved midnatt norsk tid.','Only for last-minute changes made in the game before the start. Check who actually participates. Corrections close at midnight Norwegian time.'))}</p>${all.flatMap(account=>gameIdentityRowsForAccount(account,correctingEvent)).filter(identity=>!identity.legacy).map(identity=>`<label class="derby-roster-correction-row"><strong>${esc(identity.name)}</strong><select data-derby-roster-identity="${identity.id}" data-derby-event="${correctingEvent.id}" data-original-choice="${identity.choice==='joined'?'joined':'pause'}" ${state.derbyRosterCorrectionsAvailable?'':'disabled'}><option value="joined" ${identity.choice==='joined'?'selected':''}>${esc(ui('Deltar i spillet','Participating in game'))}</option><option value="pause" ${identity.choice!=='joined'?'selected':''}>${esc(ui('Deltar ikke i spillet','Not participating in game'))}</option></select></label>`).join('')}</details>`:'';
@@ -4799,7 +4831,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.129").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.130").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4821,6 +4853,7 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 
 

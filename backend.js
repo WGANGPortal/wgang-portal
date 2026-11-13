@@ -304,8 +304,8 @@
   }
 
   function mapProfile(row, participation, preferences, expectedEvent) {
-    const prefMap = {}, prefUpdatedAt = {};
-    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; prefUpdatedAt[p.task_type] = p.updated_at; });
+    const prefMap = {}, prefUpdatedAt = {}, prefReadyBy = {};
+    (preferences || []).filter(p => p.user_id === row.id).forEach(p => { prefMap[p.task_type] = p.preference; prefUpdatedAt[p.task_type] = p.updated_at; prefReadyBy[p.task_type] = p.ready_by; });
     const part = (participation || []).find(p => p.user_id === row.id);
     const rawChoice = part ? part.choice : "waiting";
     const participationAcknowledged = rawChoice !== "joined" || !!part?.admin_corrected_at || Boolean(
@@ -331,6 +331,7 @@
       participationRulesAcknowledgedAt: participationAcknowledged ? part?.rules_acknowledged_at || null : null,
       preferences: prefMap,
       preferenceUpdatedAt: prefUpdatedAt,
+      preferenceReadyBy: prefReadyBy,
       createdAt: row.created_at || null,
       updatedAt: row.updated_at || null
     };
@@ -418,7 +419,7 @@
     const loadTaskPreferences=async()=>{
       const data=[],pageSize=500;
       for(let offset=0;;offset+=pageSize){
-        let query=client.from("task_preferences").select("user_id,task_type,preference,updated_at").order("user_id").order("task_type").range(offset,offset+pageSize-1);
+        let query=client.from("task_preferences").select("user_id,task_type,preference,updated_at,ready_by").order("user_id").order("task_type").range(offset,offset+pageSize-1);
         if(!loadMemberActivity)query=query.eq("user_id",session.user.id);
         const result=await query;
         if(result.error)return {data:null,error:result.error};
@@ -948,15 +949,16 @@
         if (error) throw error;
       }
     },
-    async setPreference(userId, taskType, preference) {
+    async setPreference(userId, taskType, preference, readyBy=null) {
+      if(preference!=="preparing")readyBy=null;
       if (!configured) {
         if(preference&&taskType.startsWith("Produkt: "))localState.taskProducts=[...new Set([...(localState.taskProducts||[]),taskType.slice(9)])];
-        const a=localState.accounts.find(x=>x.id===userId); if(a){a.preferences=a.preferences||{};a.preferenceUpdatedAt=a.preferenceUpdatedAt||{};if(preference){a.preferences[taskType]=preference;a.preferenceUpdatedAt[taskType]=new Date().toISOString();}else{delete a.preferences[taskType];delete a.preferenceUpdatedAt[taskType];}} localSave(localState); return;
+        const a=localState.accounts.find(x=>x.id===userId); if(a){a.preferenceReadyBy=a.preferenceReadyBy||{};if(readyBy)a.preferenceReadyBy[taskType]=readyBy;else delete a.preferenceReadyBy[taskType];a.preferences=a.preferences||{};a.preferenceUpdatedAt=a.preferenceUpdatedAt||{};if(preference){a.preferences[taskType]=preference;a.preferenceUpdatedAt[taskType]=new Date().toISOString();}else{delete a.preferences[taskType];delete a.preferenceUpdatedAt[taskType];}} localSave(localState); return;
       }
       if (!preference) {
         const { error } = await client.from("task_preferences").delete().eq("user_id",userId).eq("task_type",taskType); if(error)throw error;
       } else {
-        const { error } = await client.from("task_preferences").upsert({user_id:userId,task_type:taskType,preference,updated_at:new Date().toISOString()},{onConflict:"user_id,task_type"}); if(error)throw error;
+        const { error } = await client.from("task_preferences").upsert({user_id:userId,task_type:taskType,preference,ready_by:readyBy,updated_at:new Date().toISOString()},{onConflict:"user_id,task_type"}); if(error)throw error;
       }
     },
     async getMembershipStatus() {
@@ -1561,6 +1563,7 @@
 
   window.WGANG_BACKEND = api;
 })();
+
 
 
 

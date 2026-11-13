@@ -1,27 +1,32 @@
-WGANG Portal v0.18.0.129 – Vis alle rettet
+WGANG Portal v0.18.0.130 – Liker og nedtelling
 
-Bygger på v0.18.0.128 fra main.
+Bygger på main v0.18.0.129.
+Erstatt app.js, backend.js, index.html, main.css og service-worker.js.
+Oppdateringen er ikke publisert. Databasetillegget er allerede installert i Supabase.
+Du trenger ikke kjøre SQL.
 
-Rettet: Hele kortene «Kast først» og «Disse må beholdes» er klikkbare,
-også oppgavenavnene og teksten «Trykk for å vise alle i oversikten».
-Trykk filtrerer listen, åpner relevante kategorier og flytter visningen til resultatet.
-Trykk på det valgte kortet igjen for å vise alle statuser.
-Anbefalingsreglene og tilgangskontrollen er beholdt.
+Nytt:
+- Lærer under bygjester.
+- Ferdig, Påbegynt, Liker, Kan ta, Liker ikke.
+- Ved Påbegynt: 15/30 minutter, 1–8 timer eller over 8 timer/usikker.
+- Forventet tidspunkt lagres og vises som nedtelling (oppdateres hvert 30. sekund).
+- Utløpt anslag varsles, men status endres aldri automatisk til Ferdig.
+- Eksisterende Påbegynt uten tidsanslag vises som usikker.
+- Oppdatert anslag regnes fra tidspunktet du velger det nye anslaget.
+- Ferdig prioriteres som Behold; Påbegynt viser Klargjøres – vurder ventetid;
+  Liker viser Ønsket; andre besvarte oppgaver viser Vurder å kaste.
+- Alle kortene kan trykkes på, også teksten nederst.
+- Alle produksjonsoppgaver er et generelt valg under Produkter.
+  Navngitte produkter ligger i samme kategori; produktkurver ligger under Kurvoppgaver.
+- Tidligere lagrede «like»-svar vises nå som Liker.
 
-Last opp og erstatt disse fem filene i portalen:
-app.js
-backend.js
-index.html
-main.css
-service-worker.js
+Testet:
+- Mobilvisning, valg av 15 minutter og visning hos medlem og admin.
+- Klikk på Vis alle i Klargjøres-kortet filtrerer riktig liste.
+- Alle tidsvalg, utløpt anslag og fjerning av tidsanslag ved statusbytte.
+- Backend lagrer/leser absolutt tidspunkt og holder medlemmer adskilt.
+- Eksisterende regresjonskontroller for produkter, ferdige deltakere, søk og rettigheter.
+- Databasen: ready_by-felt og begrensning kontrollert, eksisterende RLS beholdt.
 
-Ingen SQL eller databaseendringer er nødvendig.
-Denne pakken er ikke publisert. Bruk gjerne en testgren før main.
-
-Admin-forhandsvisning.html er en selvstendig demo med eksempeldata.
-Den skal ikke erstatte index.html og kobler ikke til databasen.
-
-Kontrollert: Begge kortenes tekst nederst er trykket i mobilvisning.
-Filtrert liste, automatisk flytting og tilbakestilling av filter fungerer.
-JavaScript-syntaks og regresjonskontroller er bestått, inkludert anbefalinger,
-nye produkter, ferdige deltakere, søk og tilgangskontroll.
+Admin-forhandsvisning.html bruker eksempeldata, ikke produksjonsdatabasen.
+Åpne lokalt for å prøve ut visningen. Skal ikke erstatte index.html.
