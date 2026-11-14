@@ -1,4 +1,4 @@
-/* v0.18.0.130 – oppdatert oppgavestatus gjennom derbyuken */
+/* v0.18.0.131 – oppdatert oppgavestatus gjennom derbyuken */
 (function () {
   "use strict";
 
@@ -28,7 +28,7 @@
   });
 
   const TASK_GROUPS = [
-    { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Tomat","Annen høsting"] },
+    { icon:"🌾", name:"Innhøstingsoppgaver", tasks:["Hvete","Mais","Gulrot","Soyabønne","Svart bønne","Sukkererter","Ris","Jordbær","Potet","Tomat","Annen høsting"] },
     { icon:"🐄", name:"Dyreoppgaver", tasks:["Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr"] },
     { icon:"🏭", name:"Produkter", tasks:["Produksjonsoppgaver"] },
     { icon:"🚚", name:"Lastebiloppgaver", tasks:["Lastebiloppgaver"] },
@@ -42,7 +42,7 @@
     { icon:"🧺", name:"Kurvoppgaver", tasks:["Produkter","Dyr","Transportmidler","Annet"] }
   ];
   const TASK_TYPES = TASK_GROUPS.flatMap(group => group.tasks);
-  const RETIRED_TASK_TYPES = new Set(["Spesifikke personer","Spesifikke hus"]);
+  const RETIRED_TASK_TYPES = new Set(["Spesifikke personer","Spesifikke hus","Bønner"]);
   const PREF_LABELS = {ready:"Jeg har spart opp dette – ferdig",preparing:"Denne sparer jeg til – påbegynt",like:"Denne liker jeg å ta",can:"Denne kan jeg gjerne gjøre – ikke begynt",avoid:"Denne liker jeg ikke"};
   // Legacy dislikes remain compatible; liking never implies readiness.
   const preferenceValue = value => value === "no" ? "avoid" : value;
@@ -52,6 +52,8 @@
   }
   const PREF_EN = {ready:"I have this prepared – ready",preparing:"I am preparing this – started",like:"I like doing this task",can:"I would like to do this – not started",avoid:"I do not like this task"};
   function preferenceTaskLabel(task) {
+    // Keep the original storage key so saved answers and countdowns survive this correction.
+    if(task==="Sukkererter")return ui("Sukkerrør","Sugarcane");
     if(currentLanguage!=="en") return task;
     const labels={"Bygjest: Dame":"Town visitor: Lady","Bygjest: Danser":"Town visitor: Dancer","Bygjest: Mekaniker":"Town visitor: Mechanic","Bygjest: Cowboy":"Town visitor: Cowboy","Bygjest: Bodybuilder":"Town visitor: Strongman","Bygjest: Selger":"Town visitor: Salesman","Bygjest: Skuespiller":"Town visitor: Actress","Bygjest: Oldefar":"Town visitor: Grand Master","Bygjest: Lokal":"Town visitor: Local","Bygjest: Lærer":"Town visitor: Teacher","Bygning: Matbutikk":"Building: Grocery store","Bygning: Kino":"Building: Cinema","Bygning: Vertshus":"Building: Bed and Breakfast","Bygning: Spa":"Building: Spa","Bygning: Kafé":"Building: Diner","Bygning: Gavebutikk":"Building: Gift shop","Bygning: Strandkafé":"Building: Beach café"};
     return labels[task] || (task.startsWith("Produkt: ") ? "Product: "+task.slice(9) : tText(task));
@@ -74,6 +76,7 @@
   let currentLanguage = localStorage.getItem(LANG_KEY) || "no";
   const ui = (no, en) => currentLanguage === "en" ? en : no;
   const I18N_EN = {
+    "Soyabønne":"Soybean","Svart bønne":"Black bean","Ris":"Rice",
     "♥ Liker":"♥ Like","+ Kan ta":"+ Can do","Liker":"Like","Kan ta":"Can do","Vurder å kaste":"Consider discarding","Behold":"Keep","Klargjøres – vurder ventetid":"Preparing – assess wait","Ønsket":"Preferred",
     "En oppgave du foretrekker, uten at du har startet å klargjøre.":"A task you prefer, before you start preparing.",
     "Du sparer opp eller gjør klart nå. Legg gjerne inn forventet klartid. Dette reserverer ikke oppgaven.":"You are preparing now. Add an estimated ready time. This does not reserve the task.",
@@ -1790,7 +1793,7 @@
   function preparationBadge(account,task) {
     if(preferenceValue(account.preferences?.[task])!=="preparing")return "";
     const value=account.preferenceReadyBy?.[task]||"";
-    return `<small class="preparation-countdown" data-preparation-ready-by="${esc(value)}">${esc(preparationCountdown(value))}</small>`;
+    return `<small class="harvest-names" data-preparation-ready-by="${esc(value)}">${esc(preparationCountdown(value))}</small>`;
   }
   function tickPreparationCountdowns(){document.querySelectorAll('[data-preparation-ready-by]').forEach(el=>{el.textContent=preparationCountdown(el.dataset.preparationReadyBy);});}
   setInterval(tickPreparationCountdowns,30000);
@@ -1856,7 +1859,7 @@
       visibleCount+=tasks.length+(showProductForm?1:0);
       const open=query||preferenceUi.onlyMine||preferenceUi.openGroups.has(group.key);
       const summary=Object.entries(labels).filter(([key])=>group.tasks.some(task=>preferenceValue(user.preferences?.[task])===key)).map(([key,label])=>`<span class="category-status readiness-${key}">${icons[key]} ${group.tasks.filter(task=>preferenceValue(user.preferences?.[task])===key).length}<span class="sr-only"> ${esc(label)}</span></span>`).join("");
-      return `<details class="readiness-category" data-preference-group="${group.key}" ${open?"open":""}><summary><span class="readiness-category-icon" aria-hidden="true">${group.icon}</span><span class="readiness-category-heading"><strong>${esc(tText(group.name))}</strong><small>${chosen?ui(`${chosen} valg delt`,`${chosen} choices shared`):ui("Åpne og velg det som passer deg","Open and choose what suits you")}</small></span><span class="category-status-list">${summary}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="readiness-category-body">${group.key==="products"?`<p class="shared-product-note">${ui("Produktene er felles for nabolaget og kan brukes i senere derby. Velg din egen status for produktene du vil dele.","Products are shared with the Neighborhood and can be reused in later Derbies. Choose your own status for the products you want to share.")}${state.taskProductsAvailable===false?` <strong>${ui("Felleslisten kunne ikke hentes. Prøv å laste siden på nytt.","The shared list could not be loaded. Try refreshing the page.")}</strong>`:""}</p>`:""}${tasks.map(task=>{
+      return `<details class="readiness-category" data-preference-group="${group.key}" ${open?"open":""}><summary><span class="readiness-category-icon" aria-hidden="true">${group.icon}</span><span class="readiness-category-heading"><strong>${esc(tText(group.name))}</strong><small>${chosen?ui(`${chosen} valg delt`,`${chosen} choices shared`):ui("Åpne og velg det som passer deg","Open and choose what suits you")}</small></span><span class="category-status-list">${summary}</span><span class="category-chevron" aria-hidden="true">⌄</span></summary><div class="readiness-category-body">${group.name==="Innhøstingsoppgaver"&&user.preferences?.["Bønner"]&&(!user.preferences?.["Soyabønne"]||!user.preferences?.["Svart bønne"])?`<p class="shared-product-note" role="status">${ui("Du har et tidligere svar på «Bønner». Velg nå separat for Soyabønne og Svart bønne. Det gamle svaret brukes ikke i anbefalingene.","You previously answered for ‘Beans’. Choose separately for Soybean and Black bean. The old answer is excluded from recommendations.")}</p>`:""}${group.key==="products"?`<p class="shared-product-note">${ui("Produktene er felles for nabolaget og kan brukes i senere derby. Velg din egen status for produktene du vil dele.","Products are shared with the Neighborhood and can be reused in later Derbies. Choose your own status for the products you want to share.")}${state.taskProductsAvailable===false?` <strong>${ui("Felleslisten kunne ikke hentes. Prøv å laste siden på nytt.","The shared list could not be loaded. Try refreshing the page.")}</strong>`:""}</p>`:""}${tasks.map(task=>{
         const status=preferenceValue(user.preferences?.[task]);
         const title=task==="Produkter"?ui("Produktkurver","Product baskets"):task==="Produksjonsoppgaver"?ui("Alle produksjonsoppgaver","All production tasks"):preferenceTaskLabel(task).replace(/^(Bygjest|Bygning|Produkt|Town visitor|Building|Product): /,"");
         return `<div class="readiness-task ${status?`has-choice choice-${status}`:""}"><div class="readiness-task-heading"><strong>${esc(title)}</strong>${user.preferenceUpdatedAt?.[task]?`<small class="preference-updated">${ui("Oppdatert","Updated")} ${esc(formatDate(user.preferenceUpdatedAt[task]))}</small>`:""}</div><div class="readiness-options" role="group" aria-label="${esc(ui("Din status for ","Your status for ")+title)}">${Object.entries(labels).map(([key,label])=>`<button type="button" data-pref-task="${esc(task)}" data-pref-value="${key}" class="readiness-option readiness-${key} ${status===key?"selected":""}" aria-pressed="${status===key}" title="${esc(descriptions[key])}"><span aria-hidden="true">${icons[key]}</span>${esc(label)}</button>`).join("")}</div>${status==="preparing"?`<div class="preparation-estimate">${preparationBadge(user,task)}<label>${ui("Oppdater forventet klartid","Update estimated ready time")}<select data-preparation-task="${esc(task)}"><option value="" selected disabled>${ui("Velg nytt tidsanslag","Choose a new estimate")}</option>${preparationOptions()}</select></label><small>${ui("Tidsanslaget gir ingen reservasjon. Ledelsen vurderer ventetiden.","An estimate does not reserve a task. Leadership assesses the wait.")}</small></div>`:""}</div>`;
@@ -4831,7 +4834,7 @@
     installButton.classList.add("hidden");
   };
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.130").catch(console.error));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=0.18.0.131").catch(console.error));
     navigator.serviceWorker.addEventListener("message",event=>{
       const d=event.data||{};
       if(d.type!=="WGANG_NOTIFICATION_FOCUS") return;
@@ -4853,6 +4856,7 @@
     if(route&&route!=="landing"&&route!==activePortalRoute)navigate(route,false);
   });
 })();
+
 
 
 

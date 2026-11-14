@@ -3,7 +3,7 @@
   "use strict";
 
   const STORAGE_KEY = "wgangPortalV080";
-  const TASK_TYPES = (window.ROOSTER_DATA && window.ROOSTER_DATA.taskTypes) || ["Hvete","Mais","Gulrot","Bønner","Sukkererter","Jordbær","Potet","Tomat","Annen høsting","Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr","Produksjonsoppgaver","Lastebiloppgaver","Båtoppgaver","Besøkende","Spesifikke personer","Spesifikke hus","Fiskeoppgaver","Gruveoppgaver","Hjelpeoppgaver","Produkter","Dyr","Transportmidler","Annet"];
+  const TASK_TYPES = (window.ROOSTER_DATA && window.ROOSTER_DATA.taskTypes) || ["Hvete","Mais","Gulrot","Soyabønne","Svart bønne","Sukkererter","Ris","Jordbær","Potet","Tomat","Annen høsting","Melk","Bacon","Egg","Ull","Geitemelk","Mate dyr","Produksjonsoppgaver","Lastebiloppgaver","Båtoppgaver","Besøkende","Spesifikke personer","Spesifikke hus","Fiskeoppgaver","Gruveoppgaver","Hjelpeoppgaver","Produkter","Dyr","Transportmidler","Annet"];
   const DEFAULT_DERBY = {
     type: "Standard Derby",
     taskTotal: 9,
@@ -1563,6 +1563,7 @@
 
   window.WGANG_BACKEND = api;
 })();
+
 
 
 

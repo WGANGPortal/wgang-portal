@@ -1,7 +1,7 @@
-const CACHE_NAME = "wgang-v0.18.0.130-preparation-countdown";
+const CACHE_NAME = "wgang-v0.18.0.131-harvest-names";
 const APP_SHELL = [
-  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.130",
-  "/app.js?v=0.18.0.130", "/backend.js?v=0.18.0.130", "/config.js?v=0.18.0.130",
+  "/", "/index.html", "/privacy.html", "/rules.html", "/main.css?v=0.18.0.131",
+  "/app.js?v=0.18.0.131", "/backend.js?v=0.18.0.131", "/config.js?v=0.18.0.131",
   "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png",
   "/wgang-icon-cream.webp", "/wgang-icon-pink.webp", "/hero-farm-desktop.webp", "/hero-farm-mobile.webp",
   "/01-gjester-i-matbutikk.png",
@@ -222,6 +222,7 @@ self.addEventListener("notificationclick", event => {
     if (clients.openWindow) await clients.openWindow(url.toString());
   })());
 });
+
 
 
 

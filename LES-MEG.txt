@@ -1,32 +1,22 @@
-WGANG Portal v0.18.0.130 – Liker og nedtelling
+WGANG Portal v0.18.0.131 – høstingsnavn
 
-Bygger på main v0.18.0.129.
-Erstatt app.js, backend.js, index.html, main.css og service-worker.js.
-Oppdateringen er ikke publisert. Databasetillegget er allerede installert i Supabase.
-Du trenger ikke kjøre SQL.
+Bygger på main v0.18.0.130, med alle funksjonene fra v130 beholdt.
+Erstatt disse fem filene: app.js, backend.js, index.html, main.css, service-worker.js.
+Ingen SQL eller databaseendringer nødvendig. Ikke publisert.
 
-Nytt:
-- Lærer under bygjester.
-- Ferdig, Påbegynt, Liker, Kan ta, Liker ikke.
-- Ved Påbegynt: 15/30 minutter, 1–8 timer eller over 8 timer/usikker.
-- Forventet tidspunkt lagres og vises som nedtelling (oppdateres hvert 30. sekund).
-- Utløpt anslag varsles, men status endres aldri automatisk til Ferdig.
-- Eksisterende Påbegynt uten tidsanslag vises som usikker.
-- Oppdatert anslag regnes fra tidspunktet du velger det nye anslaget.
-- Ferdig prioriteres som Behold; Påbegynt viser Klargjøres – vurder ventetid;
-  Liker viser Ønsket; andre besvarte oppgaver viser Vurder å kaste.
-- Alle kortene kan trykkes på, også teksten nederst.
-- Alle produksjonsoppgaver er et generelt valg under Produkter.
-  Navngitte produkter ligger i samme kategori; produktkurver ligger under Kurvoppgaver.
-- Tidligere lagrede «like»-svar vises nå som Liker.
+Endringer i medlemstavlen og adminoversikten:
+- Sukkererter vises som Sukkerrør. Tidligere svar og nedtelling beholdes.
+- Bønner erstattes med separate valg: Soyabønne og Svart bønne.
+- Ris er lagt til.
+- Gamle Bønner-svar beholdes i databasen, men telles ikke i anbefalingene.
+  Medlemmet får beskjed om å velge separat for de to bønnetypene.
+- Norske og engelske visningsnavn er oppdatert.
 
-Testet:
-- Mobilvisning, valg av 15 minutter og visning hos medlem og admin.
-- Klikk på Vis alle i Klargjøres-kortet filtrerer riktig liste.
-- Alle tidsvalg, utløpt anslag og fjerning av tidsanslag ved statusbytte.
-- Backend lagrer/leser absolutt tidspunkt og holder medlemmer adskilt.
-- Eksisterende regresjonskontroller for produkter, ferdige deltakere, søk og rettigheter.
-- Databasen: ready_by-felt og begrensning kontrollert, eksisterende RLS beholdt.
+Teknisk kompatibilitet: Sukkerrør beholder den tidligere interne lagringsnøkkelen
+Sukkererter. Derfor trengs ingen migrering av svar eller forventet klartid.
 
-Admin-forhandsvisning.html bruker eksempeldata, ikke produksjonsdatabasen.
-Åpne lokalt for å prøve ut visningen. Skal ikke erstatte index.html.
+Kontrollert: nye valg og navn, bevaring av gamle sukkerrør-svar, utelatelse av
+Bønner fra statistikk, medlemspåminnelse, engelske navn, JavaScript-syntaks og
+regresjonskontroller for nedtelling, anbefalinger, søk, produkter og tilganger.
+Denne mindre navneendringen er kontrollert med automatiserte kontroller;
+ny nettlesertest er ikke kjørt.
